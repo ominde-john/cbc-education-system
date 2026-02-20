@@ -27,7 +27,7 @@ export default function LoginPage() {
   });
   const [userType, setUserType] = useState<LoginUserType>('admin');
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
@@ -42,8 +42,8 @@ const handleSubmit = async (e: React.FormEvent) => {
         description: `Successfully signed in as ${userType}.`,
       });
       
-      // Navigate to dashboard after successful login
-      navigate('/school-admin/dashboard');
+      // Navigate to admin-login after successful login
+      navigate('/admin-login');
     } catch (error: unknown) {
       toast({
         title: 'Sign In Failed',
