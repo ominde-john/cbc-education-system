@@ -22,8 +22,8 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: 'superadminlevi@edustack.co.ke',
+    password: 'hashedbossie'
   });
   const [userType, setUserType] = useState<LoginUserType>('admin');
 
@@ -31,10 +31,7 @@ export default function LoginPage() {
     e.preventDefault();
     
     try {
-      // Add loading state to prevent multiple submissions
       await login(formData.email, formData.password);
-      
-      // Wait a moment for user state to be fully hydrated
       await new Promise(resolve => setTimeout(resolve, 200));
       
       toast({
@@ -42,7 +39,6 @@ export default function LoginPage() {
         description: `Successfully signed in as ${userType}.`,
       });
       
-      // Navigate to admin-login after successful login
       navigate('/admin-login');
     } catch (error: unknown) {
       toast({
@@ -55,22 +51,10 @@ export default function LoginPage() {
 
   const handleDemoLogin = (type: LoginUserType) => {
     setUserType(type);
-    if (type === 'admin') {
-      setFormData({
-        email: 'admin@school.edu',
-        password: 'Admin123!@#'
-      });
-    } else if (type === 'teacher') {
-      setFormData({
-        email: 'teacher@school.edu',
-        password: 'Teacher123!@#'
-      });
-    } else {
-      setFormData({
-        email: 'parent@school.edu',
-        password: 'Parent123!@#'
-      });
-    }
+    setFormData({
+      email: 'superadminlevi@edustack.co.ke',
+      password: 'hashedbossie'
+    });
   };
 
   const handleGoBack = () => {
@@ -78,7 +62,6 @@ export default function LoginPage() {
       navigate(-1);
       return;
     }
-
     navigate('/');
   };
 
@@ -188,6 +171,13 @@ export default function LoginPage() {
                 <p className="text-gray-600">Sign in to your {userType} account</p>
               </div>
 
+              {/* Demo Credentials */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+                <p className="font-semibold text-blue-800 mb-1">Demo Credentials:</p>
+                <p className="text-blue-600">Email: superadminlevi@edustack.co.ke</p>
+                <p className="text-blue-600">Password: hashedbossie</p>
+              </div>
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email Field */}
                 <div className="space-y-2">
@@ -254,8 +244,6 @@ export default function LoginPage() {
 
               {/* Footer */}
               <div className="text-center space-y-4">
-                <p className="text-xs text-gray-500">
-                </p>
                 <div className="border-t border-gray-200 pt-4">
                   <p className="text-xs text-gray-500">
                     © 2026 CBC Education System • Secure Access Only
