@@ -14,8 +14,10 @@ import {
   TrendingUp,
   Loader2,
   AlertCircle,
+  Building2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import SchoolSetupWizard from '@/components/SchoolSetupWizard';
 
 interface SchoolStats {
   totalTeachers: number;
@@ -95,9 +97,13 @@ export default function SchoolDashboard() {
       setLoading(true);
       setError(null);
 
-      // Validate user has required permissions
+      // If user doesn't have schoolId, show demo data or empty state
       if (!user?.schoolId) {
-        throw new Error('Access denied. School information not found.');
+        // Set default stats for users without school association
+        setStats(DEFAULT_STATS);
+        setActivities([]);
+        setLoading(false);
+        return;
       }
 
       const { data: statsData, error: statsError } = await supabase
@@ -129,7 +135,7 @@ export default function SchoolDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [user?.schoolId, user?.schoolId]);
+  }, [user?.schoolId]);
 
   useEffect(() => {
     void fetchDashboardData();
@@ -160,6 +166,29 @@ export default function SchoolDashboard() {
     );
   }
 
+  // If user doesn't have schoolId, show setup wizard
+  if (!user?.schoolId) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-8 h-8 text-blue-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Welcome to CBC Education System, {user?.firstName}!
+          </h1>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+            To get started, you need to set up your school. This will only take a few minutes 
+            and will give you access to all the features including fees management, payroll, 
+            teacher and learner management, and much more.
+          </p>
+        </div>
+        
+        <SchoolSetupWizard />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -168,7 +197,7 @@ export default function SchoolDashboard() {
             Welcome back, {user?.firstName}!
           </h1>
           <p className="text-muted-foreground mt-1">
-            Here's what&apos;s happening at your school today.
+            Here's what's happening at your school today.
           </p>
         </div>
         <div className="flex gap-2">
