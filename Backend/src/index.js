@@ -1,8 +1,13 @@
 require("dotenv").config();
 const app = require("./app");
 
-const PORT = process.env.PORT || 3001;
+// Vercel serverless export
+module.exports = app;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 CBE AI Backend running on port ${PORT}`);
-});
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 CBE AI Backend running on port ${PORT}`);
+  });
+}
