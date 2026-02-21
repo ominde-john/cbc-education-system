@@ -10,12 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create the Supabase client with optimized settings for faster performance
+// Note: autoRefreshToken is disabled to prevent CORS errors when using backend authentication
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    // Enable faster authentication
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
     flowType: 'pkce',
   },
   db: {

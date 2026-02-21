@@ -8,12 +8,21 @@ export enum UserRole {
   STUDENT = 'student',
 }
 
+// School levels that match the database constraint
 export enum SchoolLevel {
   ECDE = 'ecde',
   PRIMARY = 'primary',
   JUNIOR_SECONDARY = 'junior_secondary',
   SENIOR_SECONDARY = 'senior_secondary',
 }
+
+// Display-friendly labels for school levels
+export const SchoolLevelLabels: Record<SchoolLevel, string> = {
+  [SchoolLevel.ECDE]: 'ECDE',
+  [SchoolLevel.PRIMARY]: 'Primary',
+  [SchoolLevel.JUNIOR_SECONDARY]: 'Junior Secondary',
+  [SchoolLevel.SENIOR_SECONDARY]: 'Senior Secondary',
+};
 
 export enum GradeLevel {
   PP1 = 'PP1',

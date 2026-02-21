@@ -75,13 +75,14 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if email is verified (optional based on requirements)
-    if (!user.email_verified && process.env.REQUIRE_EMAIL_VERIFICATION === 'true') {
-      return res.status(403).json({
-        success: false,
-        message: 'Please verify your email address before logging in.'
-      });
-    }
+    // Email verification check disabled for development
+    // To enable, set REQUIRE_EMAIL_VERIFICATION=true in environment variables
+    // if (!user.email_verified && process.env.REQUIRE_EMAIL_VERIFICATION === 'true') {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Please verify your email address before logging in.'
+    //   });
+    // }
 
     // Reset login attempts on successful login
     await resetLoginAttempts(user.id).catch(err => console.error('Failed to reset login attempts:', err));
@@ -193,3 +194,4 @@ exports.refreshToken = async (req, res) => {
     });
   }
 };
+
