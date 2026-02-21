@@ -259,14 +259,14 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   
-  // Content Security Policy
+  // Content Security Policy - include Vercel and Render domains for CORS
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data: https:; " +
     "font-src 'self' https:; " +
-    "connect-src 'self' https:; " +
+    "connect-src 'self' https://cbc-education-system-sooty.vercel.app https://college-cohatmi-college-1.onrender.com https://*.vercel.app https://*.render.com; " +
     "frame-ancestors 'none';"
   );
 
