@@ -116,6 +116,31 @@ if (process.env.NODE_ENV === "development") {
 // Trust proxy for accurate IP addresses (important for rate limiting)
 app.set("trust proxy", 1);
 
+// ==================== ROOT ROUTE HANDLER ====================
+// Add this before your API routes
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    name: "CBC Education System API",
+    version: "1.0.0",
+    description: "Enterprise-grade authentication and AI assistant API",
+    status: "running",
+    environment: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      root: "/",
+      health: "/health",
+      api_info: "/api",
+      auth: "/api/auth/*",
+      users: "/api/users/*",
+      register: "/api/register/*",
+      password: "/api/password/*",
+      ai: "/api/ai/*"
+    },
+    documentation: "https://github.com/communityteksoft-source/cbc-education-system"
+  });
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
@@ -128,7 +153,9 @@ app.get("/health", (req, res) => {
   res.json({ 
     status: "ok",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    cpu: process.cpuUsage()
   });
 });
 
@@ -140,18 +167,23 @@ app.get("/api", (req, res) => {
     description: "Enterprise-grade authentication and AI assistant API",
     endpoints: {
       auth: "/api/auth/*",
-      ai: "/api/ai/*"
+      ai: "/api/ai/*",
+      users: "/api/users/*",
+      register: "/api/register/*",
+      password: "/api/password/*"
     },
     documentation: "https://github.com/communityteksoft-source/cbc-education-system"
   });
 });
 
-// 404 handler
+// 404 handler - This catches all unmatched routes
 app.use("*", (req, res) => {
   res.status(404).json({
     success: false,
     message: "Endpoint not found",
-    path: req.originalUrl
+    path: req.originalUrl,
+    method: req.method,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -175,10 +207,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-app.use("*", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Endpoint not found",
-    path: req.originalUrl
-  });
-});
