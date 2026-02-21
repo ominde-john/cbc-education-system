@@ -1,7 +1,7 @@
 import { useState, createContext, useContext, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 
-const API_URL = '/api';
+const API_URL = '/api/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Email and password are required');
       }
 
-      const response = await fetch(`${API_URL}/users/login`, {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
