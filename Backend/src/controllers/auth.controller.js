@@ -7,15 +7,25 @@ const {
   isValidEmail
 } = require('../config/auth');
 
-// Login
+// Login with extensive debugging
 exports.login = async (req, res) => {
+  console.log('\n========== LOGIN ATTEMPT ==========');
+  console.log('Time:', new Date().toISOString());
+  console.log('Request body:', req.body);
+  console.log('Email provided:', req.body?.email);
+  console.log('Password provided:', !!req.body?.password);
+  console.log('Content-Type:', req.headers['content-type']);
+  console.log('IP:', req.ip || req.connection.remoteAddress);
+  
   try {
     const { email, password } = req.body;
     const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
     const userAgent = req.get('User-Agent') || 'unknown';
 
-    // Validate inputs
+    // Step 1: Validate inputs
+    console.log('\n📋 STEP 1: Validating inputs');
     if (!email || !password) {
+      console.log('❌ Missing email or password');
       return res.status(400).json({
         success: false,
         message: 'Email and password are required.'
@@ -23,13 +33,18 @@ exports.login = async (req, res) => {
     }
 
     if (!isValidEmail(email)) {
+      console.log('❌ Invalid email format:', email);
       return res.status(400).json({
         success: false,
         message: 'Invalid email format.'
       });
     }
+    console.log('✅ Input validation passed');
 
-    // Get user from database - use COALESCE to handle missing columns gracefully
+    // Step 2: Query database
+    console.log('\n📋 STEP 2: Querying database for user:', email);
+    console.log('Database query executing...');
+    
     const userResult = await query(
       `SELECT u.id, u.email, u.password_hash, u.role, u.status, 
               COALESCE(u.school_id, NULL) as school_id, 
@@ -42,8 +57,13 @@ exports.login = async (req, res) => {
       [email]
     );
 
+    console.log('📊 Query result:', {
+      rowsFound: userResult.rows.length,
+      rowCount: userResult.rows.length
+    });
+
     if (userResult.rows.length === 0) {
-      // Don't reveal if user exists or not
+      console.log('❌ No user found with email:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials.'
@@ -51,58 +71,127 @@ exports.login = async (req, res) => {
     }
 
     const user = userResult.rows[0];
+    console.log('✅ User found:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      schoolId: user.school_id,
+      hasPasswordHash: !!user.password_hash,
+      loginAttempts: user.login_attempts,
+      lockedUntil: user.locked_until,
+      emailVerified: user.email_verified
+    });
 
-    // Check if account is locked (optimized check)
+    // Step 3: Check account lock
+    console.log('\n📋 STEP 3: Checking account lock status');
     if (user.locked_until && new Date() < new Date(user.locked_until)) {
+      console.log('❌ Account is locked until:', user.locked_until);
       return res.status(423).json({
         success: false,
         message: 'Account temporarily locked due to too many failed login attempts. Please try again later.'
       });
     }
+    console.log('✅ Account not locked');
 
-    // Check if account is suspended
+    // Step 4: Check account status
+    console.log('\n📋 STEP 4: Checking account status');
     if (user.status === 'suspended') {
+      console.log('❌ Account is suspended');
       return res.status(403).json({
         success: false,
         message: 'Account suspended. Please contact support.'
       });
     }
+    console.log('✅ Account status:', user.status);
 
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password_hash);
-    if (!isValidPassword) {
-      // Increment login attempts
-      await incrementLoginAttempts(user.id).catch(err => console.error('Failed to increment login attempts:', err));
+    // Step 5: Verify password
+    console.log('\n📋 STEP 5: Verifying password');
+    console.log('Password hash present:', !!user.password_hash);
+    
+    if (!user.password_hash) {
+      console.log('❌ No password hash found for user');
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials.'
       });
     }
 
-    // Email verification check disabled for development
-    // To enable, set REQUIRE_EMAIL_VERIFICATION=true in environment variables
+    const isValidPassword = await verifyPassword(password, user.password_hash);
+    console.log('Password verification result:', isValidPassword);
+    
+    if (!isValidPassword) {
+      console.log('❌ Invalid password, incrementing login attempts...');
+      
+      try {
+        await incrementLoginAttempts(user.id);
+        console.log('✅ Login attempts incremented');
+      } catch (err) {
+        console.error('Failed to increment login attempts:', err.message);
+      }
+      
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials.'
+      });
+    }
+    console.log('✅ Password verified successfully');
+
+    // Step 6: Email verification check
+    console.log('\n📋 STEP 6: Checking email verification');
+    console.log('REQUIRE_EMAIL_VERIFICATION:', process.env.REQUIRE_EMAIL_VERIFICATION);
+    console.log('Email verified:', user.email_verified);
+    
     // if (!user.email_verified && process.env.REQUIRE_EMAIL_VERIFICATION === 'true') {
+    //   console.log('❌ Email not verified');
     //   return res.status(403).json({
     //     success: false,
     //     message: 'Please verify your email address before logging in.'
     //   });
     // }
+    console.log('✅ Email verification check passed');
 
-    // Reset login attempts on successful login
-    await resetLoginAttempts(user.id).catch(err => console.error('Failed to reset login attempts:', err));
+    // Step 7: Reset login attempts
+    console.log('\n📋 STEP 7: Resetting login attempts');
+    try {
+      await resetLoginAttempts(user.id);
+      console.log('✅ Login attempts reset');
+    } catch (err) {
+      console.error('Failed to reset login attempts:', err.message);
+    }
 
-    // Generate tokens
+    // Step 8: Generate tokens
+    console.log('\n📋 STEP 8: Generating tokens');
+    console.log('JWT_SECRET present:', !!process.env.JWT_SECRET);
+    console.log('JWT_EXPIRES_IN:', process.env.JWT_EXPIRES_IN);
+    
     const tokens = await generateTokens(user);
+    console.log('Tokens generated:', {
+      hasAccessToken: !!tokens.accessToken,
+      hasRefreshToken: !!tokens.refreshToken,
+      accessTokenLength: tokens.accessToken?.length,
+      refreshTokenLength: tokens.refreshToken?.length
+    });
 
-    // Update session with IP and user agent (optimized) - ignore errors for this optional update
-    await query(
-      `UPDATE user_sessions 
-       SET ip_address = $1, user_agent = $2 
-       WHERE session_token = $3`,
-      [clientIp, userAgent, tokens.refreshToken]
-    ).catch(err => console.error('Failed to update session:', err));
+    // Step 9: Update session
+    console.log('\n📋 STEP 9: Updating session');
+    try {
+      await query(
+        `UPDATE user_sessions 
+         SET ip_address = $1, user_agent = $2 
+         WHERE session_token = $3`,
+        [clientIp, userAgent, tokens.refreshToken]
+      );
+      console.log('✅ Session updated successfully');
+    } catch (err) {
+      console.error('Failed to update session:', err.message);
+    }
 
-    // Send successful response
+    // Step 10: Success response
+    console.log('\n📋 STEP 10: Sending success response');
+    console.log('✅✅✅ LOGIN SUCCESSFUL for:', email);
+    console.log('=====================================\n');
+
     return res.json({
       success: true,
       message: 'Login successful.',
@@ -118,39 +207,63 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Login error:', error);
+    console.error('\n❌❌❌ LOGIN ERROR ❌❌❌');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
     console.error('Error stack:', error.stack);
+    
+    if (error.code) {
+      console.error('PostgreSQL Error Code:', error.code);
+    }
+    
+    if (error.constraint) {
+      console.error('Constraint violated:', error.constraint);
+    }
+    
+    if (error.detail) {
+      console.error('Error detail:', error.detail);
+    }
+    
+    console.error('=====================================\n');
     
     // Determine more specific error message
     let errorMessage = 'An error occurred during login. Please try again.';
     
     if (error.code === '42P01') {
-      // Table doesn't exist
       errorMessage = 'Database configuration error. Please contact support.';
       console.error('❌ Table does not exist:', error.message);
     } else if (error.code === '42703') {
-      // Column doesn't exist
       errorMessage = 'Database schema error. Please contact support.';
       console.error('❌ Column does not exist:', error.message);
+    } else if (error.code === '28P01') {
+      errorMessage = 'Database authentication error.';
+      console.error('❌ Invalid password for database user');
+    } else if (error.code === '3D000') {
+      errorMessage = 'Database does not exist.';
+      console.error('❌ Database does not exist');
+    } else if (error.code === 'ECONNREFUSED') {
+      errorMessage = 'Database connection refused. Please try again later.';
     } else if (error.message && error.message.includes('connection')) {
       errorMessage = 'Database connection error. Please try again later.';
+    } else if (error.message && error.message.includes('timeout')) {
+      errorMessage = 'Database connection timeout. Please try again.';
     }
     
-    // Ensure we always send a valid JSON response
     return res.status(500).json({
       success: false,
-      message: errorMessage
+      message: errorMessage,
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
 
-// Logout
+// Logout (unchanged)
 exports.logout = async (req, res) => {
   try {
     const token = req.headers.authorization?.substring(7);
     
     if (token) {
-      // Remove session from database
       await query('DELETE FROM user_sessions WHERE session_token = $1', [token]);
     }
 
@@ -168,7 +281,7 @@ exports.logout = async (req, res) => {
   }
 };
 
-// Refresh token
+// Refresh token (unchanged)
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -180,7 +293,6 @@ exports.refreshToken = async (req, res) => {
       });
     }
 
-    // Check if refresh token exists and is valid
     const sessionResult = await query(
       `SELECT us.user_id, us.expires_at, u.email, u.role, u.status, u.school_id
        FROM user_sessions us
@@ -197,8 +309,6 @@ exports.refreshToken = async (req, res) => {
     }
 
     const user = sessionResult.rows[0];
-
-    // Generate new tokens
     const tokens = await generateTokens(user);
 
     res.json({
