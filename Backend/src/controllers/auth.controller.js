@@ -212,53 +212,22 @@ exports.login = async (req, res) => {
     console.error('Error message:', error.message);
     console.error('Error code:', error.code);
     console.error('Error stack:', error.stack);
-    
-    if (error.code) {
-      console.error('PostgreSQL Error Code:', error.code);
-    }
-    
-    if (error.constraint) {
-      console.error('Constraint violated:', error.constraint);
-    }
-    
-    if (error.detail) {
-      console.error('Error detail:', error.detail);
-    }
-    
     console.error('=====================================\n');
     
-    // Determine more specific error message
-    let errorMessage = 'An error occurred during login. Please try again.';
-    
-    if (error.code === '42P01') {
-      errorMessage = 'Database configuration error. Please contact support.';
-      console.error('❌ Table does not exist:', error.message);
-    } else if (error.code === '42703') {
-      errorMessage = 'Database schema error. Please contact support.';
-      console.error('❌ Column does not exist:', error.message);
-    } else if (error.code === '28P01') {
-      errorMessage = 'Database authentication error.';
-      console.error('❌ Invalid password for database user');
-    } else if (error.code === '3D000') {
-      errorMessage = 'Database does not exist.';
-      console.error('❌ Database does not exist');
-    } else if (error.code === 'ECONNREFUSED') {
-      errorMessage = 'Database connection refused. Please try again later.';
-    } else if (error.message && error.message.includes('connection')) {
-      errorMessage = 'Database connection error. Please try again later.';
-    } else if (error.message && error.message.includes('timeout')) {
-      errorMessage = 'Database connection timeout. Please try again.';
-    }
-    
+    // Send the REAL error message
     return res.status(500).json({
       success: false,
-      message: errorMessage,
-      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: error.message, // This shows the actual error
+      error: {
+        name: error.name,
+        code: error.code,
+        detail: error.detail || error.message
+      }
     });
   }
 };
 
-// Logout (unchanged)
+// Logout
 exports.logout = async (req, res) => {
   try {
     const token = req.headers.authorization?.substring(7);
@@ -281,7 +250,7 @@ exports.logout = async (req, res) => {
   }
 };
 
-// Refresh token (unchanged)
+// Refresh token
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -317,17 +286,14 @@ exports.refreshToken = async (req, res) => {
       data: { tokens }
     });
 
-    } catch (error) {
-    console.error('\n❌❌❌ LOGIN ERROR ❌❌❌');
-    console.error('Error name:', error.name);
+  } catch (error) {
+    console.error('\n❌❌❌ REFRESH TOKEN ERROR ❌❌❌');
     console.error('Error message:', error.message);
-    console.error('Error code:', error.code);
     console.error('Error stack:', error.stack);
     
-    // Send the REAL error message
     return res.status(500).json({
       success: false,
-      message: error.message, // This shows the actual error
+      message: error.message,
       error: {
         name: error.name,
         code: error.code,
@@ -335,9 +301,4 @@ exports.refreshToken = async (req, res) => {
       }
     });
   }
-};
-
-// Logout (unchanged)
-exports.logout = async (req, res) => {
-  // ... rest of your code stays exactly the same
 };
