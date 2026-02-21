@@ -23,7 +23,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://cbc-education-system-sooty.vercel.app", "https://college-cohatmi-college-1.onrender.com", "https://*.vercel.app", "https://*.render.com"],
+      connectSrc: ["'self'", "https://cbc-education-system-sooty.vercel.app", "https://cbc-education-system-1.onrender.com", "https://*.vercel.app", "https://*.render.com"],
       fontSrc: ["'self'", "https:", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -43,6 +43,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://cbc-education-system-sooty.vercel.app",
+  "https://cbc-education-system-1.onrender.com",
   process.env.FRONTEND_URL
 ].filter(Boolean);
 

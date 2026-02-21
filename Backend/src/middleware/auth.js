@@ -282,7 +282,7 @@ const securityHeaders = (req, res, next) => {
   // Only set CSP connect-src for allowed origins, don't block CORS
   const connectSrc = isAllowedOrigin && origin 
     ? `'self' https: ${origin}`
-    : "'self' https: https://cbc-education-system-sooty.vercel.app https://college-cohatmi-college-1.onrender.com https://*.vercel.app https://*.render.com";
+    : "'self' https: https://cbc-education-system-sooty.vercel.app https://cbc-education-system-1.onrender.com https://*.vercel.app https://*.render.com";
 
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
