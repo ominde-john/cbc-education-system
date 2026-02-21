@@ -23,8 +23,8 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      connectSrc: ["'self'", "https://cbc-education-system-sooty.vercel.app", "https://college-cohatmi-college-1.onrender.com", "https://*.vercel.app", "https://*.render.com"],
+      fontSrc: ["'self'", "https:", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
@@ -40,6 +40,8 @@ app.use(compression());
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+  "http://localhost:3000",
+  "http://localhost:3001",
   "https://cbc-education-system-sooty.vercel.app",
   process.env.FRONTEND_URL
 ].filter(Boolean);
@@ -49,15 +51,31 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+    
+    // Also allow all Vercel preview/production deployments
+    if (origin && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'))) {
+      return callback(null, true);
+    }
+    
+    // Also allow all Render deployments
+    if (origin && (origin.endsWith('.render.com') || origin.includes('render.com'))) {
+      return callback(null, true);
+    }
+    
+    // Log the rejected origin for debugging
+    console.log('CORS rejected origin:', origin);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"]
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "Accept", "Origin"],
+  exposedHeaders: ["Content-Length", "Content-Type", "Authorization"],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Rate limiting
