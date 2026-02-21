@@ -317,11 +317,27 @@ exports.refreshToken = async (req, res) => {
       data: { tokens }
     });
 
-  } catch (error) {
-    console.error('❌ Token refresh error:', error);
-    res.status(500).json({
+    } catch (error) {
+    console.error('\n❌❌❌ LOGIN ERROR ❌❌❌');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error stack:', error.stack);
+    
+    // Send the REAL error message
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error during token refresh.'
+      message: error.message, // This shows the actual error
+      error: {
+        name: error.name,
+        code: error.code,
+        detail: error.detail || error.message
+      }
     });
   }
+};
+
+// Logout (unchanged)
+exports.logout = async (req, res) => {
+  // ... rest of your code stays exactly the same
 };
