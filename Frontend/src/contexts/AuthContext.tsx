@@ -2,8 +2,8 @@ import { useState, createContext, useContext, ReactNode, useEffect } from 'react
 import { User, UserRole } from '@/types';
 
 // Use environment variable for API URL, fallback to relative path for development
-// In production, set VITE_API_URL to your backend URL (e.g., https://college-cohatmi-college-1.onrender.com)
-const API_URL = import.meta.env.VITE_API_URL || 'https://college-cohatmi-college-1.onrender.com';
+// In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
+const API_URL = import.meta.env.VITE_API_URL || 'https://cbc-education-system-1.onrender.com';
 
 interface AuthContextType {
   user: User | null;
