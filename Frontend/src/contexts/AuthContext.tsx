@@ -3,7 +3,8 @@ import { User, UserRole } from '@/types';
 
 // Use environment variable for API URL, fallback to relative path for development
 // In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
-const API_URL = import.meta.env.VITE_API_URL || 'https://cbc-education-system-1.onrender.com';
+// Use empty string (relative path) in development to leverage Vite proxy
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 interface AuthContextType {
   user: User | null;
@@ -84,8 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const userData = data.data?.user || data.user || data.data || {};
-      const token = data.data?.token || data.token || data.data?.accessToken || '';
-      const refreshToken = data.refreshToken || data.data?.refreshToken || '';
+      // Backend returns: { success: true, data: { user: {...}, tokens: { accessToken, refreshToken } } }
+      const token = data.data?.tokens?.accessToken || data.data?.accessToken || data.token || '';
+      const refreshToken = data.data?.tokens?.refreshToken || data.data?.refreshToken || data.refreshToken || '';
 
       const user: User = {
         id: userData.id || '1',

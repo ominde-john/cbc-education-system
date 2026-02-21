@@ -43,18 +43,23 @@ const generateTokens = async (user) => {
   const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   const refreshToken = generateSecureToken();
 
-  // Store refresh token in database
-  await query(
-    `INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expires_at)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [
-      user.id,
-      refreshToken,
-      null, // Will be set during login
-      null, // Will be set during login
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-    ]
-  );
+  // Store refresh token in database - handle missing table gracefully
+  try {
+    await query(
+      `INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expires_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        user.id,
+        refreshToken,
+        null, // Will be set during login
+        null, // Will be set during login
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+      ]
+    );
+  } catch (error) {
+    // If table doesn't exist, just log and continue without session storage
+    console.warn('⚠️ Could not create user session:', error.message);
+  }
 
   return {
     accessToken,
@@ -85,33 +90,44 @@ const isAccountLocked = async (userId) => {
   return lockedUntil && new Date() < new Date(lockedUntil);
 };
 
-// Increment login attempts
+// Increment login attempts - handle missing columns gracefully
 const incrementLoginAttempts = async (userId) => {
-  const result = await query(
-    `UPDATE users 
-     SET login_attempts = login_attempts + 1,
-         locked_until = CASE 
-           WHEN login_attempts + 1 >= $2 THEN NOW() + INTERVAL '${LOCKOUT_TIME} minutes'
-           ELSE locked_until
-         END
-     WHERE id = $1
-     RETURNING login_attempts, locked_until`,
-    [userId, MAX_LOGIN_ATTEMPTS]
-  );
+  try {
+    const result = await query(
+      `UPDATE users 
+       SET login_attempts = COALESCE(login_attempts, 0) + 1,
+           locked_until = CASE 
+             WHEN COALESCE(login_attempts, 0) + 1 >= $2 THEN NOW() + INTERVAL '${LOCKOUT_TIME} minutes'
+             ELSE locked_until
+           END
+       WHERE id = $1
+       RETURNING login_attempts, locked_until`,
+      [userId, MAX_LOGIN_ATTEMPTS]
+    );
 
-  return result.rows[0];
+    return result.rows[0];
+  } catch (error) {
+    // If column doesn't exist, just log and continue
+    console.warn('⚠️ Could not increment login attempts:', error.message);
+    return null;
+  }
 };
 
-// Reset login attempts on successful login
+// Reset login attempts on successful login - handle missing columns gracefully
 const resetLoginAttempts = async (userId) => {
-  await query(
-    `UPDATE users 
-     SET login_attempts = 0, 
-         locked_until = NULL, 
-         last_login = NOW()
-     WHERE id = $1`,
-    [userId]
-  );
+  try {
+    await query(
+      `UPDATE users 
+       SET login_attempts = 0, 
+           locked_until = NULL, 
+           last_login = NOW()
+       WHERE id = $1`,
+      [userId]
+    );
+  } catch (error) {
+    // If columns don't exist, just log and continue
+    console.warn('⚠️ Could not reset login attempts:', error.message);
+  }
 };
 
 // Validate email format

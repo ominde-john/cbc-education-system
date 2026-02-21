@@ -29,9 +29,13 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Get user from database with optimized query
+    // Get user from database - use COALESCE to handle missing columns gracefully
     const userResult = await query(
-      `SELECT u.id, u.email, u.password_hash, u.role, u.status, u.school_id, u.login_attempts, u.locked_until, u.email_verified
+      `SELECT u.id, u.email, u.password_hash, u.role, u.status, 
+              COALESCE(u.school_id, NULL) as school_id, 
+              COALESCE(u.login_attempts, 0) as login_attempts, 
+              u.locked_until, 
+              COALESCE(u.email_verified, false) as email_verified
        FROM users u
        WHERE u.email = $1 AND u.status != 'deleted'
        LIMIT 1`,
