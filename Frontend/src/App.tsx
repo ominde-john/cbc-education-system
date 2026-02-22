@@ -42,11 +42,14 @@ import TeachingResources from "@/pages/teacher/TeachingResources";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // School Admin Pages
-import SchoolDashboard from "@/pages/auth/school-admin/Dashboard";
+import { DashboardWidgets } from "./pages/school-admin/learners/DashboardWidgets";
 import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
 import LearnersListPage from "@/pages/auth/school-admin/learners/LearnersList";
 import AddLearnerPage from "@/pages/auth/school-admin/learners/AddLearner";
+import StudentDetails from "./pages/school-admin/learners/AddLearner";
+import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
+
 
 // ✅ Student Management Page
 import StudentManagement from "./pages/school-admin/learners/Learners";
@@ -200,15 +203,15 @@ function AppRoutes() {
             <DashboardLayout>
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<SchoolDashboard />} />
+                <Route path="dashboard" element={<DashboardWidgets/>} />
 
                 {/* Teachers */}
                 <Route path="teachers" element={<TeachersListPage />} />
                 <Route path="teachers/add" element={<AddTeacherPage />} />
 
                 {/* Learners */}
-                <Route path="learners" element={<LearnersListPage />} />
-                <Route path="learners/add" element={<AddLearnerPage />} />
+                <Route path="learners/all" element={<StudentManagement />} />
+                
 
                 {/* ✅ Student Management — linked here */}
                 <Route path="learners/manage" element={<StudentManagement />} />
@@ -219,7 +222,8 @@ function AppRoutes() {
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="demo" element={<ModernDashboard />} />
-
+                <Route path="learners/add" element={<StudentDetails />} />
+                <Route path="fee-management/" element={<FeeManagement/>} />
                 {/* Fallback */}
                 <Route path="" element={<Navigate to="dashboard" replace />} />
               </Routes>

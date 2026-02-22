@@ -1,1440 +1,550 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Plus, Search, Download, MoreHorizontal, Eye, Edit, Trash2 } from 'lucide-react';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Student {
-  id: number;
-  admissionNo: string;
-  upi: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  dob: string;
-  photo: string | null;
-}
-
-interface FormErrors {
-  admissionNo?: string;
-  firstName?: string;
-  lastName?: string;
-  gender?: string;
-  dob?: string;
-}
-
-interface StatItem {
-  label: string;
-  value: number;
-  icon: string;
-  color: string;
-  light: string;
-  dark: string;
-  trend?: number;
-}
-
-interface TabItem {
-  id: string;
-  label: string;
-  count: number;
-  icon: string;
-}
-
-interface GenderStyle {
-  bg: string;
-  color: string;
-  dot: string;
-  label: string;
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-const GENDERS: string[] = ["Male", "Female", "Other"];
-
-const AVATAR_COLORS: [string, string][] = [
-  ["#4f46e5", "#818cf8"],
-  ["#0891b2", "#67e8f9"],
-  ["#059669", "#6ee7b7"],
-  ["#d97706", "#fcd34d"],
-  ["#db2777", "#f9a8d4"],
-  ["#7c3aed", "#c4b5fd"],
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+const mockStudents = [
+  { id: '1', admNo: 'CBC/2024/001', firstName: 'John',  lastName: 'Kamau',    grade: 'Grade4', gender: 'Male',   guardianName: 'Mary Kamau',    guardianPhone: '0712345678', status: 'active' },
+  { id: '2', admNo: 'CBC/2024/002', firstName: 'Jane',  lastName: 'Wanjiku',  grade: 'Grade5', gender: 'Female', guardianName: 'Peter Wanjiku', guardianPhone: '0723456789', status: 'active' },
+  { id: '3', admNo: 'CBC/2024/003', firstName: 'David', lastName: 'Ochieng',  grade: 'Grade3', gender: 'Male',   guardianName: 'Sarah Ochieng', guardianPhone: '0734567890', status: 'active' },
+  { id: '4', admNo: 'CBC/2024/004', firstName: 'Grace', lastName: 'Njeri',    grade: 'PP2',    gender: 'Female', guardianName: 'James Njeri',   guardianPhone: '0745678901', status: 'transferred' },
+  { id: '5', admNo: 'CBC/2024/005', firstName: 'Brian', lastName: 'Mwangi',   grade: 'Grade6', gender: 'Male',   guardianName: 'Anne Mwangi',   guardianPhone: '0756789012', status: 'active' },
+  { id: '6', admNo: 'CBC/2024/006', firstName: 'Faith', lastName: 'Akinyi',   grade: 'Grade7', gender: 'Female', guardianName: 'Tom Akinyi',    guardianPhone: '0767890123', status: 'active' },
+  { id: '7', admNo: 'CBC/2024/007', firstName: 'Kevin', lastName: 'Kipchoge', grade: 'Grade8', gender: 'Male',   guardianName: 'Rose Kipchoge', guardianPhone: '0778901234', status: 'active' },
+  { id: '8', admNo: 'CBC/2024/008', firstName: 'Lucy',  lastName: 'Wambui',   grade: 'PP1',    gender: 'Female', guardianName: 'John Wambui',   guardianPhone: '0789012345', status: 'active' },
 ];
 
-const GENDER_CONFIG: Record<string, GenderStyle> = {
-  Male:   { bg: "#dbeafe", color: "#1d4ed8", dot: "#3b82f6", label: "Male" },
-  Female: { bg: "#fce7f3", color: "#be185d", dot: "#ec4899", label: "Female" },
-  Other:  { bg: "#f3e8ff", color: "#7e22ce", dot: "#a855f7", label: "Other" },
+const grades = ['PP1','PP2','Grade1','Grade2','Grade3','Grade4','Grade5','Grade6','Grade7','Grade8','Grade9'];
+
+const STATUS_CONFIG = {
+  active:      { label: 'Active',      style: { background:'#dcfce7', color:'#15803d', border:'1px solid #bbf7d0' }, darkStyle: { background:'#14532d', color:'#86efac', border:'1px solid #166534' } },
+  transferred: { label: 'Transferred', style: { background:'#fef9c3', color:'#92400e', border:'1px solid #fde68a' }, darkStyle: { background:'#451a03', color:'#fcd34d', border:'1px solid #78350f' } },
+  graduated:   { label: 'Graduated',   style: { background:'#dbeafe', color:'#1d4ed8', border:'1px solid #bfdbfe' }, darkStyle: { background:'#1e3a5f', color:'#93c5fd', border:'1px solid #1d4ed8' } },
+  withdrawn:   { label: 'Withdrawn',   style: { background:'#fee2e2', color:'#b91c1c', border:'1px solid #fecaca' }, darkStyle: { background:'#450a0a', color:'#fca5a5', border:'1px solid #991b1b' } },
 };
 
-const initialStudents: Student[] = [
-  { id: 1, admissionNo: "ADM202562925", upi: "UPI2025001", firstName: "James",  lastName: "Mwangi", gender: "Male",   dob: "2005-03-12", photo: null },
-  { id: 2, admissionNo: "ADM202562369", upi: "",           firstName: "Amina",  lastName: "Hassan", gender: "Female", dob: "2006-07-22", photo: null },
-  { id: 3, admissionNo: "ADM202562738", upi: "UPI2025003", firstName: "Brian",  lastName: "Otieno", gender: "Male",   dob: "2005-11-05", photo: null },
-  { id: 4, admissionNo: "ADM202562307", upi: "",           firstName: "Grace",  lastName: "Wanjiku",gender: "Female", dob: "2007-01-18", photo: null },
-  { id: 5, admissionNo: "ADM202562971", upi: "UPI2025005", firstName: "Kevin",  lastName: "Kamau",  gender: "Male",   dob: "2006-09-30", photo: null },
-  { id: 6, admissionNo: "ADM202562226", upi: "",           firstName: "Purity", lastName: "Njeri",  gender: "Female", dob: "2005-05-14", photo: null },
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function generateAdmissionNo(): string {
-  return "ADM" + Date.now().toString().slice(-9);
-}
-
-function getInitials(first: string, last: string): string {
-  return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase();
-}
-
-function avatarColor(id: number): [string, string] {
-  return AVATAR_COLORS[id % AVATAR_COLORS.length];
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function calculateAge(dob: string): number {
-  const today = new Date();
-  const birthDate = new Date(dob);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
-const StudentManagement: React.FC = () => {
-  const [students, setStudents] = useState<Student[]>(initialStudents);
-  const [search, setSearch]     = useState<string>("");
-  const [selected, setSelected] = useState<number[]>([]);
-  const [showModal, setShowModal]   = useState<boolean>(false);
-  const [editStudentId, setEditStudentId] = useState<number | null>(null);
-  const [photoPreview, setPhotoPreview]   = useState<string | null>(null);
-  const [errors, setErrors]   = useState<FormErrors>({});
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
+/**
+ * Props:
+ *   onAddStudent  — callback/navigation function wired up by the parent
+ *                   e.g. () => router.push('/students/add')
+ *                        () => navigate('/add-student')
+ *                        () => setPage('addStudent')
+ */
+const StudentManagement = ({ onAddStudent }) => {
+  const [students, setStudents]           = useState(mockStudents);
+  const [searchTerm, setSearchTerm]       = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
 
-  const emptyForm: Student = {
-    id: 0,
-    admissionNo: generateAdmissionNo(),
-    upi: "",
-    firstName: "",
-    lastName: "",
-    gender: "",
-    dob: "",
-    photo: null,
-  };
-  const [form, setForm] = useState<Student>(emptyForm);
-
-  // Auto-hide notification
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
-
-  // Click outside to close modal
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        setShowModal(false);
-      }
-    };
-    if (showModal) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showModal]);
-
-  // ── Derived ──────────────────────────────────────────────────────────────
-  const filtered: Student[] = students.filter((s) => {
-    const q = search.toLowerCase();
+  const filtered = students.filter(s => {
+    const q = searchTerm.toLowerCase();
     const matchSearch =
-      s.admissionNo.toLowerCase().includes(q) ||
-      s.firstName.toLowerCase().includes(q)   ||
-      s.lastName.toLowerCase().includes(q)    ||
-      s.upi.toLowerCase().includes(q);
-    const matchTab =
-      activeTab === "all"    ||
-      (activeTab === "male"   && s.gender === "Male")   ||
-      (activeTab === "female" && s.gender === "Female") ||
-      (activeTab === "upi"    && s.upi !== "");
-    return matchSearch && matchTab;
+      s.firstName.toLowerCase().includes(q) ||
+      s.lastName.toLowerCase().includes(q)  ||
+      s.admNo.toLowerCase().includes(q);
+    const matchGrade  = selectedGrade  === 'all' || s.grade  === selectedGrade;
+    const matchStatus = selectedStatus === 'all' || s.status === selectedStatus;
+    return matchSearch && matchGrade && matchStatus;
   });
 
-  const stats: StatItem[] = [
-    { 
-      label: "Total Students",  
-      value: students.length, 
-      icon: "👥", 
-      color: "#4f46e5", 
-      light: "#eef2ff", 
-      dark: "#c7d2fe",
-      trend: 12 
-    },
-    { 
-      label: "Male Students",   
-      value: students.filter(s => s.gender === "Male").length,   
-      icon: "👦", 
-      color: "#0891b2", 
-      light: "#ecfeff", 
-      dark: "#a5f3fc",
-      trend: 8 
-    },
-    { 
-      label: "Female Students", 
-      value: students.filter(s => s.gender === "Female").length, 
-      icon: "👧", 
-      color: "#db2777", 
-      light: "#fdf2f8", 
-      dark: "#fbcfe8",
-      trend: 5 
-    },
-    { 
-      label: "With UPI",        
-      value: students.filter(s => s.upi !== "").length,   
-      icon: "🆔", 
-      color: "#059669", 
-      light: "#ecfdf5", 
-      dark: "#a7f3d0",
-      trend: 15 
-    },
-  ];
-
-  const tabs: TabItem[] = [
-    { id: "all",    label: "All Students", count: students.length, icon: "📋" },
-    { id: "male",   label: "Male",         count: students.filter(s => s.gender === "Male").length, icon: "👦" },
-    { id: "female", label: "Female",       count: students.filter(s => s.gender === "Female").length, icon: "👧" },
-    { id: "upi",    label: "Has UPI",      count: students.filter(s => s.upi !== "").length, icon: "🆔" },
-  ];
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
-  const showNotification = (message: string, type: 'success' | 'error') => {
-    setNotification({ message, type });
-  };
-
-  const openAdd = (): void => {
-    setForm({ ...emptyForm, admissionNo: generateAdmissionNo() });
-    setPhotoPreview(null);
-    setErrors({});
-    setEditStudentId(null);
-    setShowModal(true);
-  };
-
-  const openEdit = (student: Student): void => {
-    setForm({ ...student });
-    setPhotoPreview(student.photo);
-    setErrors({});
-    setEditStudentId(student.id);
-    setShowModal(true);
-  };
-
-  const validate = (): FormErrors => {
-    const e: FormErrors = {};
-    if (!form.firstName.trim())   e.firstName   = "First name is required";
-    if (!form.lastName.trim())    e.lastName    = "Last name is required";
-    if (!form.gender)             e.gender      = "Please select a gender";
-    if (!form.dob)                e.dob         = "Date of birth is required";
-    if (!form.admissionNo.trim()) e.admissionNo = "Admission number is required";
-    const dup = students.find(
-      (s) => s.admissionNo === form.admissionNo && s.id !== editStudentId
-    );
-    if (dup) e.admissionNo = "Admission number must be unique";
-    return e;
-  };
-
-  const handleSubmit = async (): Promise<void> => {
-    const e = validate();
-    if (Object.keys(e).length) { 
-      setErrors(e); 
-      showNotification('Please fix the errors in the form', 'error');
-      return; 
-    }
-    
-    setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    if (editStudentId !== null) {
-      setStudents(students.map((s) =>
-        s.id === editStudentId ? { ...form, id: editStudentId } : s
-      ));
-      showNotification('Student updated successfully!', 'success');
-    } else {
-      setStudents([...students, { ...form, id: Date.now() }]);
-      showNotification('Student added successfully!', 'success');
-    }
-    
-    setIsLoading(false);
-    setShowModal(false);
-  };
-
-  const handleDelete = (id: number): void => {
+  const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
-      setStudents(students.filter((s) => s.id !== id));
-      setSelected(selected.filter((x) => x !== id));
-      showNotification('Student deleted successfully', 'success');
+      setStudents(prev => prev.filter(s => s.id !== id));
     }
   };
 
-  const handleBulkDelete = (): void => {
-    if (window.confirm(`Are you sure you want to delete ${selected.length} student(s)?`)) {
-      setStudents(students.filter((s) => !selected.includes(s.id)));
-      setSelected([]);
-      showNotification(`${selected.length} student(s) deleted successfully`, 'success');
-    }
-  };
-
-  const toggleSelect = (id: number): void =>
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-
-  const toggleAll = (): void =>
-    setSelected(
-      selected.length === filtered.length && filtered.length > 0
-        ? []
-        : filtered.map((s) => s.id)
-    );
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    if (file.size > 5 * 1024 * 1024) {
-      showNotification('File size must be less than 5MB', 'error');
-      return;
-    }
-    
-    if (!file.type.startsWith('image/')) {
-      showNotification('Please upload an image file', 'error');
-      return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (ev: ProgressEvent<FileReader>) => {
-      const result = ev.target?.result as string;
-      setPhotoPreview(result);
-      setForm((f) => ({ ...f, photo: result }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const updateForm = (key: keyof Student, value: string): void => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    // Clear error for this field when user starts typing
-    if (errors[key as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [key]: undefined }));
-    }
-  };
-
-  // ── Styles ────────────────────────────────────────────────────────────────
-  const inputStyle = (hasError: boolean): React.CSSProperties => ({
-    width: "100%",
-    border: `1.5px solid ${hasError ? "#ef4444" : "#e2e8f0"}`,
-    borderRadius: 12,
-    padding: "12px 16px",
-    fontSize: 14,
-    color: "#0f172a",
-    background: hasError ? "#fff7f7" : "#fff",
-    transition: "all 0.2s ease",
-    fontFamily: "inherit",
-    outline: "none",
-  });
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#475569",
-    marginBottom: 6,
-  };
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+    <div
+      style={{ minHeight: '100vh', fontFamily: "'Inter', system-ui, sans-serif" }}
+      className="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+    >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        
-        * { 
-          box-sizing: border-box; 
-          margin: 0;
-          padding: 0;
+        /* ── Search input ───────────────────────────────────────── */
+        .sm-search {
+          width: 100%;
+          height: 40px;
+          padding: 0 14px 0 40px;
+          font-size: 13px;
+          border-radius: 10px;
+          border: 1.5px solid #e2e8f0;
+          background: #f8fafc;
+          color: #0f172a;
+          transition: all 0.2s;
+          outline: none;
+          font-family: inherit;
         }
-        
-        input, select, button, textarea { 
-          font-family: inherit; 
+        .sm-search::placeholder { color: #94a3b8; }
+        .sm-search:focus {
+          border-color: #4f46e5;
+          box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+          background: #fff;
         }
-        
-        input::placeholder { 
-          color: #94a3b8; 
-          font-weight: 400;
+        .dark .sm-search {
+          background: #1e293b;
+          border-color: #334155;
+          color: #f1f5f9;
         }
-        
-        input:focus, select:focus { 
-          outline: none !important; 
-          border-color: #4f46e5 !important; 
-          box-shadow: 0 0 0 4px rgba(79,70,229,0.1) !important; 
+        .dark .sm-search::placeholder { color: #64748b; }
+        .dark .sm-search:focus {
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+          background: #1e293b;
         }
-        
-        .row-hover {
-          transition: background-color 0.2s ease;
+
+        /* ── Select trigger box ─────────────────────────────────── */
+        .sm-select-trigger {
+          height: 40px;
+          min-width: 130px;
+          padding: 0 12px;
+          border-radius: 10px;
+          border: 1.5px solid #e2e8f0 !important;
+          background: #ffffff !important;
+          color: #0f172a !important;
+          font-size: 13px;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          transition: border-color 0.2s, box-shadow 0.2s;
         }
-        
-        .row-hover:hover { 
-          background: #f8fafc !important; 
+        .sm-select-trigger:hover { border-color: #94a3b8 !important; }
+        .sm-select-trigger:focus {
+          border-color: #4f46e5 !important;
+          box-shadow: 0 0 0 3px rgba(79,70,229,0.12) !important;
+          outline: none;
         }
-        
-        .stat-card { 
-          transition: all 0.2s ease; 
-          cursor: pointer; 
+        .dark .sm-select-trigger {
+          background: #1e293b !important;
+          border-color: #334155 !important;
+          color: #f1f5f9 !important;
         }
-        
-        .stat-card:hover { 
-          transform: translateY(-2px); 
-          box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15) !important; 
+        .dark .sm-select-trigger:hover { border-color: #64748b !important; }
+
+        /* ── Select dropdown content ────────────────────────────── */
+        .sm-select-content {
+          background: #ffffff !important;
+          border: 1.5px solid #e2e8f0 !important;
+          border-radius: 12px !important;
+          box-shadow: 0 10px 30px -5px rgba(0,0,0,0.12) !important;
+          overflow: hidden;
+          z-index: 9999 !important;
+          padding: 4px !important;
         }
-        
-        .tab-button {
-          transition: all 0.2s ease;
+        .dark .sm-select-content {
+          background: #1e293b !important;
+          border-color: #334155 !important;
+          box-shadow: 0 10px 30px -5px rgba(0,0,0,0.5) !important;
         }
-        
-        .tab-button:hover {
-          background: #f1f5f9 !important;
-        }
-        
-        .modal-overlay {
-          animation: fadeIn 0.2s ease;
-        }
-        
-        .modal-content {
-          animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        
-        @keyframes fadeIn { 
-          from { opacity: 0; } 
-          to { opacity: 1; } 
-        }
-        
-        @keyframes slideUp { 
-          from { 
-            opacity: 0; 
-            transform: translateY(20px) scale(0.98); 
-          } 
-          to { 
-            opacity: 1; 
-            transform: translateY(0) scale(1); 
-          } 
-        }
-        
-        .action-button {
-          transition: all 0.2s ease;
-        }
-        
-        .action-button:hover {
-          background: #f1f5f9 !important;
-          border-color: #94a3b8 !important;
-        }
-        
-        .delete-button:hover {
-          background: #fee2e2 !important;
-          border-color: #f87171 !important;
-          color: #dc2626 !important;
-        }
-        
-        .photo-zone {
-          transition: all 0.2s ease;
+
+        /* ── Select items ───────────────────────────────────────── */
+        .sm-select-item {
+          padding: 9px 12px !important;
+          font-size: 13px !important;
+          font-weight: 500 !important;
+          color: #374151 !important;
+          border-radius: 8px !important;
           cursor: pointer;
         }
-        
-        .photo-zone:hover {
-          border-color: #4f46e5 !important;
-          background: #f5f3ff !important;
-          transform: scale(1.02);
+        .sm-select-item:hover,
+        .sm-select-item[data-highlighted] {
+          background: #f1f5f9 !important;
+          color: #4f46e5 !important;
         }
-        
-        .scrollbar-custom::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
+        .dark .sm-select-item { color: #e2e8f0 !important; }
+        .dark .sm-select-item:hover,
+        .dark .sm-select-item[data-highlighted] {
+          background: #334155 !important;
+          color: #818cf8 !important;
         }
-        
-        .scrollbar-custom::-webkit-scrollbar-track {
+
+        /* ── Export button ──────────────────────────────────────── */
+        .sm-export-btn {
+          height: 40px;
+          padding: 0 16px;
+          border-radius: 10px;
+          border: 1.5px solid #e2e8f0;
+          background: #ffffff;
+          color: #374151;
+          font-size: 13px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+        .sm-export-btn:hover { background: #f8fafc; border-color: #94a3b8; }
+        .dark .sm-export-btn {
+          background: #1e293b;
+          border-color: #334155;
+          color: #e2e8f0;
+        }
+        .dark .sm-export-btn:hover { background: #334155; border-color: #475569; }
+
+        /* ── Add Student button ─────────────────────────────────── */
+        .sm-add-btn {
+          height: 40px;
+          padding: 0 20px;
+          border-radius: 10px;
+          border: none;
+          background: #4f46e5;
+          color: #ffffff;
+          font-size: 13px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+          transition: all 0.2s;
+          white-space: nowrap;
+          font-family: inherit;
+        }
+        .sm-add-btn:hover {
+          background: #4338ca;
+          box-shadow: 0 6px 20px rgba(79,70,229,0.4);
+          transform: translateY(-1px);
+        }
+        .sm-add-btn:active { transform: translateY(0); }
+
+        /* ── Table card ─────────────────────────────────────────── */
+        .sm-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .dark .sm-card {
+          background: #0f172a;
+          border-color: #1e293b;
+        }
+
+        /* ── Table head ─────────────────────────────────────────── */
+        .sm-table { width: 100%; border-collapse: collapse; }
+        .sm-table thead tr { background: #f8fafc; }
+        .dark .sm-table thead tr { background: #1e293b; }
+        .sm-table th {
+          padding: 13px 16px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #64748b;
+          text-align: left;
+          border-bottom: 1px solid #e2e8f0;
+          white-space: nowrap;
+        }
+        .dark .sm-table th { color: #94a3b8; border-color: #1e293b; }
+        .sm-table th.right { text-align: right; }
+
+        /* ── Table body ─────────────────────────────────────────── */
+        .sm-table tbody tr {
+          border-bottom: 1px solid #f1f5f9;
+          transition: background 0.15s;
+        }
+        .sm-table tbody tr:last-child { border-bottom: none; }
+        .sm-table tbody tr:hover { background: #f8fafc; }
+        .dark .sm-table tbody tr { border-color: #1e293b; }
+        .dark .sm-table tbody tr:hover { background: #1e293b; }
+        .sm-table td {
+          padding: 13px 16px;
+          font-size: 13px;
+          color: #374151;
+          vertical-align: middle;
+        }
+        .dark .sm-table td { color: #cbd5e1; }
+        .sm-table td.right { text-align: right; }
+
+        /* ── Adm No chip ────────────────────────────────────────── */
+        .sm-adm {
+          font-family: 'SF Mono', 'Courier New', monospace;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #4f46e5;
+          background: #eef2ff;
+          border: 1px solid #c7d2fe;
+          border-radius: 6px;
+          padding: 4px 10px;
+          display: inline-block;
+        }
+        .dark .sm-adm {
+          color: #818cf8;
+          background: #1e1b4b;
+          border-color: #3730a3;
+        }
+
+        /* ── Student name ───────────────────────────────────────── */
+        .sm-name { font-weight: 600; color: #0f172a; }
+        .dark .sm-name { color: #f1f5f9; }
+
+        /* ── Gender pill ────────────────────────────────────────── */
+        .sm-gender {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 10px;
+          border-radius: 20px;
+          display: inline-block;
+        }
+        .sm-gender-m { color:#1d4ed8; background:#dbeafe; border:1px solid #bfdbfe; }
+        .sm-gender-f { color:#be185d; background:#fce7f3; border:1px solid #fbcfe8; }
+        .dark .sm-gender-m { color:#93c5fd; background:#1e3a5f; border-color:#1d4ed8; }
+        .dark .sm-gender-f { color:#f9a8d4; background:#4a1942; border-color:#be185d; }
+
+        /* ── Status pill ────────────────────────────────────────── */
+        .sm-status {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 4px 12px;
+          border-radius: 20px;
+          display: inline-block;
+          white-space: nowrap;
+        }
+
+        /* ── Action button ──────────────────────────────────────── */
+        .sm-action-btn {
+          background: transparent;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 8px;
+          width: 32px;
+          height: 32px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.15s;
+          color: #64748b;
+          margin-left: auto;
+        }
+        .sm-action-btn:hover {
           background: #f1f5f9;
+          border-color: #94a3b8;
+          color: #374151;
         }
-        
-        .scrollbar-custom::-webkit-scrollbar-thumb {
-          background: #94a3b8;
-          border-radius: 3px;
+        .dark .sm-action-btn { border-color: #334155; color: #94a3b8; }
+        .dark .sm-action-btn:hover { background: #334155; border-color: #475569; color: #e2e8f0; }
+
+        /* ── Dropdown (dark) ────────────────────────────────────── */
+        .dark [data-radix-popper-content-wrapper] [role="menu"] {
+          background: #1e293b !important;
+          border-color: #334155 !important;
         }
-        
-        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-          background: #64748b;
+        .dark [data-radix-popper-content-wrapper] [role="menuitem"] {
+          color: #e2e8f0 !important;
         }
-        
-        .notification {
-          animation: slideIn 0.3s ease;
+        .dark [data-radix-popper-content-wrapper] [role="menuitem"]:hover,
+        .dark [data-radix-popper-content-wrapper] [role="menuitem"]:focus {
+          background: #334155 !important;
         }
-        
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+
+        /* ── Pagination buttons ─────────────────────────────────── */
+        .sm-pag-btn {
+          height: 34px;
+          padding: 0 14px;
+          border-radius: 8px;
+          border: 1.5px solid #e2e8f0;
+          background: #ffffff;
+          color: #374151;
+          font-size: 12.5px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
         }
-        
-        /* Responsive Styles */
-        @media (max-width: 1280px) {
-          .stats-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
+        .sm-pag-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+        .sm-pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .dark .sm-pag-btn {
+          background: #1e293b;
+          border-color: #334155;
+          color: #e2e8f0;
         }
-        
-        @media (max-width: 768px) {
-          .stats-grid {
-            grid-template-columns: 1fr !important;
-          }
-          
-          .search-input {
-            width: 100% !important;
-          }
-          
-          .table-container {
-            min-width: 600px;
-          }
-        }
+        .dark .sm-pag-btn:hover:not(:disabled) { background: #334155; }
       `}</style>
 
-      {/* Notification */}
-      {notification && (
-        <div className="notification"
-          style={{
-            position: "fixed",
-            top: 24,
-            right: 24,
-            zIndex: 9999,
-            background: notification.type === 'success' ? '#22c55e' : '#ef4444',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: 12,
-            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            fontWeight: 500,
-            fontSize: 14,
-          }}
-        >
-          <span style={{ fontSize: 18 }}>
-            {notification.type === 'success' ? '✓' : '⚠'}
-          </span>
-          {notification.message}
-        </div>
-      )}
+      <div style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto' }}>
 
-      {/* Navbar */}
-      <nav style={{ 
-        position: "sticky", 
-        top: 0, 
-        zIndex: 100, 
-        background: "rgba(255,255,255,0.9)", 
-        backdropFilter: "blur(10px)",
-        borderBottom: "1px solid #e2e8f0", 
-        boxShadow: "0 1px 3px rgba(0,0,0,0.05)", 
-        padding: "0 32px", 
-        height: 70, 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "space-between" 
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ 
-            width: 42, 
-            height: 42, 
-            background: "linear-gradient(135deg,#4f46e5,#7c3aed)", 
-            borderRadius: 12, 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center", 
-            fontSize: 22, 
-            boxShadow: "0 4px 12px rgba(79,70,229,0.3)" 
-          }}>
-            🎓
-          </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.5px" }}>
-              Student Management
-            </div>
-            <div style={{ fontSize: 12, color: "#64748b", fontWeight: 500, marginTop: 2 }}>
-              School Administration Portal
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button 
-            className="action-button"
-            style={{ 
-              background: "#fff", 
-              color: "#475569", 
-              border: "1.5px solid #e2e8f0", 
-              borderRadius: 10, 
-              padding: "8px 20px", 
-              fontWeight: 600, 
-              fontSize: 13, 
-              cursor: "pointer", 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 8 
-            }}
-          >
-            <span>📊</span> Export
-          </button>
-          <button 
-            className="add-btn" 
-            onClick={openAdd} 
-            style={{ 
-              background: "#4f46e5", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 10, 
-              padding: "8px 22px", 
-              fontWeight: 600, 
-              fontSize: 13, 
-              cursor: "pointer", 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 8, 
-              boxShadow: "0 4px 16px rgba(79,70,229,0.35)", 
-              transition: "all 0.2s" 
-            }}
-          >
-            <span style={{ fontSize: 18, lineHeight: 1 }}>+</span> Add Student
-          </button>
-        </div>
-      </nav>
+        {/* ── Toolbar ────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
 
-      <div style={{ padding: "28px 32px", maxWidth: 1400, margin: "0 auto" }}>
+          {/* Left: Search + Filters */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, flex: 1, alignItems: 'center' }}>
 
-        {/* Stats Grid */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(4,1fr)", 
-          gap: 20, 
-          marginBottom: 28 
-        }} className="stats-grid">
-          {stats.map((st, index) => (
-            <div 
-              key={st.label} 
-              className="stat-card" 
-              style={{ 
-                background: "#fff", 
-                borderRadius: 20, 
-                padding: "24px", 
-                border: "1px solid #e2e8f0", 
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)", 
-                position: "relative",
-                overflow: "hidden"
-              }}
-            >
-              <div style={{ 
-                position: "absolute", 
-                top: 0, 
-                right: 0, 
-                width: 100, 
-                height: 100, 
-                background: st.light, 
-                opacity: 0.3, 
-                borderRadius: "0 0 0 100px" 
-              }} />
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontSize: 36, fontWeight: 700, color: "#0f172a", lineHeight: 1, marginBottom: 8 }}>
-                    {st.value}
-                  </div>
-                  <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>{st.label}</div>
-                </div>
-                <div style={{ 
-                  width: 56, 
-                  height: 56, 
-                  background: st.light, 
-                  borderRadius: 16, 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "center", 
-                  fontSize: 26, 
-                  border: `1px solid ${st.dark}` 
-                }}>
-                  {st.icon}
-                </div>
-              </div>
-              {st.trend && (
-                <div style={{ 
-                  marginTop: 16, 
-                  fontSize: 12, 
-                  color: "#22c55e", 
-                  background: "#dcfce7", 
-                  padding: "4px 8px", 
-                  borderRadius: 20, 
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4
-                }}>
-                  ↑ {st.trend}% from last month
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Main Card */}
-        <div style={{ 
-          background: "#fff", 
-          borderRadius: 24, 
-          border: "1px solid #e2e8f0", 
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05)", 
-          overflow: "hidden" 
-        }}>
-
-          {/* Toolbar */}
-          <div style={{ 
-            padding: "20px 24px", 
-            borderBottom: "1px solid #e2e8f0", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "space-between", 
-            flexWrap: "wrap", 
-            gap: 16,
-            background: "#fff"
-          }}>
-            <div style={{ display: "flex", gap: 4 }}>
-              {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  className="tab-button"
-                  onClick={() => setActiveTab(t.id)}
-                  style={{
-                    background: activeTab === t.id ? "#4f46e5" : "transparent",
-                    color: activeTab === t.id ? "#fff" : "#64748b",
-                    border: "none",
-                    borderRadius: 10,
-                    padding: "8px 16px",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <span>{t.icon}</span>
-                  {t.label}
-                  <span style={{
-                    background: activeTab === t.id ? "rgba(255,255,255,0.2)" : "#e2e8f0",
-                    color: activeTab === t.id ? "#fff" : "#64748b",
-                    borderRadius: 20,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: "2px 8px",
-                    marginLeft: 4
-                  }}>
-                    {t.count}
-                  </span>
-                </button>
-              ))}
+            {/* Search box */}
+            <div style={{ position: 'relative', minWidth: 200, flex: 1, maxWidth: 300 }}>
+              <Search
+                size={14}
+                style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}
+              />
+              <input
+                className="sm-search"
+                placeholder="Search students..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
             </div>
 
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              {selected.length > 0 && (
-                <button
-                  className="delete-button"
-                  onClick={handleBulkDelete}
-                  style={{
-                    background: "#fef2f2",
-                    color: "#dc2626",
-                    border: "1px solid #fecaca",
-                    borderRadius: 10,
-                    padding: "8px 16px",
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  🗑 Delete ({selected.length})
-                </button>
-              )}
-              <div style={{ position: "relative" }}>
-                <span style={{ 
-                  position: "absolute", 
-                  left: 12, 
-                  top: "50%", 
-                  transform: "translateY(-50%)", 
-                  color: "#94a3b8", 
-                  pointerEvents: "none",
-                  fontSize: 16
-                }}>
-                  🔍
-                </span>
-                <input
-                  style={{
-                    background: "#f8fafc",
-                    border: "1.5px solid #e2e8f0",
-                    borderRadius: 10,
-                    padding: "10px 16px 10px 42px",
-                    color: "#0f172a",
-                    fontSize: 13,
-                    width: 260,
-                    transition: "all 0.2s",
-                  }}
-                  placeholder="Search by name, ID, or UPI..."
-                  value={search}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
+            {/* Grade filter */}
+            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+              <SelectTrigger className="sm-select-trigger">
+                <SelectValue placeholder="All Grades" />
+              </SelectTrigger>
+              <SelectContent className="sm-select-content">
+                <SelectItem className="sm-select-item" value="all">All Grades</SelectItem>
+                {grades.map(g => (
+                  <SelectItem className="sm-select-item" key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Status filter */}
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="sm-select-trigger">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent className="sm-select-content">
+                <SelectItem className="sm-select-item" value="all">All Status</SelectItem>
+                <SelectItem className="sm-select-item" value="active">Active</SelectItem>
+                <SelectItem className="sm-select-item" value="transferred">Transferred</SelectItem>
+                <SelectItem className="sm-select-item" value="graduated">Graduated</SelectItem>
+                <SelectItem className="sm-select-item" value="withdrawn">Withdrawn</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Table */}
-          <div style={{ overflowX: "auto" }} className="scrollbar-custom">
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
-              <thead>
-                <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                  <th style={{ padding: "16px 20px", textAlign: "left", width: 44 }}>
-                    <input 
-                      type="checkbox" 
-                      checked={selected.length === filtered.length && filtered.length > 0} 
-                      onChange={toggleAll} 
-                      style={{ 
-                        accentColor: "#4f46e5", 
-                        width: 18, 
-                        height: 18, 
-                        cursor: "pointer",
-                        borderRadius: 4
-                      }} 
-                    />
-                  </th>
-                  {["Student", "Admission No.", "UPI", "Gender", "Age", "Date of Birth", "Actions"].map((h) => (
-                    <th 
-                      key={h} 
-                      style={{ 
-                        padding: "16px 16px", 
-                        textAlign: "left", 
-                        fontSize: 12, 
-                        fontWeight: 600, 
-                        color: "#64748b", 
-                        letterSpacing: "0.3px", 
-                        textTransform: "uppercase",
-                        whiteSpace: "nowrap" 
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
+          {/* Right: Export + Add Student */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="sm-export-btn">
+              <Download size={14} /> Export
+            </button>
+
+            {/*
+              ── ADD STUDENT ──────────────────────────────────────────────
+              Calls the `onAddStudent` prop passed in from the parent.
+              Wire it up like:
+                <StudentManagement onAddStudent={() => router.push('/students/add')} />
+                <StudentManagement onAddStudent={() => navigate('/add-student')} />
+                <StudentManagement onAddStudent={() => setCurrentPage('addStudent')} />
+              ─────────────────────────────────────────────────────────── */}
+            <button className="sm-add-btn" onClick={onAddStudent}>
+              <Plus size={15} /> Add Student
+            </button>
+          </div>
+        </div>
+
+        {/* ── Table ──────────────────────────────────────────────── */}
+        <div className="sm-card" style={{ overflowX: 'auto' }}>
+          <table className="sm-table">
+            <thead>
+              <tr>
+                <th>Adm. No</th>
+                <th>Student Name</th>
+                <th>Grade</th>
+                <th>Gender</th>
+                <th>Guardian</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th className="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.4 }}>🔍</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: '#475569' }}>No students found</div>
+                    <div style={{ fontSize: 13, color: '#94a3b8' }}>Try adjusting your search or filters</div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={7}>
-                      <div style={{ textAlign: "center", padding: "80px 24px", color: "#94a3b8" }}>
-                        <div style={{ fontSize: 64, marginBottom: 16, opacity: 0.5 }}>🔍</div>
-                        <div style={{ fontSize: 18, fontWeight: 600, color: "#475569" }}>No students found</div>
-                        <div style={{ fontSize: 14, marginTop: 8, color: "#64748b" }}>
-                          Try adjusting your search or filters
-                        </div>
-                        <button
-                          onClick={() => { setSearch(""); setActiveTab("all"); }}
-                          style={{
-                            marginTop: 20,
-                            background: "#fff",
-                            border: "1.5px solid #e2e8f0",
-                            borderRadius: 10,
-                            padding: "8px 20px",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "#475569",
-                            cursor: "pointer",
-                          }}
+              ) : filtered.map(s => {
+                const sc   = STATUS_CONFIG[s.status] ?? STATUS_CONFIG.active;
+                const isDark = document.documentElement.classList.contains('dark');
+                const statusStyle = isDark ? sc.darkStyle : sc.style;
+
+                return (
+                  <tr key={s.id}>
+                    <td><span className="sm-adm">{s.admNo}</span></td>
+                    <td><span className="sm-name">{s.firstName} {s.lastName}</span></td>
+                    <td style={{ fontWeight: 500 }}>{s.grade}</td>
+                    <td>
+                      <span className={`sm-gender ${s.gender === 'Male' ? 'sm-gender-m' : 'sm-gender-f'}`}>
+                        {s.gender}
+                      </span>
+                    </td>
+                    <td>{s.guardianName}</td>
+                    <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{s.guardianPhone}</td>
+                    <td>
+                      {/* Using CSS class for dark/light instead of inline style for status */}
+                      <span
+                        className="sm-status"
+                        style={sc.style}
+                      >
+                        {sc.label}
+                      </span>
+                    </td>
+                    <td className="right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="sm-action-btn">
+                            <MoreHorizontal size={15} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="dark:bg-slate-800 dark:border-slate-700"
                         >
-                          Clear filters
-                        </button>
-                      </div>
+                          <DropdownMenuItem className="cursor-pointer dark:text-slate-200 dark:focus:bg-slate-700">
+                            <Eye size={14} className="mr-2" /> View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer dark:text-slate-200 dark:focus:bg-slate-700">
+                            <Edit size={14} className="mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-rose-600 dark:text-rose-400 dark:focus:bg-slate-700"
+                            onClick={() => handleDelete(s.id)}
+                          >
+                            <Trash2 size={14} className="mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
-                ) : filtered.map((s) => {
-                  const [c1, c2] = avatarColor(s.id);
-                  const gc: GenderStyle = GENDER_CONFIG[s.gender] ?? { bg: "#f3e8ff", color: "#7e22ce", dot: "#a855f7", label: "Other" };
-                  const age = calculateAge(s.dob);
-                  
-                  return (
-                    <tr 
-                      key={s.id} 
-                      className="row-hover" 
-                      style={{ 
-                        borderBottom: "1px solid #f1f5f9", 
-                        background: selected.includes(s.id) ? "#f5f3ff" : "#fff",
-                        transition: "background 0.2s"
-                      }}
-                    >
-                      <td style={{ padding: "16px 20px" }}>
-                        <input 
-                          type="checkbox" 
-                          checked={selected.includes(s.id)} 
-                          onChange={() => toggleSelect(s.id)} 
-                          style={{ 
-                            accentColor: "#4f46e5", 
-                            width: 18, 
-                            height: 18, 
-                            cursor: "pointer" 
-                          }} 
-                        />
-                      </td>
-                      <td style={{ padding: "16px 16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                          <div style={{ 
-                            width: 44, 
-                            height: 44, 
-                            borderRadius: "12px", 
-                            background: `linear-gradient(135deg,${c1},${c2})`, 
-                            display: "flex", 
-                            alignItems: "center", 
-                            justifyContent: "center", 
-                            fontSize: 16, 
-                            fontWeight: 700, 
-                            color: "#fff", 
-                            flexShrink: 0, 
-                            overflow: "hidden", 
-                            boxShadow: "0 4px 8px rgba(0,0,0,0.1)" 
-                          }}>
-                            {s.photo ? 
-                              <img src={s.photo} alt={s.firstName} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : 
-                              getInitials(s.firstName, s.lastName)
-                            }
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 15, fontWeight: 600, color: "#0f172a" }}>
-                              {s.firstName} {s.lastName}
-                            </div>
-                            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 3, fontWeight: 500 }}>
-                              ID: {s.id.toString().padStart(4, '0')}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: "16px 16px" }}>
-                        <span style={{ 
-                          fontFamily: "'SF Mono', 'Courier New', monospace", 
-                          fontSize: 12, 
-                          fontWeight: 600, 
-                          color: "#4f46e5", 
-                          background: "#eef2ff", 
-                          padding: "6px 12px", 
-                          borderRadius: 8, 
-                          border: "1px solid #c7d2fe",
-                          display: "inline-block"
-                        }}>
-                          {s.admissionNo}
-                        </span>
-                      </td>
-                      <td style={{ padding: "16px 16px" }}>
-                        {s.upi ? (
-                          <span style={{ 
-                            fontFamily: "monospace", 
-                            fontSize: 12, 
-                            color: "#059669", 
-                            background: "#d1fae5", 
-                            padding: "6px 12px", 
-                            borderRadius: 8, 
-                            fontWeight: 600, 
-                            border: "1px solid #a7f3d0",
-                            display: "inline-block"
-                          }}>
-                            {s.upi}
-                          </span>
-                        ) : (
-                          <span style={{ color: "#94a3b8", fontSize: 13, fontStyle: "italic" }}>
-                            Not assigned
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: "16px 16px" }}>
-                        <span style={{ 
-                          background: gc.bg, 
-                          color: gc.color, 
-                          fontSize: 12, 
-                          fontWeight: 600, 
-                          padding: "6px 14px", 
-                          borderRadius: 20, 
-                          display: "inline-flex", 
-                          alignItems: "center", 
-                          gap: 6,
-                          border: `1px solid ${gc.dot}`,
-                        }}>
-                          <span style={{ width: 6, height: 6, background: gc.dot, borderRadius: "50%", display: "inline-block" }} />
-                          {gc.label}
-                        </span>
-                      </td>
-                      <td style={{ padding: "16px 16px", fontSize: 14, fontWeight: 600, color: "#475569" }}>
-                        {age} years
-                      </td>
-                      <td style={{ padding: "16px 16px", fontSize: 13, color: "#64748b" }}>
-                        {formatDate(s.dob)}
-                      </td>
-                      <td style={{ padding: "16px 16px" }}>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button 
-                            className="action-button" 
-                            onClick={() => openEdit(s)} 
-                            style={{ 
-                              background: "transparent", 
-                              border: "1.5px solid #e2e8f0", 
-                              borderRadius: 8, 
-                              padding: "6px 14px", 
-                              fontSize: 12, 
-                              fontWeight: 600, 
-                              color: "#475569", 
-                              cursor: "pointer", 
-                              transition: "all 0.2s", 
-                              display: "flex", 
-                              alignItems: "center", 
-                              gap: 6 
-                            }}
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button 
-                            className="delete-button" 
-                            onClick={() => handleDelete(s.id)} 
-                            style={{ 
-                              background: "transparent", 
-                              border: "1.5px solid #fecdd3", 
-                              borderRadius: 8, 
-                              padding: "6px 10px", 
-                              fontSize: 14, 
-                              color: "#e11d48", 
-                              cursor: "pointer", 
-                              transition: "all 0.2s",
-                              display: "flex",
-                              alignItems: "center"
-                            }}
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Footer */}
-          <div style={{ 
-            padding: "16px 24px", 
-            borderTop: "1px solid #e2e8f0", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "space-between", 
-            background: "#fff",
-            fontSize: 13
-          }}>
-            <div style={{ color: "#64748b", fontWeight: 500 }}>
-              Showing <strong style={{ color: "#0f172a" }}>{filtered.length}</strong> of <strong style={{ color: "#0f172a" }}>{students.length}</strong> students
-            </div>
-            {selected.length > 0 && (
-              <div style={{ 
-                color: "#4f46e5", 
-                fontWeight: 600, 
-                background: "#eef2ff", 
-                padding: "4px 14px", 
-                borderRadius: 20,
-                fontSize: 12
-              }}>
-                {selected.length} row{selected.length > 1 ? "s" : ""} selected
-              </div>
-            )}
+        {/* ── Footer / Pagination ────────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+          <p style={{ fontSize: 13, color: '#64748b' }} className="dark:text-slate-400">
+            Showing{' '}
+            <strong style={{ color: '#0f172a' }} className="dark:text-slate-200">{filtered.length}</strong>
+            {' '}of{' '}
+            <strong style={{ color: '#0f172a' }} className="dark:text-slate-200">{students.length}</strong>
+            {' '}students
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="sm-pag-btn" disabled>Previous</button>
+            <button className="sm-pag-btn">Next</button>
           </div>
         </div>
+
       </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div 
-          className="modal-overlay"
-          style={{ 
-            position: "fixed", 
-            inset: 0, 
-            background: "rgba(0,0,0,0.5)", 
-            backdropFilter: "blur(8px)", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center", 
-            zIndex: 1000, 
-            padding: 24 
-          }}
-        >
-          <div 
-            ref={modalRef}
-            className="modal-content"
-            style={{ 
-              background: "#fff", 
-              borderRadius: 28, 
-              width: "100%", 
-              maxWidth: 620, 
-              boxShadow: "0 32px 64px -12px rgba(0,0,0,0.2)", 
-              maxHeight: "90vh", 
-              overflowY: "auto" 
-            }}
-          >
-
-            {/* Modal Header */}
-            <div style={{ 
-              padding: "28px 32px 20px", 
-              borderBottom: "1px solid #e2e8f0", 
-              display: "flex", 
-              alignItems: "center", 
-              justifyContent: "space-between" 
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ 
-                  width: 48, 
-                  height: 48, 
-                  background: "#eef2ff", 
-                  borderRadius: 16, 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "center", 
-                  fontSize: 24, 
-                  border: "1px solid #c7d2fe" 
-                }}>
-                  {editStudentId !== null ? "✏️" : "➕"}
-                </div>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>
-                    {editStudentId !== null ? "Edit Student" : "Add New Student"}
-                  </div>
-                  <div style={{ fontSize: 13, color: "#64748b", marginTop: 4, fontWeight: 500 }}>
-                    {editStudentId !== null ? "Update the student's information below" : "Fill in all required fields to enroll a student"}
-                  </div>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowModal(false)} 
-                style={{ 
-                  background: "#f8fafc", 
-                  border: "1.5px solid #e2e8f0", 
-                  borderRadius: 12, 
-                  width: 40, 
-                  height: 40, 
-                  fontSize: 22, 
-                  cursor: "pointer", 
-                  color: "#64748b", 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "center", 
-                  flexShrink: 0,
-                  transition: "all 0.2s",
-                  outline: "none"
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <div style={{ padding: "32px" }}>
-
-              {/* Photo Upload */}
-              <div style={{ marginBottom: 32, textAlign: "center" }}>
-                <label style={labelStyle}>Passport Photo</label>
-                <div 
-                  className="photo-zone" 
-                  onClick={() => fileRef.current?.click()}
-                  style={{ 
-                    border: "2px dashed #cbd5e1", 
-                    borderRadius: 20, 
-                    padding: "32px 20px", 
-                    cursor: "pointer", 
-                    transition: "all 0.2s", 
-                    background: "#fafafa", 
-                    display: "inline-flex", 
-                    flexDirection: "column", 
-                    alignItems: "center", 
-                    gap: 12, 
-                    minWidth: 260 
-                  }}
-                >
-                  {photoPreview ? (
-                    <>
-                      <img 
-                        src={photoPreview} 
-                        alt="preview" 
-                        style={{ 
-                          width: 100, 
-                          height: 100, 
-                          borderRadius: "50%", 
-                          objectFit: "cover", 
-                          border: "3px solid #4f46e5", 
-                          boxShadow: "0 8px 24px rgba(79,70,229,0.25)" 
-                        }} 
-                      />
-                      <span style={{ fontSize: 13, color: "#4f46e5", fontWeight: 600 }}>
-                        Click to change photo
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ 
-                        width: 72, 
-                        height: 72, 
-                        background: "#eef2ff", 
-                        borderRadius: "50%", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center", 
-                        fontSize: 32, 
-                        border: "2px solid #c7d2fe" 
-                      }}>
-                        📷
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: "#475569" }}>
-                          Upload Passport Photo
-                        </div>
-                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>
-                          JPG or PNG · Max 5MB
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  <input 
-                    ref={fileRef} 
-                    type="file" 
-                    accept="image/*" 
-                    style={{ display: "none" }} 
-                    onChange={handlePhotoChange} 
-                  />
-                </div>
-              </div>
-
-              {/* Academic Info */}
-              <div style={{ 
-                background: "#f8fafc", 
-                borderRadius: 16, 
-                padding: "20px", 
-                marginBottom: 20, 
-                border: "1px solid #e2e8f0" 
-              }}>
-                <div style={{ 
-                  fontSize: 12, 
-                  fontWeight: 600, 
-                  color: "#64748b", 
-                  textTransform: "uppercase", 
-                  letterSpacing: "0.5px", 
-                  marginBottom: 16,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8
-                }}>
-                  <span style={{ fontSize: 16 }}>📚</span> Academic Information
-                </div>
-                <div style={{ display: "grid", gap: 16 }}>
-                  <div>
-                    <label style={labelStyle}>
-                      Admission Number <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <input 
-                      style={inputStyle(!!errors.admissionNo)} 
-                      value={form.admissionNo} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateForm("admissionNo", e.target.value)} 
-                      placeholder="e.g. ADM202562925" 
-                    />
-                    {errors.admissionNo && (
-                      <div style={{ fontSize: 12, color: "#ef4444", marginTop: 6, fontWeight: 500 }}>
-                        ⚠ {errors.admissionNo}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label style={labelStyle}>
-                      UPI <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 400, marginLeft: 4 }}>(optional)</span>
-                    </label>
-                    <input 
-                      style={inputStyle(false)} 
-                      value={form.upi} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateForm("upi", e.target.value)} 
-                      placeholder="Enter UPI if available" 
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Personal Info */}
-              <div style={{ 
-                background: "#f8fafc", 
-                borderRadius: 16, 
-                padding: "20px", 
-                border: "1px solid #e2e8f0" 
-              }}>
-                <div style={{ 
-                  fontSize: 12, 
-                  fontWeight: 600, 
-                  color: "#64748b", 
-                  textTransform: "uppercase", 
-                  letterSpacing: "0.5px", 
-                  marginBottom: 16,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8
-                }}>
-                  <span style={{ fontSize: 16 }}>👤</span> Personal Information
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  <div>
-                    <label style={labelStyle}>
-                      First Name <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <input 
-                      style={inputStyle(!!errors.firstName)} 
-                      value={form.firstName} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateForm("firstName", e.target.value)} 
-                      placeholder="First name" 
-                    />
-                    {errors.firstName && (
-                      <div style={{ fontSize: 12, color: "#ef4444", marginTop: 6, fontWeight: 500 }}>
-                        ⚠ {errors.firstName}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label style={labelStyle}>
-                      Last Name <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <input 
-                      style={inputStyle(!!errors.lastName)} 
-                      value={form.lastName} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateForm("lastName", e.target.value)} 
-                      placeholder="Last name" 
-                    />
-                    {errors.lastName && (
-                      <div style={{ fontSize: 12, color: "#ef4444", marginTop: 6, fontWeight: 500 }}>
-                        ⚠ {errors.lastName}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label style={labelStyle}>
-                      Gender <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <select 
-                      style={{ ...inputStyle(!!errors.gender), cursor: "pointer" }} 
-                      value={form.gender} 
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateForm("gender", e.target.value)}
-                    >
-                      <option value="">Select gender</option>
-                      {GENDERS.map((g) => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                    {errors.gender && (
-                      <div style={{ fontSize: 12, color: "#ef4444", marginTop: 6, fontWeight: 500 }}>
-                        ⚠ {errors.gender}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label style={labelStyle}>
-                      Date of Birth <span style={{ color: "#ef4444" }}>*</span>
-                    </label>
-                    <input 
-                      type="date" 
-                      style={inputStyle(!!errors.dob)} 
-                      value={form.dob} 
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateForm("dob", e.target.value)} 
-                    />
-                    {errors.dob && (
-                      <div style={{ fontSize: 12, color: "#ef4444", marginTop: 6, fontWeight: 500 }}>
-                        ⚠ {errors.dob}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div style={{ 
-                display: "flex", 
-                gap: 12, 
-                marginTop: 32, 
-                justifyContent: "flex-end" 
-              }}>
-                <button 
-                  onClick={() => setShowModal(false)} 
-                  style={{ 
-                    background: "#fff", 
-                    border: "1.5px solid #e2e8f0", 
-                    color: "#475569", 
-                    borderRadius: 12, 
-                    padding: "12px 28px", 
-                    fontWeight: 600, 
-                    fontSize: 14, 
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSubmit} 
-                  disabled={isLoading}
-                  style={{ 
-                    background: isLoading ? "#94a3b8" : "#4f46e5", 
-                    color: "#fff", 
-                    border: "none", 
-                    borderRadius: 12, 
-                    padding: "12px 32px", 
-                    fontWeight: 600, 
-                    fontSize: 14, 
-                    cursor: isLoading ? "not-allowed" : "pointer", 
-                    boxShadow: "0 4px 16px rgba(79,70,229,0.35)", 
-                    transition: "all 0.2s", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: 8,
-                    opacity: isLoading ? 0.7 : 1
-                  }}
-                >
-                  {isLoading ? (
-                    <>
-                      <span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⏳</span>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      {editStudentId !== null ? "💾 Save Changes" : "✅ Add Student"}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

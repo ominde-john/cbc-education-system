@@ -379,7 +379,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full">
         <header
           className={cn(
             'flex-shrink-0 h-16 border-b flex items-center px-4 lg:px-8 sticky top-0 z-30',
