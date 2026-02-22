@@ -109,11 +109,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 lg:translate-x-0 lg:static lg:inset-auto border-r',
+          'fixed inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 border-r',
           collapsed ? 'w-16' : 'w-64',
           theme.sidebar.bg,
           theme.sidebar.border,
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Header with toggle */}
@@ -379,10 +379,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 w-full">
+      <div 
+        className={cn(
+          'flex-1 flex flex-col min-w-0 w-full',
+          collapsed ? 'lg:pl-16' : 'lg:pl-64'
+        )}
+      >
         <header
           className={cn(
-            'flex-shrink-0 h-16 border-b flex items-center px-4 lg:px-8 sticky top-0 z-30',
+            'flex-shrink-0 h-16 border-b flex items-center px-4 lg:px-8 sticky top-0 z-40',
             theme.header.bg,
             theme.header.border
           )}
