@@ -11,7 +11,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
-import ContactPage from './pages/website-pages/Contact'
+import ContactPage from './pages/website-pages/Contact';
+
 // Public Pages
 import HomePage from "@/pages/website-pages/HomePage";
 import AboutPage from "@/pages/website-pages/AboutPage";
@@ -21,7 +22,7 @@ import CBCStandardsPage from "@/pages/website-pages/CBCStandardsPage";
 import TermsPage from "@/pages/website-pages/TermsPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import GetStartedPage from "@/pages/website-pages/signup";
-import Analytics from "@/pages/website-pages/Platform"
+import Analytics from "@/pages/website-pages/Platform";
 import TeamMmembersPage from '@/pages/website-pages/TeamPage';
 import ClientsPage from '@/pages/website-pages/ClientsPage';
 import Feature from "@/pages/website-pages/Features";
@@ -46,6 +47,10 @@ import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
 import LearnersListPage from "@/pages/auth/school-admin/learners/LearnersList";
 import AddLearnerPage from "@/pages/auth/school-admin/learners/AddLearner";
+
+// ✅ Student Management Page
+import StudentManagement from "./pages/school-admin/learners/Learners";
+
 import EducationalResourcesPage from "./pages/website-pages/Educationalresourcespage";
 import AdminLoginPage from '@/pages/auth/AdminLoginPage';
 import UserManagement from "./pages/Users/UserManagement";
@@ -62,10 +67,16 @@ import TeamMembersPage from "@/pages/website-pages/TeamPage";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
-function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole?: string }) {
+// ─── Protected Route ──────────────────────────────────────────────────────────
+function ProtectedRoute({
+  children,
+  requiredRole,
+}: {
+  children: React.ReactNode;
+  requiredRole?: string;
+}) {
   const { isAuthenticated, isLoading, user } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -73,32 +84,31 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check for specific role if required
+  // Redirect if role doesn't match
   if (requiredRole && user?.role !== requiredRole) {
-    // Redirect based on user role or to home if no role matches
-    if (user?.role === 'school_admin') {
+    if (user?.role === "school_admin") {
       return <Navigate to="/school-admin/dashboard" replace />;
-    } else if (user?.role === 'student') {
+    } else if (user?.role === "student") {
       return <Navigate to="/student/learning-materials" replace />;
-    } else if (user?.role === 'teacher') {
+    } else if (user?.role === "teacher") {
       return <Navigate to="/teacher/resources" replace />;
     } else {
       return <Navigate to="/" replace />;
     }
   }
-  
+
   return <>{children}</>;
 }
 
-// Admin Route Component - Specifically for admin access
+// ─── Admin Route ──────────────────────────────────────────────────────────────
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -106,106 +116,128 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
-  // Check if authenticated AND has admin role
-  if (!isAuthenticated || user?.role !== 'school_admin') {
+
+  if (!isAuthenticated || user?.role !== "school_admin") {
     return <Navigate to="/admin-login" replace />;
   }
-  
+
   return <>{children}</>;
 }
 
+// ─── App Routes ───────────────────────────────────────────────────────────────
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* ── Public Routes ── */}
       <Route path="/explore" element={<HomePage />} />
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/resources" element={<EducationalResourcesPage />} />
       <Route path="/analytics" element={<EduStackPlatformPage />} />
-      <Route path="/company/client" element={<ClientsPage/>} />
+      <Route path="/company/client" element={<ClientsPage />} />
       <Route path="/support" element={<SupportPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
-      
-      <Route path="/company/our-team" element={<TeamMembersPage/>} />
+      <Route path="/company/our-team" element={<TeamMembersPage />} />
       <Route path="/cbc-standards" element={<CBCStandardsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/signup" element={<GetStartedPage />} />
-      <Route path="/contact" element={<ContactPage/>} />
-      <Route path="/features" element={<Feature/>} />
-      
-      {/* Demo Routes - Public access to ModernDashboard */}
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/features" element={<Feature />} />
+
+      {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
       <Route path="/demo" element={<ModernDashboard />} />
-      
-      {/* Student Routes */}
-      <Route path="/student/learning-materials" element={
-        <ProtectedRoute requiredRole="student">
-          <LearningMaterials />
-        </ProtectedRoute>
-      } />
-      <Route path="/student/grade/1" element={
-        <ProtectedRoute requiredRole="student">
-          <Grade1 />
-        </ProtectedRoute>
-      } />
-      <Route path="/student/grade/2" element={
-        <ProtectedRoute requiredRole="student">
-          <Grade2 />
-        </ProtectedRoute>
-      } />
-      
-      {/* Teacher Routes */}
-      <Route path="/teacher/resources" element={
-        <ProtectedRoute requiredRole="teacher">
-          <TeachingResources />
-        </ProtectedRoute>
-      } />
-      
-      {/* Admin Registration Route */}
+
+      {/* ── Student Routes ── */}
+      <Route
+        path="/student/learning-materials"
+        element={
+          <ProtectedRoute requiredRole="student">
+            <LearningMaterials />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/grade/1"
+        element={
+          <ProtectedRoute requiredRole="student">
+            <Grade1 />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/grade/2"
+        element={
+          <ProtectedRoute requiredRole="student">
+            <Grade2 />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Teacher Routes ── */}
+      <Route
+        path="/teacher/resources"
+        element={
+          <ProtectedRoute requiredRole="teacher">
+            <TeachingResources />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Admin Registration ── */}
       <Route path="/admin/register-school" element={<SchoolRegistration />} />
-      
-      {/* Admin Login - if already authenticated as admin, redirect to dashboard */}
-      <Route path="/admin-login" element={
-        <AdminLoginRedirect />
-      } />
-      
-      {/* School Admin Routes - Protected with AdminRoute */}
-      <Route path="/school-admin/*" element={
-        <AdminRoute>
-          <DashboardLayout>
-            <Routes>
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<SchoolDashboard />} />
-              <Route path="teachers" element={<TeachersListPage />} />
-              <Route path="teachers/add" element={<AddTeacherPage />} />
-              <Route path="learners" element={<LearnersListPage />} />
-              <Route path="learners/add" element={<AddLearnerPage />} />
-              <Route path="curriculum" element={<CurriculumPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="users" element={<UserManagement />} />
-              <Route path="demo" element={<ModernDashboard/>} />
-              {/* Redirect /school-admin to /school-admin/dashboard */}
-              <Route path="" element={<Navigate to="dashboard" replace />} />
-            </Routes>
-          </DashboardLayout>
-        </AdminRoute>
-      } />
-      
-      {/* 404 */}
+
+      {/* ── Admin Login ── */}
+      <Route path="/admin-login" element={<AdminLoginRedirect />} />
+
+      {/* ── School Admin Routes (Protected) ── */}
+      <Route
+        path="/school-admin/*"
+        element={
+          <AdminRoute>
+            <DashboardLayout>
+              <Routes>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<SchoolDashboard />} />
+
+                {/* Teachers */}
+                <Route path="teachers" element={<TeachersListPage />} />
+                <Route path="teachers/add" element={<AddTeacherPage />} />
+
+                {/* Learners */}
+                <Route path="learners" element={<LearnersListPage />} />
+                <Route path="learners/add" element={<AddLearnerPage />} />
+
+                {/* ✅ Student Management — linked here */}
+                <Route path="learners/manage" element={<StudentManagement />} />
+
+                {/* Other Admin Pages */}
+                <Route path="curriculum" element={<CurriculumPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="demo" element={<ModernDashboard />} />
+
+                {/* Fallback */}
+                <Route path="" element={<Navigate to="dashboard" replace />} />
+              </Routes>
+            </DashboardLayout>
+          </AdminRoute>
+        }
+      />
+
+      {/* ── 404 ── */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
 
-// Helper component to handle admin login redirect
+// ─── Admin Login Redirect Helper ──────────────────────────────────────────────
 function AdminLoginRedirect() {
   const { isAuthenticated, isLoading, user } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -213,16 +245,15 @@ function AdminLoginRedirect() {
       </div>
     );
   }
-  
-  // If already authenticated as admin, redirect to dashboard
-  if (isAuthenticated && user?.role === 'school_admin') {
+
+  if (isAuthenticated && user?.role === "school_admin") {
     return <Navigate to="/school-admin/dashboard" replace />;
   }
-  
-  // Otherwise show login page
+
   return <AdminLoginPage />;
 }
 
+// ─── Root App ─────────────────────────────────────────────────────────────────
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
