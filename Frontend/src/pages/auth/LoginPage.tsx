@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Eye, EyeOff, Lock, Mail, ArrowRight, Shield, Loader2, 
-  User, GraduationCap, Users, Building2, Key, Sparkles, ArrowLeft
+  GraduationCap, Users, Building2, Sparkles, ArrowLeft
 } from 'lucide-react';
 
 type LoginUserType = 'admin' | 'teacher' | 'parent';
@@ -22,8 +22,8 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: 'superadminlevi@edustack.co.ke',
-    password: 'hashedbossie'
+    email: '',
+    password: ''
   });
   const [userType, setUserType] = useState<LoginUserType>('admin');
 
@@ -47,14 +47,6 @@ export default function LoginPage() {
         variant: 'destructive',
       });
     }
-  };
-
-  const handleDemoLogin = (type: LoginUserType) => {
-    setUserType(type);
-    setFormData({
-      email: 'superadminlevi@edustack.co.ke',
-      password: 'hashedbossie'
-    });
   };
 
   const handleGoBack = () => {
@@ -168,16 +160,6 @@ export default function LoginPage() {
                 <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
                 <p className="text-blue-200">Sign in to your {userType} account</p>
               </div>
-
-              {/* Demo Credentials */}
-              <div className="bg-blue-500/10 border border-blue-400/30 rounded-lg p-3 text-xs">
-                <p className="font-semibold text-blue-300 mb-1 flex items-center gap-1">
-                  <Key className="w-3 h-3" /> Demo Credentials:
-                </p>
-                <p className="text-blue-200">Email: superadminlevi@edustack.co.ke</p>
-                <p className="text-blue-200">Password: hashedbossie</p>
-              </div>
-
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email Field */}
                 <div className="space-y-2">
