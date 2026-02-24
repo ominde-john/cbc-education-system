@@ -51,7 +51,6 @@ import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
 import LearnersListPage from "@/pages/auth/school-admin/learners/LearnersList";
 import AddLearnerPage from "@/pages/auth/school-admin/learners/AddLearner";
-import StudentDetails from "./pages/school-admin/learners/AddLearner";
 import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
 import Student from "./pages/school-admin/learners/LearnerProfile";
 import Assessments from "./pages/school-admin/Assessment";
@@ -248,7 +247,7 @@ function AppRoutes() {
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="demo" element={<ModernDashboard />} />
-                <Route path="learners/add" element={<StudentDetails />} />
+                <Route path="learners/add" element={<AddLearnerPage />} />
                 <Route path="learners/profile" element={<Student/>} />
                 <Route path="fee-management/" element={<FeeManagement/>} />
                 <Route path="assessments/" element={<Assessments/>} />
