@@ -58,67 +58,70 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
-      {/* Subtle Animated Background */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden p-4">
+      {/* Animated Background Blobs */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-gray-300/50"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gray-200/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gray-300/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/20"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '700ms'}}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '300ms'}}></div>
       </div>
 
-      {/* Floating Elements */}
+      {/* Floating Decorative Icons */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 text-gray-400/20">
+        <div className="absolute top-20 left-10 text-blue-400/25 animate-float">
           <GraduationCap className="w-16 h-16" />
         </div>
-        <div className="absolute top-40 right-10 text-gray-400/20">
+        <div className="absolute top-40 right-12 text-indigo-400/25 animate-float-slow" style={{animationDelay: '300ms'}}>
           <Users className="w-12 h-12" />
         </div>
-        <div className="absolute bottom-20 left-20 text-gray-400/20">
+        <div className="absolute bottom-24 left-20 text-cyan-400/25 animate-float-slower" style={{animationDelay: '700ms'}}>
           <Building2 className="w-14 h-14" />
+        </div>
+        <div className="absolute bottom-40 right-24 text-blue-300/20 animate-float" style={{animationDelay: '500ms'}}>
+          <Sparkles className="w-10 h-10" />
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="relative w-full max-w-4xl mx-4">
-        {/* Left Side - Branding */}
-        <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-xl p-8 lg:p-12">
+      {/* Main Card */}
+      <div className="relative w-full max-w-4xl animate-fade-in">
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl shadow-black/30 p-8 lg:p-12">
           <div className="grid lg:grid-cols-2 gap-8">
-            
+
             {/* Branding Section */}
-            <div className="space-y-8">
+            <div className="space-y-8 animate-slide-in-left">
               <div className="text-center lg:text-left">
                 <div className="flex justify-center lg:justify-start mb-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/40 transition-all duration-300 hover:scale-110 hover:rotate-3 hover:shadow-blue-400/60">
                     <Shield className="w-8 h-8 text-white" />
                   </div>
                 </div>
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">CBC Education System</h1>
-                <p className="text-gray-600 text-lg">Secure Access Portal</p>
+                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">CBC Education System</h1>
+                <p className="text-blue-200 text-lg">Secure Access Portal</p>
               </div>
 
               {/* User Type Selection */}
               <div className="space-y-4">
-                <p className="text-sm text-gray-500 uppercase font-semibold tracking-wide">Select Your Role</p>
+                <p className="text-xs text-blue-300 uppercase font-semibold tracking-widest">Select Your Role</p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { type: 'admin', label: 'Administrator', icon: Building2, color: 'from-gray-800 to-gray-900' },
-                    { type: 'teacher', label: 'Teacher', icon: GraduationCap, color: 'from-gray-700 to-gray-800' },
-                    { type: 'parent', label: 'Parent', icon: Users, color: 'from-gray-600 to-gray-700' }
+                    { type: 'admin', label: 'Administrator', icon: Building2, color: 'from-blue-500 to-blue-700' },
+                    { type: 'teacher', label: 'Teacher', icon: GraduationCap, color: 'from-indigo-500 to-indigo-700' },
+                    { type: 'parent', label: 'Parent', icon: Users, color: 'from-cyan-500 to-cyan-700' }
                   ].map((role: { type: LoginUserType; label: string; icon: typeof Building2; color: string }) => (
                     <button
                       key={role.type}
                       onClick={() => setUserType(role.type)}
-                      className={`p-4 rounded-xl border-2 transition-all ${
-                        userType === role.type 
-                          ? 'border-gray-300 bg-gray-50' 
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      className={`p-4 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+                        userType === role.type
+                          ? 'border-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/30'
+                          : 'border-white/20 bg-white/5 hover:border-blue-400/50 hover:bg-white/10'
                       }`}
                     >
-                      <div className={`w-8 h-8 bg-gradient-to-br ${role.color} rounded-lg flex items-center justify-center mx-auto mb-2`}>
+                      <div className={`w-8 h-8 bg-gradient-to-br ${role.color} rounded-lg flex items-center justify-center mx-auto mb-2 shadow-md transition-transform duration-300 ${userType === role.type ? 'scale-110' : ''}`}>
                         <role.icon className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-xs font-medium text-gray-700">{role.label}</span>
+                      <span className={`text-xs font-medium transition-colors duration-300 ${userType === role.type ? 'text-blue-200' : 'text-white/70'}`}>{role.label}</span>
                     </button>
                   ))}
                 </div>
@@ -126,24 +129,19 @@ export default function LoginPage() {
 
               {/* Features */}
               <div className="space-y-3">
-                <p className="text-sm text-gray-500 uppercase font-semibold tracking-wide">Features</p>
+                <p className="text-xs text-blue-300 uppercase font-semibold tracking-widest">Features</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Sparkles className="w-4 h-4 text-gray-500" />
-                    <span>Real-time Data</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Shield className="w-4 h-4 text-gray-500" />
-                    <span>Secure Access</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <span>Role-based</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <GraduationCap className="w-4 h-4 text-gray-500" />
-                    <span>CBC Compliant</span>
-                  </div>
+                  {[
+                    { icon: Sparkles, label: 'Real-time Data' },
+                    { icon: Shield, label: 'Secure Access' },
+                    { icon: Users, label: 'Role-based' },
+                    { icon: GraduationCap, label: 'CBC Compliant' },
+                  ].map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-2 text-blue-200 transition-transform duration-200 hover:translate-x-1">
+                      <Icon className="w-4 h-4 text-blue-400 shrink-0" />
+                      <span>{label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -154,38 +152,35 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleGoBack}
-                  className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm text-blue-300 hover:text-white mb-3 transition-all duration-200 hover:-translate-x-1"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Go Back
                 </button>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-                <p className="text-gray-600">Sign in to your {userType} account</p>
+                <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
+                <p className="text-blue-200">Sign in to your {userType} account</p>
               </div>
-
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
-                    <Mail className="w-5 h-5" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-200">
+                    <Mail className="w-4 h-4 text-blue-400" />
                     Email Address
                   </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-4 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm"
-                      placeholder="your@email.com"
-                    />
-                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-4 bg-white/10 border border-white/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:bg-white/15 transition-all duration-300 text-sm"
+                    placeholder="your@email.com"
+                  />
                 </div>
 
                 {/* Password Field */}
                 <div className="space-y-2">
-                  <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
-                    <Lock className="w-5 h-5" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-200">
+                    <Lock className="w-4 h-4 text-blue-400" />
                     Password
                   </label>
                   <div className="relative">
@@ -194,13 +189,13 @@ export default function LoginPage() {
                       required
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-4 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm"
+                      className="w-full px-4 py-4 bg-white/10 border border-white/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent focus:bg-white/15 transition-all duration-300 text-sm"
                       placeholder="Enter your password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors duration-200"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -211,7 +206,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-4 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none animate-glow-pulse"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center gap-3">
@@ -228,9 +223,9 @@ export default function LoginPage() {
               </form>
 
               {/* Footer */}
-              <div className="text-center space-y-4">
-                <div className="border-t border-gray-200 pt-4">
-                  <p className="text-xs text-gray-500">
+              <div className="text-center">
+                <div className="border-t border-white/20 pt-4">
+                  <p className="text-xs text-slate-400">
                     © 2026 CBC Education System • Secure Access Only
                   </p>
                 </div>
