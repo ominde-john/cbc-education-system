@@ -2,7 +2,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function GlobalSkeletonLoader() {
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative">
+      {/* Top animated loading bar */}
+      <div className="fixed top-0 left-0 right-0 h-1.5 z-50 bg-primary/20 overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full"
+          style={{
+            width: "45%",
+            animation: "skeletonProgressBar 1.4s ease-in-out infinite",
+          }}
+        />
+      </div>
+
+      {/* Visible loading badge */}
+      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-2xl text-sm font-semibold tracking-wide select-none">
+        <span className="relative flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-white" />
+        </span>
+        Loading your workspace…
+      </div>
+
       {/* Sidebar skeleton */}
       <aside className="hidden md:flex flex-col w-64 border-r border-border p-4 gap-4 shrink-0">
         {/* Logo area */}

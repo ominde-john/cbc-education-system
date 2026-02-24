@@ -22,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ACCESS_TOKEN_KEY = 'cbc_access_token';
 const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
 const USER_KEY = 'cbc_user';
-const LOGIN_SKELETON_DURATION_MS = 3000;
+const LOGIN_SKELETON_DURATION_MS = 6000;
 
 const getStoredTokens = () => {
   try {
