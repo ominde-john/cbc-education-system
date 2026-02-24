@@ -155,11 +155,11 @@ exports.registerSchoolAdmin = async (req, res) => {
 
       // Create administrator user
       const userResult = await client.query(
-        `INSERT INTO users (email, password_hash, first_name, last_name, phone_number, role, status, email_verified, two_factor_enabled)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `INSERT INTO users (email, password_hash, first_name, last_name, phone_number, role, status, email_verified, two_factor_enabled, school_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING id`,
         [administratorEmail, passwordHash, fullName, lastName, administratorPhoneNumber, 
-         'school_admin', 'active', false, twoFactorAuth || false]
+         'school_admin', 'active', false, twoFactorAuth || false, schoolId]
       );
 
       const userId = userResult.rows[0].id;
