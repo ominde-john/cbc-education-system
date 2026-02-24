@@ -14,7 +14,6 @@ import {
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { GradeLevel, Gender } from '@/types';
-import { supabase } from '@/lib/supabase';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) {
@@ -63,71 +62,39 @@ export default function AddLearnerPage() {
         throw new Error('Please fill in all required fields.');
       }
 
-      // Check if admission number already exists
-      const { data: existingLearner, error: checkError } = await supabase
-        .from('learners')
-        .select('id')
-        .eq('admission_number', learnerData.admissionNumber)
-        .single();
+      const token = localStorage.getItem('cbc_access_token');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ||
+        (import.meta.env.PROD ? 'https://cbc-education-system-1.onrender.com/api' : '/api');
 
-      if (existingLearner) {
-        throw new Error('A learner with this admission number already exists.');
-      }
-
-      // Check if parent email already exists
-      const { data: existingParent, error: parentCheckError } = await supabase
-        .from('parents')
-        .select('id')
-        .eq('email', parentData.email)
-        .single();
-
-      if (existingParent) {
-        throw new Error('A parent account with this email already exists.');
-      }
-
-      // Create parent account first
-      const { data: parentDataResult, error: parentError } = await supabase
-        .from('parents')
-        .insert({
-          first_name: parentData.firstName,
-          last_name: parentData.lastName,
-          email: parentData.email,
-          phone_number: parentData.phoneNumber,
-          national_id: parentData.nationalId,
-          occupation: parentData.occupation,
-          relationship: parentData.relationship,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (parentError) {
-        throw parentError;
-      }
-
-      // Create learner record
-      const { data: learnerDataResult, error: learnerError } = await supabase
-        .from('learners')
-        .insert({
-          admission_number: learnerData.admissionNumber,
-          first_name: learnerData.firstName,
-          middle_name: learnerData.middleName,
-          last_name: learnerData.lastName,
-          date_of_birth: learnerData.dateOfBirth,
+      const response = await fetch(`${apiBaseUrl}/register/learner`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          admissionNumber: learnerData.admissionNumber,
+          firstName: learnerData.firstName,
+          lastName: learnerData.lastName,
+          middleName: learnerData.middleName,
+          dateOfBirth: learnerData.dateOfBirth,
           gender: learnerData.gender,
-          grade_level: learnerData.gradeLevel,
-          stream_name: learnerData.streamName,
-          special_needs: learnerData.specialNeeds,
-          parent_id: parentDataResult.id,
-          is_active: true,
-        })
-        .select()
-        .single();
+          gradeLevel: learnerData.gradeLevel,
+          streamName: learnerData.streamName,
+          specialNeeds: learnerData.specialNeeds,
+          parentEmail: parentData.email,
+          parentFirstName: parentData.firstName,
+          parentLastName: parentData.lastName,
+          parentPhoneNumber: parentData.phoneNumber,
+          parentNationalId: parentData.nationalId,
+          parentOccupation: parentData.occupation,
+          parentRelationship: parentData.relationship,
+        }),
+      });
 
-      if (learnerError) {
-        // Rollback parent creation if learner creation fails
-        await supabase.from('parents').delete().eq('id', parentDataResult.id);
-        throw learnerError;
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to enroll learner.');
       }
 
       toast({

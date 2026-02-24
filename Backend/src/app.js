@@ -83,7 +83,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Methods", "Access-Control-Request-Headers"],
   exposedHeaders: ["Content-Length", "Content-Type", "Authorization", "Access-Control-Allow-Origin"],
-  preflightContinue: true, // Pass the OPTIONS request to next middleware
+  preflightContinue: false,
   optionsSuccessStatus: 204
 }));
 
