@@ -9,6 +9,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import CookieBanner from "@/components/CookieBanner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import GlobalSkeletonLoader from "@/components/GlobalSkeletonLoader";
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
 import ContactPage from './pages/website-pages/Contact';
@@ -88,7 +89,7 @@ function ProtectedRoute({
   children: React.ReactNode;
   requiredRole?: string;
 }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, showLoginSkeleton } = useAuth();
 
   if (isLoading) {
     return (
@@ -100,6 +101,10 @@ function ProtectedRoute({
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (showLoginSkeleton) {
+    return <GlobalSkeletonLoader />;
   }
 
   // Redirect if role doesn't match
@@ -120,7 +125,7 @@ function ProtectedRoute({
 
 // ─── Admin Route ──────────────────────────────────────────────────────────────
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, showLoginSkeleton } = useAuth();
 
   if (isLoading) {
     return (
@@ -132,6 +137,10 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated || user?.role !== "school_admin") {
     return <Navigate to="/admin-login" replace />;
+  }
+
+  if (showLoginSkeleton) {
+    return <GlobalSkeletonLoader />;
   }
 
   return <>{children}</>;

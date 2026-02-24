@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, ReactNode, useEffect } from 'react';
+import { useState, useRef, createContext, useContext, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 
 // Use environment variable for API URL, fallback to relative path for development
@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  showLoginSkeleton: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ACCESS_TOKEN_KEY = 'cbc_access_token';
 const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
 const USER_KEY = 'cbc_user';
+const LOGIN_SKELETON_DURATION_MS = 3000;
 
 const getStoredTokens = () => {
   try {
@@ -49,6 +51,8 @@ const clearTokens = () => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLoginSkeleton, setShowLoginSkeleton] = useState(false);
+  const skeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const initializeAuth = () => {
@@ -65,6 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
     initializeAuth();
+
+    return () => {
+      if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -105,6 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       saveTokens(token, refreshToken, user);
       setUser(user);
+      if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+      setShowLoginSkeleton(true);
+      skeletonTimerRef.current = setTimeout(() => setShowLoginSkeleton(false), LOGIN_SKELETON_DURATION_MS);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -114,6 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    if (skeletonTimerRef.current) clearTimeout(skeletonTimerRef.current);
+    setShowLoginSkeleton(false);
     clearTokens();
     setUser(null);
   };
@@ -123,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isLoading,
       isAuthenticated: !!user,
+      showLoginSkeleton,
       login,
       logout,
     }}>
