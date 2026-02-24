@@ -20,9 +20,11 @@ const authenticate = async (req, res, next) => {
     const decoded = verifyToken(token);
     
     // Get user details from database with optimized query
+    // Use COALESCE to fallback to school_admins.school_id for users where school_id is not set in users table
     const userResult = await query(
-      `SELECT u.id, u.email, u.role, u.status, u.school_id
+      `SELECT u.id, u.email, u.role, u.status, COALESCE(u.school_id, sa.school_id) AS school_id
        FROM users u
+       LEFT JOIN school_admins sa ON sa.user_id = u.id
        WHERE u.id = $1 AND u.status != 'deleted'
        LIMIT 1`,
       [decoded.userId]
