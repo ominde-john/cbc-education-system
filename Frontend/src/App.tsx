@@ -50,7 +50,7 @@ import  DashboardWidgets  from "./pages/school-admin/learners/DashboardWidgets";
 import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
 import LearnersListPage from "@/pages/auth/school-admin/learners/LearnersList";
-import AddLearnerPage from "@/pages/auth/school-admin/learners/AddLearner";
+import AddLearnerPage from "./pages/school-admin/learners/AddLearner";
 import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
 import Student from "./pages/school-admin/learners/LearnerProfile";
 import Assessments from "./pages/school-admin/Assessment";

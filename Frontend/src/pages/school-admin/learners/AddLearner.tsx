@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,10 +17,19 @@ import {
 
 interface StudentDetailsProps {
   studentId?: number;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) => {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/school-admin/learners');
+    }
+  };
   // Student state
   const [student, setStudent] = useState({
     firstName: '',
@@ -138,7 +148,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <div className="flex items-center gap-3">
-            <Button onClick={onBack} variant="ghost" size="sm">
+            <Button onClick={handleBack} variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to List
             </Button>
@@ -429,7 +439,7 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
 
         {/* ── Form Actions ── */}
         <div className="flex items-center justify-end gap-3 pt-2 pb-8 animate-fade-in">
-          <Button type="button" variant="outline" onClick={onBack}>
+          <Button type="button" variant="outline" onClick={handleBack}>
             Cancel
           </Button>
           <Button type="button" onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground">
