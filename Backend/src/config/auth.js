@@ -3,8 +3,13 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { query, transaction } = require('./database');
 
-// JWT Configuration
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
+// JWT Configuration - Use a fixed secret for production to persist across restarts
+// IMPORTANT: Set JWT_SECRET in environment variables for production
+const JWT_SECRET = process.env.JWT_SECRET || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'cbc-education-system-production-secret-key-2024' 
+    : crypto.randomBytes(64).toString('hex'));
+    
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 

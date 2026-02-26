@@ -45,17 +45,27 @@ exports.login = async (req, res) => {
     console.log('\n📋 STEP 2: Querying database for user:', email);
     console.log('Database query executing...');
     
-    const userResult = await query(
-      `SELECT u.id, u.email, u.password_hash, u.role, u.status, 
-              COALESCE(u.school_id, NULL) as school_id, 
-              COALESCE(u.login_attempts, 0) as login_attempts, 
-              u.locked_until, 
-              COALESCE(u.email_verified, false) as email_verified
-       FROM users u
-       WHERE u.email = $1 AND u.status != 'deleted'
-       LIMIT 1`,
-      [email]
-    );
+    let userResult;
+    try {
+      userResult = await query(
+        `SELECT u.id, u.email, u.password_hash, u.role, u.status, 
+                COALESCE(u.school_id, NULL) as school_id, 
+                COALESCE(u.login_attempts, 0) as login_attempts, 
+                u.locked_until, 
+                COALESCE(u.email_verified, false) as email_verified
+         FROM users u
+         WHERE u.email = $1 AND u.status != 'deleted'
+         LIMIT 1`,
+        [email]
+      );
+    } catch (dbError) {
+      console.error('❌ Database query error:', dbError.message);
+      console.error('Database may not be connected or table may not exist');
+      return res.status(503).json({
+        success: false,
+        message: 'Service temporarily unavailable. Please try again later.'
+      });
+    }
 
     console.log('📊 Query result:', {
       rowsFound: userResult.rows.length,

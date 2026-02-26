@@ -14,6 +14,7 @@
   ],
   "env": {
     "DATABASE_URL": "postgresql://postgres:hashedbossie%40admin@db.ywcrsgaxftooovqipkdr.supabase.co:5432/postgres",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "JWT_SECRET": "cbc-education-system-production-secret-key-2024"
   }
 }
