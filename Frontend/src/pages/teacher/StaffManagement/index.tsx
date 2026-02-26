@@ -12,20 +12,47 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   const [query, setQuery]       = useState("");
   const [fStatus, setFStatus]   = useState("all");
   const [fBranch, setFBranch]   = useState("all");
+  const [fStaffType, setFStaffType] = useState("all");
   const [tab, setTab]           = useState<"general"|"teaching"|"contact">("general");
   const [toast, setToast]       = useState<string | null>(null);
   const [slots, setSlots]       = useState<string[]>(["","","",""]);
 
-  const empty: StaffMember = { id:"", firstName:"", lastName:"", idNumber:"", designation:"", dateOfBirth:"", contractStart:"", contractEnd:"", jobStatus:"Active", sex:"Male", branch:"", county:"", location:"", email:"", mobilePhone:"", tscNumber:"", teachingSubjects:[], qualifications:[], salary:0, hireDate:"" };
+  const empty: StaffMember = { 
+    id:"", 
+    firstName:"", 
+    lastName:"", 
+    idNumber:"", 
+    designation:"", 
+    dateOfBirth:"", 
+    contractStart:"", 
+    contractEnd:"", 
+    jobStatus:"Active", 
+    sex:"Male", 
+    branch:"", 
+    county:"", 
+    location:"", 
+    email:"", 
+    mobilePhone:"", 
+    tscNumber:"", 
+    teachingSubjects:[], 
+    qualifications:[], 
+    salary:0, 
+    hireDate:"",
+    staffType: "teaching",
+    photo: "" // Photo URL
+  };
   const [form, setForm] = useState<StaffMember>(empty);
 
   const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   const filtered = staff.filter(s => {
     const q = query.toLowerCase();
-    return (!q || `${s.firstName} ${s.lastName} ${s.idNumber} ${s.email} ${s.tscNumber}`.toLowerCase().includes(q))
-      && (fStatus === "all" || s.jobStatus === fStatus)
-      && (fBranch === "all" || s.branch === fBranch);
+    const matchesQuery = !q || `${s.firstName} ${s.lastName} ${s.idNumber} ${s.email} ${s.tscNumber}`.toLowerCase().includes(q);
+    const matchesStatus = fStatus === "all" || s.jobStatus === fStatus;
+    const matchesBranch = fBranch === "all" || s.branch === fBranch;
+    const matchesStaffType = fStaffType === "all" || s.staffType === fStaffType;
+    
+    return matchesQuery && matchesStatus && matchesBranch && matchesStaffType;
   });
 
   const openEdit = (m: StaffMember) => {
@@ -71,6 +98,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
         query={query}
         fStatus={fStatus}
         fBranch={fBranch}
+        fStaffType={fStaffType}
         onBack={() => setView("dashboard")}
         onCreate={openCreate}
         onViewDetails={(s) => { setSelected(s); setView("details"); }}
@@ -79,6 +107,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
         onQueryChange={setQuery}
         onStatusChange={setFStatus}
         onBranchChange={setFBranch}
+        onStaffTypeChange={setFStaffType}
         toast={toast}
       />
     );

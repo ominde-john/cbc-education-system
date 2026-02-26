@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Edit, IdCard, Phone, Briefcase, BookOpen, Mail, MapPin, Calendar, Badge, Code2, Copy, Check, ArrowRight } from "lucide-react";
+import { Edit, IdCard, Phone, Briefcase, BookOpen, Mail, MapPin, Calendar, Badge as BadgeIcon, Code2, Copy, Check, ArrowRight, GraduationCap, Briefcase as BriefcaseIcon } from "lucide-react";
 import { StaffMember } from "../types";
 import { T } from "../constants";
-import { fmt } from "../helpers";
+import { fmt, getStaffTypeLabel, getStaffTypeColor } from "../helpers";
 import { GLOBAL_CSS } from "../styles";
 import { TopNav, NavBtn, Avatar, StatusBadge, DetailRow, Toast } from "./index";
 
@@ -120,7 +120,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
                 alignItems: "center",
                 justifyContent: "center"
               }}>
-                <Badge size={14} color="white" strokeWidth={2.5} />
+                <BadgeIcon size={14} color="white" strokeWidth={2.5} />
               </div>
             </div>
 
@@ -158,8 +158,29 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
 
                 {/* Quick Info Badges */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  {/* Staff Type Badge */}
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "4px 10px",
+                    borderRadius: 14,
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.03em",
+                    background: getStaffTypeColor(selected.staffType).bg,
+                    color: getStaffTypeColor(selected.staffType).text,
+                  }}>
+                    {selected.staffType === "teaching" ? (
+                      <GraduationCap size={12} />
+                    ) : (
+                      <BriefcaseIcon size={12} />
+                    )}
+                    {getStaffTypeLabel(selected.staffType)}
+                  </span>
                   <StatusBadge status={selected.jobStatus} />
-                  {selected.tscNumber && selected.tscNumber !== "N/A" && (
+                  {selected.tscNumber && selected.tscNumber !== "N/A" && selected.staffType === "teaching" && (
                     <span style={{
                       fontSize: 12,
                       fontWeight: 600,

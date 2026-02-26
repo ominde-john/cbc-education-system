@@ -1,9 +1,9 @@
-import React from "react";
-import { Users, X, Save, ChevronDown, CheckCircle } from "lucide-react";
+import React, { useState } from "react";
+import { Users, X, Save, ChevronDown, CheckCircle, GraduationCap, Briefcase, Camera, Upload } from "lucide-react";
 import { StaffMember } from "../types";
-import { T, STATUS_CFG, DESIGNATIONS, BRANCHES, COUNTIES, ALL_SUBJECTS } from "../constants";
+import { T, STATUS_CFG, DESIGNATIONS, BRANCHES, COUNTIES, ALL_SUBJECTS, TEACHING_DESIGNATIONS } from "../constants";
 import { inp, sel, GLOBAL_CSS } from "../styles";
-import { initials, avatarBg } from "../helpers";
+import { initials, avatarBg, getStaffTypeLabel } from "../helpers";
 import { TopNav, NavBtn, StatusBadge, FormField, Toast } from "./index";
 
 /* ─── FORM VIEW ───────────────────────────────────────────────────────── */
@@ -32,6 +32,14 @@ export const FormView: React.FC<FormViewProps> = ({
   onSlotsChange,
   toast,
 }) => {
+  const [photoPreview, setPhotoPreview] = useState<string>(form.photo || "");
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setPhotoPreview(url);
+    onFieldChange("photo", url);
+  };
+
   const sectionHeader = (title: string) => (
     <div style={{ fontSize: 12, fontWeight: 800, color: T.text.primary, marginBottom: 14, paddingBottom: 9, borderBottom: `1px solid ${T.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
       {title}
@@ -104,6 +112,81 @@ export const FormView: React.FC<FormViewProps> = ({
             {/* General Tab */}
             {tab === "general" && (
               <>
+                {/* Photo Upload Section */}
+                <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
+                  {sectionHeader("Staff Photo")}
+                  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                    {/* Photo Preview */}
+                    <div style={{ flexShrink: 0 }}>
+                      {photoPreview ? (
+                        <img 
+                          src={photoPreview} 
+                          alt="Staff preview"
+                          style={{
+                            width: 80,
+                            height: 80,
+                            borderRadius: 12,
+                            objectFit: "cover",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                          }}
+                          onError={() => setPhotoPreview("")}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 12,
+                          background: `linear-gradient(135deg, ${avatarBg(selected?.id ?? "0")}, ${avatarBg(selected?.id ?? "0")}dd)`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 24,
+                          fontWeight: 800,
+                          color: "white",
+                        }}>
+                          {form.firstName && form.lastName ? initials(form.firstName, form.lastName) : <Camera size={24} color="white" />}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Photo URL Input */}
+                    <div style={{ flex: 1 }}>
+                      <FormField label="Photo URL">
+                        <input 
+                          style={inp} 
+                          value={form.photo || ""} 
+                          onChange={handlePhotoChange}
+                          placeholder="Enter photo URL or leave empty for auto-generated avatar"
+                        />
+                      </FormField>
+                      <p style={{ fontSize: 11, color: T.text.muted, marginTop: 6 }}>
+                        Paste a URL to a photo (e.g., from Google Drive, Dropbox, or any image hosting service)
+                      </p>
+                      {photoPreview && (
+                        <button
+                          onClick={() => {
+                            setPhotoPreview("");
+                            onFieldChange("photo", "");
+                          }}
+                          style={{
+                            marginTop: 8,
+                            padding: "4px 10px",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#DC2626",
+                            background: "#FEF2F2",
+                            border: "1px solid #FCA5A5",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Remove Photo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
                   {sectionHeader("Personal Information")}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -130,6 +213,20 @@ export const FormView: React.FC<FormViewProps> = ({
                 <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
                   {sectionHeader("Employment Details")}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    {/* Staff Type Selection */}
+                    <FormField label="Staff Type" required>
+                      <div style={{ position: "relative" }}>
+                        <select
+                          style={sel}
+                          value={String(form.staffType || "teaching")}
+                          onChange={e => onFieldChange("staffType", e.target.value as "teaching" | "non-teaching")}
+                        >
+                          <option value="teaching">Teaching Staff</option>
+                          <option value="non-teaching">Non-Teaching Staff</option>
+                        </select>
+                        <ChevronDown size={12} color={T.text.muted} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                      </div>
+                    </FormField>
                     <FormField label="Designation" required>
                       <DD k="designation" opts={DESIGNATIONS} placeholder="Select…" />
                     </FormField>
@@ -225,23 +322,42 @@ export const FormView: React.FC<FormViewProps> = ({
           {/* Sidebar */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "16px", textAlign: "center" }}>
-              <div
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: "50%",
-                  background: form.firstName ? avatarBg(selected?.id ?? "0") : T.bg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 10px",
-                  fontSize: 20,
-                  fontWeight: 800,
-                  color: form.firstName ? "white" : T.text.muted,
-                }}
-              >
-                {form.firstName && form.lastName ? initials(form.firstName, form.lastName) : <Users size={22} color={T.text.muted} />}
-              </div>
+              {/* Photo Preview in Sidebar */}
+              {form.photo ? (
+                <img 
+                  src={form.photo} 
+                  alt="Staff"
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    margin: "0 auto 10px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  }}
+                  onError={() => {
+                    // Fall back to initials if image fails to load
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: "50%",
+                    background: form.firstName ? avatarBg(selected?.id ?? "0") : T.bg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 10px",
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: form.firstName ? "white" : T.text.muted,
+                  }}
+                >
+                  {form.firstName && form.lastName ? initials(form.firstName, form.lastName) : <Users size={18} color={T.text.muted} />}
+                </div>
+              )}
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text.primary }}>{form.firstName || "First"} {form.lastName || "Last"}</div>
               <div style={{ fontSize: 11, color: T.text.muted, marginTop: 2 }}>{form.designation || "No designation"}</div>
               {form.jobStatus && <div style={{ marginTop: 8 }}><StatusBadge status={form.jobStatus} /></div>}

@@ -27,6 +27,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const onLeaveStaff = staff.filter(s => s.jobStatus === "On Leave").length;
   const branches = [...new Set(staff.map(s => s.branch))].length;
   const roles = [...new Set(staff.map(s => s.designation))].length;
+  const teachingStaff = staff.filter(s => s.staffType === "teaching").length;
+  const nonTeachingStaff = staff.filter(s => s.staffType === "non-teaching").length;
 
   return (
     <div style={{ 
@@ -76,7 +78,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               { icon: UserCheck, label: "Active", value: activeStaff, color: "#15803D", bg: "#F0FDF4", trend: `${Math.round((activeStaff/staff.length)*100)}% of total` },
               { icon: Clock, label: "On Leave", value: onLeaveStaff, color: "#B45309", bg: "#FFFBEB", trend: "Currently away" },
               { icon: MapPin, label: "Branches", value: branches, color: "#7C3AED", bg: "#F5F3FF", trend: "Locations" },
-              { icon: Briefcase, label: "Designations", value: roles, color: "#0891B2", bg: "#ECFEFF", trend: "Role types" },
+              { icon: Briefcase, label: "Non-Teaching", value: nonTeachingStaff, color: "#B45309", bg: "#FEF3C7", trend: "Support staff" },
+              { icon: Award, label: "Teaching", value: teachingStaff, color: "#4F46E5", bg: "#EEF2FF", trend: "Educators" },
             ].map(({ icon: Icon, label, value, color, bg, trend }, idx) => (
               <div
                 key={idx}
