@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-// API URL - use environment variable, empty for development (uses Vite proxy)
-const API_URL = import.meta.env.VITE_API_URL || '';
+// API URL - use localhost:3001 for development, environment variable for production
+// In production, if VITE_API_URL is not set, use relative URLs (assumes API is on same domain)
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
 
 // User type from API
 interface UserFromAPI {
@@ -187,6 +188,14 @@ const UserManagement = () => {
           'Authorization': `Bearer ${token}`
         }
       });
+
+      // Check if response is JSON or HTML (error case)
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Received non-JSON response:', text.substring(0, 200));
+        throw new Error('Invalid API response. Please check your API configuration.');
+      }
 
       const data = await response.json();
 
