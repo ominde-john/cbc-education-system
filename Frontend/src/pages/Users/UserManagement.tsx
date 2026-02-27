@@ -5,6 +5,7 @@ import {
   Lock, Unlock, AlertTriangle, ShieldCheck, Eye, EyeOff, Key
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 // API URL - use localhost:3001 for development, environment variable for production
 // In production, if VITE_API_URL is not set, use relative URLs (assumes API is on same domain)
@@ -148,8 +149,10 @@ const UserManagement = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [showAddModal, setShowAddModal] = useState(false);
+const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserForUI | null>(null);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState<UserForUI | null>(null);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<UserForUI | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const usersPerPage = 10;
@@ -728,8 +731,8 @@ const UserManagement = () => {
 
         {/* Users Table */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto min-w-[1200px]">
+            <table className="table-auto w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-4 text-left w-12">
@@ -773,7 +776,7 @@ const UserManagement = () => {
                       )}
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 min-w-[180px]">
                     School
                   </th>
                   <th 
@@ -788,7 +791,7 @@ const UserManagement = () => {
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 transition-colors"
+                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 transition-colors whitespace-nowrap"
                     onClick={() => handleSort('lastLogin')}
                   >
                     <div className="flex items-center gap-2">
@@ -798,19 +801,19 @@ const UserManagement = () => {
                       )}
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 whitespace-nowrap">
                     Sessions
                   </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700">Actions</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700 w-[180px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredUsers.map((user) => (
                   <tr 
                     key={user.id} 
-                    className="hover:bg-slate-50 transition-colors group"
+                    className="hover:bg-slate-50 transition-colors"
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 align-middle">
                       <input
                         type="checkbox"
                         checked={selectedUsers.has(user.id)}
@@ -818,9 +821,9 @@ const UserManagement = () => {
                         className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
                       />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 align-middle">
                       <div className="flex items-center gap-3">
-                        <div className="relative">
+                        <div className="relative flex-shrink-0">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${getRoleColor(user.role)}`}>
                             {getInitials(user.firstName, user.lastName)}
                           </div>
@@ -830,8 +833,8 @@ const UserManagement = () => {
                             </div>
                           )}
                         </div>
-                        <div>
-                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-2 flex-wrap">
                             {user.name}
                             {user.loginAttempts > 3 && (
                               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700" title={`${user.loginAttempts} failed login attempts`}>
@@ -855,31 +858,35 @@ const UserManagement = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 align-middle">
                       <div className="flex items-center gap-2 text-slate-600 text-sm">
-                        <Mail size={14} className="text-slate-400" />
-                        {user.email}
+                        <Mail size={14} className="text-slate-400 flex-shrink-0" />
+                        <span className="truncate max-w-[200px]" title={user.email}>{user.email}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getRoleColor(user.role)}`}>
-                        {roleLabels[user.role] || user.role}
-                      </span>
+                    <td className="px-6 py-4 align-middle">
+                      <div className="flex items-center justify-start">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getRoleColor(user.role)}`}>
+                          {roleLabels[user.role] || user.role}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-slate-700 text-sm">
+                    <td className="px-6 py-4 align-middle">
+                      <span className="text-slate-700 text-sm break-words">
                         {user.schoolId ? user.schoolName || 'Unknown School' : 'Platform Level'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getStatusColor(user.displayStatus)}`}>
-                        {user.displayStatus}
-                      </span>
+                    <td className="px-6 py-4 align-middle">
+                      <div className="flex items-center justify-start">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getStatusColor(user.displayStatus)}`}>
+                          {user.displayStatus}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 align-middle whitespace-nowrap">
                       <span className="text-sm text-slate-500">{formatLastLogin(user.lastLogin)}</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 align-middle whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         <span className={`text-sm font-medium ${user.activeSessions > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
                           {user.activeSessions}
@@ -888,48 +895,79 @@ const UserManagement = () => {
                         <span className="text-sm text-slate-500">{user.maxSessions}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button 
-                          onClick={() => setEditingUser(user)}
-                          className="p-2 hover:bg-blue-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                          title="Edit user"
-                        >
-                          <Eye size={16} className="text-blue-600" />
-                        </button>
-                        <button 
-                          onClick={() => toggleUserStatus(user.id, user.isActive)}
-                          className={`p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100 ${user.isActive ? 'hover:bg-amber-100' : 'hover:bg-green-100'}`}
-                          title={user.isActive ? 'Deactivate user' : 'Activate user'}
-                        >
-                          {user.isActive ? (
-                            <EyeOff size={16} className="text-amber-600" />
-                          ) : (
-                            <Check size={16} className="text-green-600" />
-                          )}
-                        </button>
+                    <td className="px-6 py-4 align-middle">
+                      <div className="flex items-center justify-end gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button 
+                              onClick={() => setEditingUser(user)}
+                              className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                            >
+                              <Eye size={18} className="text-blue-600" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View Details</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button 
+                              onClick={() => toggleUserStatus(user.id, user.isActive)}
+                              className={`p-2 rounded-lg transition-colors ${user.isActive ? 'hover:bg-amber-100' : 'hover:bg-green-100'}`}
+                            >
+                              {user.isActive ? (
+                                <EyeOff size={18} className="text-amber-600" />
+                              ) : (
+                                <Check size={18} className="text-green-600" />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{user.isActive ? 'Deactivate User' : 'Activate User'}</p>
+                          </TooltipContent>
+                        </Tooltip>
                         {user.isLocked && (
-                          <button 
-                            onClick={() => unlockUser(user.id)}
-                            className="p-2 hover:bg-green-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                            title="Unlock user"
-                          >
-                            <Unlock size={16} className="text-green-600" />
-                          </button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button 
+                                onClick={() => unlockUser(user.id)}
+                                className="p-2 hover:bg-green-100 rounded-lg transition-colors"
+                              >
+                                <Unlock size={18} className="text-green-600" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Unlock User</p>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
-                        <button 
-                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                          title="Reset password"
-                        >
-                          <Key size={16} className="text-slate-600" />
-                        </button>
-                        <button 
-                          onClick={() => deleteUser(user.id)}
-                          className="p-2 hover:bg-red-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                          title="Delete user"
-                        >
-                          <Trash2 size={16} className="text-red-600" />
-                        </button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button 
+                              onClick={() => setShowResetPasswordModal(user)}
+                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                              <Key size={18} className="text-slate-600" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reset Password</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button 
+                              onClick={() => setShowDeleteConfirmModal(user)}
+                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={18} className="text-red-600" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete User</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </td>
                   </tr>
@@ -1234,6 +1272,174 @@ const UserManagement = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {showResetPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900">Reset Password</h2>
+                <button
+                  onClick={() => setShowResetPasswordModal(null)}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X size={18} className="text-slate-600" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <Key size={20} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">
+                    Reset password for {showResetPasswordModal.name}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {showResetPasswordModal.email}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-600">
+                Are you sure you want to reset this user's password? An email with password reset instructions will be sent to the user.
+              </p>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowResetPasswordModal(null)}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const token = getAuthToken();
+                      if (!token) {
+                        throw new Error('Authentication required');
+                      }
+
+                      const response = await fetch(`${API_URL}/api/users/${showResetPasswordModal.id}/reset-password`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                        }
+                      });
+
+                      const data = await response.json();
+
+                      if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'Failed to reset password');
+                      }
+
+                      alert('Password reset email sent successfully!');
+                      setShowResetPasswordModal(null);
+                    } catch (err: unknown) {
+                      console.error('Error resetting password:', err);
+                      alert(getErrorMessage(err, 'Failed to reset password'));
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                >
+                  Send Reset Email
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900">Delete User</h2>
+                <button
+                  onClick={() => setShowDeleteConfirmModal(null)}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X size={18} className="text-slate-600" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <AlertTriangle size={20} className="text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-900">
+                    Delete {showDeleteConfirmModal.name}?
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {showDeleteConfirmModal.email}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-600">
+                Are you sure you want to delete this user? This action cannot be undone. All user data, including their account and associated records will be permanently removed.
+              </p>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirmModal(null)}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const token = getAuthToken();
+                      if (!token) {
+                        throw new Error('Authentication required');
+                      }
+
+                      const response = await fetch(`${API_URL}/api/users/${showDeleteConfirmModal.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        }
+                      });
+
+                      const data = await response.json();
+
+                      if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'Failed to delete user');
+                      }
+
+                      setUsers(users.filter(u => u.id !== showDeleteConfirmModal.id));
+                      const newSelected = new Set(selectedUsers);
+                      newSelected.delete(showDeleteConfirmModal.id);
+                      setSelectedUsers(newSelected);
+                      setShowDeleteConfirmModal(null);
+                    } catch (err: unknown) {
+                      console.error('Error deleting user:', err);
+                      alert(getErrorMessage(err, 'Failed to delete user'));
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                >
+                  Delete User
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
