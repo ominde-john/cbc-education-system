@@ -114,7 +114,7 @@ function ProtectedRoute({
 
   // Redirect if role doesn't match
   if (requiredRole && user?.role !== requiredRole) {
-    if (user?.role === "school_admin") {
+    if (user?.role === "school_admin" || user?.role === "super_admin") {
       return <Navigate to="/school-admin/dashboard" replace />;
     } else if (user?.role === "student") {
       return <Navigate to="/student/learning-materials" replace />;
@@ -140,7 +140,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated || user?.role !== "school_admin") {
+  if (!isAuthenticated || (user?.role !== "school_admin" && user?.role !== "super_admin")) {
     return <Navigate to="/login" replace />;
   }
 
@@ -174,10 +174,7 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/features" element={<Feature />} />
 
-      // Parent Portal
-
-
-        {/* ── Demo Routes ── */}
+      {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
       <Route path="/demo" element={<ModernDashboard />} />
 
@@ -273,10 +270,6 @@ function AppRoutes() {
                 {/* Learners */}
                 <Route path="learners/all" element={<StudentManagement />} />
                 <Route path="learners/classes" element={<StudentClasses />} />
-
-                
-
-                {/* ✅ Student Management — linked here */}
                 <Route path="learners/manage" element={<StudentManagement />} />
 
                 {/* Other Admin Pages */}
