@@ -8,6 +8,7 @@ export interface SubMenuItem {
   id: string;
   label: string;
   href: string;
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
 export interface MenuItem {

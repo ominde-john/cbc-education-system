@@ -34,30 +34,91 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // User types based on the database schema
 export interface DatabaseUser {
   id: string;
-  username: string;
   email: string;
-  full_name: string | null;
-  role: 'Administrator' | 'Editor' | 'Author' | 'Contributor' | 'Subscriber';
-  status: 'active' | 'inactive' | 'pending';
-  posts_count: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string | null;
   avatar_url: string | null;
+  role: 'super_admin' | 'school_admin' | 'teacher' | 'parent' | 'student';
+  status: 'active' | 'inactive' | 'pending';
+  email_verified: boolean;
+  two_factor_enabled: boolean;
+  last_login: string | null;
+  login_attempts: number;
+  locked_until: string | null;
+  active_sessions: number;
+  max_sessions: number;
+  school_id: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  last_active: string;
+}
+
+// Extended user type for UI display
+export interface UserForUI {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  displayStatus: string;
+  emailVerified: boolean;
+  twoFactorEnabled: boolean;
+  lastLogin: string | null;
+  loginAttempts: number;
+  lockedUntil: string | null;
+  isLocked: boolean;
+  activeSessions: number;
+  maxSessions: number;
+  schoolId: string | null;
+  isActive: boolean;
+  joinedDate: string;
+  avatarUrl: string | null;
+  schoolName?: string;
 }
 
 // Helper function to format user data for the UI
-export const formatUserForUI = (dbUser: DatabaseUser) => {
+export const formatUserForUI = (dbUser: DatabaseUser, schoolName?: string): UserForUI => {
+  const firstName = dbUser.first_name || '';
+  const lastName = dbUser.last_name || '';
+  const name = `${firstName} ${lastName}`.trim() || dbUser.email;
+  
+  // Smart status logic
+  let displayStatus = 'Active';
+  const now = new Date();
+  
+  if (dbUser.locked_until && new Date(dbUser.locked_until) > now) {
+    displayStatus = 'Locked';
+  } else if (!dbUser.is_active) {
+    displayStatus = 'Inactive';
+  } else if (!dbUser.email_verified) {
+    displayStatus = 'Not Verified';
+  }
+  
   return {
     id: dbUser.id,
-    username: dbUser.username,
-    name: dbUser.full_name || dbUser.username,
+    firstName,
+    lastName,
+    name,
     email: dbUser.email,
     role: dbUser.role,
-    posts: dbUser.posts_count,
     status: dbUser.status,
+    displayStatus,
+    emailVerified: dbUser.email_verified,
+    twoFactorEnabled: dbUser.two_factor_enabled,
+    lastLogin: dbUser.last_login,
+    loginAttempts: dbUser.login_attempts,
+    lockedUntil: dbUser.locked_until,
+    isLocked: dbUser.locked_until ? new Date(dbUser.locked_until) > now : false,
+    activeSessions: dbUser.active_sessions,
+    maxSessions: dbUser.max_sessions,
+    schoolId: dbUser.school_id,
+    isActive: dbUser.is_active,
     joinedDate: new Date(dbUser.created_at).toISOString().split('T')[0],
-    lastActive: formatLastActive(dbUser.last_active)
+    avatarUrl: dbUser.avatar_url,
+    schoolName
   };
 };
 
