@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "destination": "https://cbc-education-system-1.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
