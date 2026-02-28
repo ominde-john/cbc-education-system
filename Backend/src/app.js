@@ -10,6 +10,7 @@ const morgan = require("morgan");
 const aiRoutes = require("./routes/ai.routes");
 const authRoutes = require("./routes/auth.routes");
 const usersRoutes = require("./routes/users.routes");
+const schoolsRoutes = require("./routes/schools.routes");
 const registerRoutes = require("./routes/register.routes");
 const passwordRoutes = require("./routes/password.routes");
 
@@ -152,6 +153,7 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/schools", schoolsRoutes);
 app.use("/api/register", registerRoutes);
 app.use("/api/password", passwordRoutes);
 app.use("/api/ai", aiRoutes);

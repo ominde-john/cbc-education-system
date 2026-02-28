@@ -537,6 +537,71 @@ router.post('/:id/unlock',
   }
 );
 
+// POST /api/users/:id/reset-password - Reset user password
+router.post('/:id/reset-password',
+  authenticate,
+  authorize('super_admin', 'school_admin'),
+  auditLog('USER_PASSWORD_RESET'),
+  async (req, res) => {
+    try {
+      if (!db || !db.query) {
+        return res.status(500).json({
+          success: false,
+          message: 'Database not configured'
+        });
+      }
+
+      const { id } = req.params;
+
+      if (req.user.role === 'school_admin') {
+        const checkQuery = 'SELECT school_id, role FROM users WHERE id = $1';
+        const checkResult = await db.query(checkQuery, [id]);
+        
+        if (checkResult.rows.length === 0) {
+          return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const targetUser = checkResult.rows[0];
+        
+        if (targetUser.role === 'super_admin' || targetUser.school_id !== req.user.schoolId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Not authorized to reset password for this user'
+          });
+        }
+      }
+
+      const updateQuery = `
+        UPDATE users 
+        SET password_reset_required = true, updated_at = NOW()
+        WHERE id = $1
+        RETURNING id, email, password_reset_required, updated_at
+      `;
+
+      const result = await db.query(updateQuery, [id]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Password reset email sent successfully'
+      });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to reset password',
+        error: error.message
+      });
+    }
+  }
+);
+
 // DELETE /api/users/:id - Delete user
 router.delete('/:id',
   authenticate,

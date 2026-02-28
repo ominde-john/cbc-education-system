@@ -1,24 +1,49 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { 
-  Search, UserPlus, Mail, Trash2, Shield, 
-  User, ChevronDown, Download, RefreshCw, Check, X, Loader2, 
-  Lock, Unlock, AlertTriangle, ShieldCheck, Eye, EyeOff, Key
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Plus, Search, Download, MoreHorizontal, Eye, Edit, Lock, Unlock,
+  Users, UserCheck, UserX, Crown, School, CheckCircle2, KeyRound,
+  Smartphone, Trash2, Phone, Mail, Calendar, Shield, Activity,
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Tooltip, TooltipContent, TooltipTrigger,
+} from '@/components/ui/tooltip';
+import StatsCard from '@/components/dashboard/StatCard';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
-// API URL - use localhost:3001 for development, environment variable for production
-// In production, if VITE_API_URL is not set, use relative URLs (assumes API is on same domain)
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
+// API URL - use environment variable or relative path
+const API_URL = import.meta.env.VITE_API_URL || '';
 
-// User type from API
-interface UserFromAPI {
+// Type definitions
+interface SystemUser {
   id: string;
   email: string;
   first_name: string;
   last_name: string;
-  phone_number?: string;
-  role: string;
+  phone_number: string | null;
+  role: 'super_admin' | 'school_admin' | 'teacher' | 'parent' | 'student';
   status: string;
   is_active: boolean;
   email_verified: boolean;
@@ -29,1428 +54,768 @@ interface UserFromAPI {
   active_sessions: number;
   max_sessions: number;
   school_id: string | null;
-  school_name?: string;
+  school_name?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  password_reset_required?: boolean;
 }
 
-// UI display type
-interface UserForUI {
+interface SchoolOption {
   id: string;
-  firstName: string;
-  lastName: string;
   name: string;
-  email: string;
-  role: string;
-  status: string;
-  displayStatus: string;
-  emailVerified: boolean;
-  twoFactorEnabled: boolean;
-  lastLogin: string | null;
-  loginAttempts: number;
-  lockedUntil: string | null;
-  isLocked: boolean;
-  activeSessions: number;
-  maxSessions: number;
-  schoolId: string | null;
-  isActive: boolean;
-  joinedDate: string;
-  avatarUrl: string | null;
-  schoolName?: string;
 }
 
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return fallback;
-};
+interface UserStats {
+  total_users: number;
+  super_admins: number;
+  school_admins: number;
+  active_users: number;
+  locked_users: number;
+}
 
-// Role display labels
+interface PaginatedResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
 const roleLabels: Record<string, string> = {
   super_admin: 'Super Admin',
   school_admin: 'School Admin',
   teacher: 'Teacher',
   parent: 'Parent',
-  student: 'Student'
+  student: 'Student',
 };
 
-// Role filter options
-const roleFilters = [
-  { value: 'all', label: 'All Roles' },
-  { value: 'super_admin', label: 'Super Admin' },
-  { value: 'school_admin', label: 'School Admin' },
-  { value: 'teacher', label: 'Teacher' },
-  { value: 'parent', label: 'Parent' },
-  { value: 'student', label: 'Student' }
-];
+const roleBadgeClasses: Record<string, string> = {
+  super_admin: 'bg-destructive/10 text-destructive border-destructive/20',
+  school_admin: 'bg-primary/10 text-primary border-primary/20',
+  teacher: 'bg-accent/80 text-accent-foreground border-accent',
+  parent: 'bg-secondary text-secondary-foreground border-secondary',
+  student: 'bg-blue-100 text-blue-800 border-blue-200',
+};
 
-// Status filter options
-const statusFilters = [
-  { value: 'all', label: 'All Status' },
-  { value: 'active', label: 'Active' },
-  { value: 'locked', label: 'Locked' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'not_verified', label: 'Not Verified' }
-];
-
-// Helper function to format user data for the UI
-const formatUserForUI = (apiUser: UserFromAPI): UserForUI => {
-  const firstName = apiUser.first_name || '';
-  const lastName = apiUser.last_name || '';
-  const name = `${firstName} ${lastName}`.trim() || apiUser.email;
-  
-  // Smart status logic
-  let displayStatus = 'Active';
+function getUserStatus(user: SystemUser): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
   const now = new Date();
-  
-  if (apiUser.locked_until && new Date(apiUser.locked_until) > now) {
-    displayStatus = 'Locked';
-  } else if (!apiUser.is_active) {
-    displayStatus = 'Inactive';
-  } else if (!apiUser.email_verified) {
-    displayStatus = 'Not Verified';
-  }
-  
-  return {
-    id: apiUser.id,
-    firstName,
-    lastName,
-    name,
-    email: apiUser.email,
-    role: apiUser.role,
-    status: apiUser.status,
-    displayStatus,
-    emailVerified: apiUser.email_verified,
-    twoFactorEnabled: apiUser.two_factor_enabled,
-    lastLogin: apiUser.last_login,
-    loginAttempts: apiUser.login_attempts,
-    lockedUntil: apiUser.locked_until,
-    isLocked: apiUser.locked_until ? new Date(apiUser.locked_until) > now : false,
-    activeSessions: apiUser.active_sessions,
-    maxSessions: apiUser.max_sessions,
-    schoolId: apiUser.school_id,
-    isActive: apiUser.is_active,
-    joinedDate: new Date(apiUser.created_at).toISOString().split('T')[0],
-    avatarUrl: null,
-    schoolName: apiUser.school_name
-  };
+  if (user.locked_until && new Date(user.locked_until) > now) return { label: 'Locked', variant: 'destructive' };
+  if (!user.is_active) return { label: 'Inactive', variant: 'secondary' };
+  if (!user.email_verified) return { label: 'Email Not Verified', variant: 'outline' };
+  return { label: 'Active', variant: 'default' };
+}
+
+function isLocked(user: SystemUser): boolean {
+  return !!user.locked_until && new Date(user.locked_until) > new Date();
+}
+
+const defaultMaxSessions = (role: string) => {
+  return role === 'super_admin' ? 10 : 5;
 };
 
+// Add User Form State
+interface AddUserForm {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  role: string;
+  school_id: string;
+  email_verified: boolean;
+  two_factor_enabled: boolean;
+  max_sessions: number;
+  is_active: boolean;
+}
+
+const emptyForm: AddUserForm = {
+  first_name: '', last_name: '', email: '', phone_number: '',
+  role: 'teacher', school_id: '', email_verified: false,
+  two_factor_enabled: false, max_sessions: 5, is_active: true,
+};
+
+// API fetch function with auth headers
+const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('cbc_access_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+  
+  const response = await fetch(url, { ...options, headers });
+  return response.json();
+};
+
+// UserManagement Component
 const UserManagement = () => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<UserForUI[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [filterRole, setFilterRole] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-const [showAddModal, setShowAddModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserForUI | null>(null);
-  const [showResetPasswordModal, setShowResetPasswordModal] = useState<UserForUI | null>(null);
-  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<UserForUI | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const usersPerPage = 10;
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(50);
 
-  // Get auth token
-  const getAuthToken = (): string | null => {
-    return localStorage.getItem('cbc_access_token');
-  };
+  // Modal states
+  const [addOpen, setAddOpen] = useState(false);
+  const [viewUser, setViewUser] = useState<SystemUser | null>(null);
+  const [editUser, setEditUser] = useState<SystemUser | null>(null);
+  const [addForm, setAddForm] = useState<AddUserForm>({ ...emptyForm });
+  const [editForm, setEditForm] = useState<AddUserForm>({ ...emptyForm });
+  const [submitting, setSubmitting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Fetch users from backend API
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required. Please log in.');
-      }
+  // Current user info from auth context
+  const currentUserRole = currentUser?.role || 'super_admin';
+  const currentUserSchoolId = currentUser?.schoolId || null;
 
-      // Build query params
+  // Fetch users from API
+  const { data: usersData, isLoading, refetch } = useQuery<PaginatedResponse<SystemUser>>({
+    queryKey: ['system-users', page, limit, roleFilter, statusFilter, searchTerm],
+    queryFn: async () => {
       const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: usersPerPage.toString(),
-        search: searchTerm,
-        role: filterRole,
-        status: filterStatus
+        page: page.toString(),
+        limit: limit.toString(),
       });
-
-      console.log('Fetching users from API...');
       
-      const response = await fetch(`${API_URL}/api/users?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      if (roleFilter !== 'all') params.append('role', roleFilter);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (searchTerm.trim()) params.append('search', searchTerm.trim());
+      
+      const result = await fetchWithAuth(`${API_URL}/api/users?${params}`);
+      return result;
+    },
+  });
 
-      // Check if response is JSON or HTML (error case)
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Received non-JSON response:', text.substring(0, 200));
-        throw new Error('Invalid API response. Please check your API configuration.');
-      }
+  // Fetch user stats
+  const { data: statsData } = useQuery<UserStats>({
+    queryKey: ['system-users-stats'],
+    queryFn: async () => {
+      const result = await fetchWithAuth(`${API_URL}/api/users/stats/summary`);
+      return result.data || { total_users: 0, super_admins: 0, school_admins: 0, active_users: 0, locked_users: 0 };
+    },
+  });
 
-      const data = await response.json();
+  // Fetch schools list
+  const { data: schoolsData } = useQuery<{ success: boolean; data: SchoolOption[] }>({
+    queryKey: ['schools-list'],
+    queryFn: async () => {
+      const result = await fetchWithAuth(`${API_URL}/api/schools`);
+      return result;
+    },
+    enabled: currentUserRole === 'super_admin',
+  });
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch users');
-      }
+  const users = usersData?.data || [];
+  const schools = schoolsData?.data || [];
 
-      console.log('API response:', data);
-
-      if (data.success && data.data) {
-        console.log('Users fetched successfully:', data.data.length);
-        
-        // Format users from API
-        const formattedUsers = data.data.map((user: UserFromAPI) => formatUserForUI(user));
-        setUsers(formattedUsers);
-        
-        // Update pagination
-        if (data.pagination) {
-          setTotalPages(data.pagination.pages || 1);
-        }
-      } else {
-        console.log('No users found');
-        setUsers([]);
-      }
-    } catch (err: unknown) {
-      console.error('Error fetching users:', err);
-      setError(getErrorMessage(err, 'Failed to fetch users. Please check your connection.'));
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, searchTerm, filterRole, filterStatus]);
-
-  // Fetch on mount and when filters change
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  // Add new user via API
-  const addUser = async (userData: { firstName: string; lastName: string; email: string; role: string; schoolId?: string }) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await fetch(`${API_URL}/api/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          email: userData.email,
-          role: userData.role,
-          school_id: userData.schoolId || null
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to create user');
-      }
-
-      // Refresh users
-      await fetchUsers();
-    } catch (err: unknown) {
-      console.error('Error adding user:', err);
-      alert(getErrorMessage(err, 'Failed to add user'));
-    }
-  };
-
-  // Update user via API
-  const updateUser = async (userId: string, userData: Partial<UserForUI>) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await fetch(`${API_URL}/api/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          email: userData.email,
-          role: userData.role,
-          is_active: userData.isActive
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update user');
-      }
-
-      await fetchUsers();
-    } catch (err: unknown) {
-      console.error('Error updating user:', err);
-      alert(getErrorMessage(err, 'Failed to update user'));
-    }
-  };
-
-  // Toggle user active status
-  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await fetch(`${API_URL}/api/users/${userId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ is_active: !currentStatus })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update user status');
-      }
-
-      await fetchUsers();
-    } catch (err: unknown) {
-      console.error('Error toggling user status:', err);
-      alert(getErrorMessage(err, 'Failed to update user status'));
-    }
-  };
-
-  // Unlock user account
-  const unlockUser = async (userId: string) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await fetch(`${API_URL}/api/users/${userId}/unlock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to unlock user');
-      }
-
-      await fetchUsers();
-    } catch (err: unknown) {
-      console.error('Error unlocking user:', err);
-      alert(getErrorMessage(err, 'Failed to unlock user'));
-    }
-  };
-
-  // Delete user via API
-  const deleteUser = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
-    
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const response = await fetch(`${API_URL}/api/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to delete user');
-      }
-
-      setUsers(users.filter(u => u.id !== userId));
-      const newSelected = new Set(selectedUsers);
-      newSelected.delete(userId);
-      setSelectedUsers(newSelected);
-    } catch (err: unknown) {
-      console.error('Error deleting user:', err);
-      alert(getErrorMessage(err, 'Failed to delete user'));
-    }
-  };
-
-  // Calculate stats from current users
   const stats = useMemo(() => {
-    const totalUsers = users.length;
-    const superAdmins = users.filter(u => u.role === 'super_admin').length;
-    const schoolAdmins = users.filter(u => u.role === 'school_admin').length;
-    const activeUsers = users.filter(u => u.isActive && !u.isLocked).length;
-    const lockedUsers = users.filter(u => u.isLocked).length;
-    
-    return { totalUsers, superAdmins, schoolAdmins, activeUsers, lockedUsers };
-  }, [users]);
+    return {
+      total: statsData?.total_users || 0,
+      superAdmins: statsData?.super_admins || 0,
+      schoolAdmins: statsData?.school_admins || 0,
+      active: statsData?.active_users || 0,
+      locked: statsData?.locked_users || 0,
+    };
+  }, [statsData]);
 
-  // Filtered and sorted users
-  const filteredUsers = useMemo(() => {
-    let filtered = users.filter(user => {
-      // Search filter
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
-        user.firstName.toLowerCase().includes(searchLower) ||
-        user.lastName.toLowerCase().includes(searchLower) ||
-        user.name.toLowerCase().includes(searchLower) ||
-        user.email.toLowerCase().includes(searchLower);
-      
-      // Role filter (handled by API, but keep for local filtering)
-      const matchesRole = filterRole === 'all' || user.role === filterRole;
-      
-      // Status filter (handled by API, but keep for local filtering)
+  const filtered = useMemo(() => {
+    return users.filter((u) => {
+      const term = searchTerm.toLowerCase();
+      const matchesSearch = !term ||
+        u.first_name.toLowerCase().includes(term) ||
+        u.last_name.toLowerCase().includes(term) ||
+        u.email.toLowerCase().includes(term);
+      const matchesRole = roleFilter === 'all' || u.role === roleFilter;
       let matchesStatus = true;
-      if (filterStatus === 'active') {
-        matchesStatus = user.displayStatus === 'Active';
-      } else if (filterStatus === 'locked') {
-        matchesStatus = user.displayStatus === 'Locked';
-      } else if (filterStatus === 'inactive') {
-        matchesStatus = user.displayStatus === 'Inactive';
-      } else if (filterStatus === 'not_verified') {
-        matchesStatus = user.displayStatus === 'Not Verified';
+      if (statusFilter !== 'all') {
+        const s = getUserStatus(u);
+        const map: Record<string, string> = { active: 'Active', locked: 'Locked', inactive: 'Inactive', not_verified: 'Email Not Verified' };
+        matchesStatus = s.label === map[statusFilter];
       }
-      
       return matchesSearch && matchesRole && matchesStatus;
     });
+  }, [users, searchTerm, roleFilter, statusFilter]);
 
-    // Sort
-    filtered.sort((a, b) => {
-      let aVal: string | number = '';
-      let bVal: string | number = '';
-      
-      switch (sortBy) {
-        case 'name':
-          aVal = a.name.toLowerCase();
-          bVal = b.name.toLowerCase();
-          break;
-        case 'email':
-          aVal = a.email.toLowerCase();
-          bVal = b.email.toLowerCase();
-          break;
-        case 'role':
-          aVal = a.role;
-          bVal = b.role;
-          break;
-        case 'status':
-          aVal = a.displayStatus;
-          bVal = b.displayStatus;
-          break;
-        case 'lastLogin':
-          aVal = a.lastLogin || '';
-          bVal = b.lastLogin || '';
-          break;
-        default:
-          aVal = a.name.toLowerCase();
-          bVal = b.name.toLowerCase();
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: AddUserForm) => {
+      const schoolId = userData.role === 'super_admin' ? null
+        : currentUserRole === 'school_admin' ? currentUserSchoolId
+        : userData.school_id || null;
+
+      return fetchWithAuth(`${API_URL}/api/users`, {
+        method: 'POST',
+        body: JSON.stringify({
+          first_name: userData.first_name.trim(),
+          last_name: userData.last_name.trim(),
+          email: userData.email.trim(),
+          phone_number: userData.phone_number.trim() || null,
+          role: userData.role,
+          school_id: schoolId,
+        }),
+      });
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('User added successfully. Invite email will be sent.');
+        setAddOpen(false);
+        setAddForm({ ...emptyForm });
+        setShowAdvanced(false);
+        queryClient.invalidateQueries({ queryKey: ['system-users'] });
+        queryClient.invalidateQueries({ queryKey: ['system-users-stats'] });
+      } else {
+        toast.error(data.message || 'Failed to add user');
       }
-      
-      if (sortOrder === 'asc') {
-        return aVal > bVal ? 1 : -1;
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to add user');
+    },
+  });
+
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, userData }: { id: string; userData: Partial<AddUserForm> }) => {
+      const schoolId = userData.role === 'super_admin' ? null
+        : currentUserRole === 'school_admin' ? currentUserSchoolId
+        : userData.school_id || null;
+
+      return fetchWithAuth(`${API_URL}/api/users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          first_name: userData.first_name?.trim(),
+          last_name: userData.last_name?.trim(),
+          phone_number: userData.phone_number?.trim() || null,
+          role: userData.role,
+          school_id: schoolId,
+          is_active: userData.is_active,
+        }),
+      });
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('User updated');
+        setEditUser(null);
+        queryClient.invalidateQueries({ queryKey: ['system-users'] });
+      } else {
+        toast.error(data.message || 'Failed to update user');
       }
-      return aVal < bVal ? 1 : -1;
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update user');
+    },
+  });
+
+  // Toggle active status mutation
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      return fetchWithAuth(`${API_URL}/api/users/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_active: isActive }),
+      });
+    },
+    onSuccess: (data, variables) => {
+      if (data.success) {
+        toast.success(variables.isActive ? 'User activated' : 'User deactivated');
+        queryClient.invalidateQueries({ queryKey: ['system-users'] });
+        queryClient.invalidateQueries({ queryKey: ['system-users-stats'] });
+      } else {
+        toast.error(data.message || 'Failed to update status');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update status');
+    },
+  });
+
+  // Unlock user mutation
+  const unlockMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return fetchWithAuth(`${API_URL}/api/users/${id}/unlock`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('User unlocked');
+        queryClient.invalidateQueries({ queryKey: ['system-users'] });
+        queryClient.invalidateQueries({ queryKey: ['system-users-stats'] });
+      } else {
+        toast.error(data.message || 'Failed to unlock');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to unlock');
+    },
+  });
+
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return fetchWithAuth(`${API_URL}/api/users/${id}/reset-password`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('Password reset email sent');
+      } else {
+        toast.error(data.message || 'Failed to reset password');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to reset password');
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return fetchWithAuth(`${API_URL}/api/users/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('User deleted');
+        queryClient.invalidateQueries({ queryKey: ['system-users'] });
+        queryClient.invalidateQueries({ queryKey: ['system-users-stats'] });
+      } else {
+        toast.error(data.message || 'Failed to delete user');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete user');
+    },
+  });
+
+  // Handlers
+  const handleAddUser = async () => {
+    if (!addForm.first_name.trim() || !addForm.last_name.trim() || !addForm.email.trim()) {
+      toast.error('First name, last name, and email are required');
+      return;
+    }
+    setSubmitting(true);
+    createUserMutation.mutate(addForm);
+    setSubmitting(false);
+  };
+
+  const handleEditUser = async () => {
+    if (!editUser) return;
+    setSubmitting(true);
+    updateUserMutation.mutate({ id: editUser.id, userData: editForm });
+    setSubmitting(false);
+  };
+
+  const handleToggleActive = (user: SystemUser) => {
+    toggleActiveMutation.mutate({ id: user.id, isActive: !user.is_active });
+  };
+
+  const handleUnlock = (user: SystemUser) => {
+    unlockMutation.mutate(user.id);
+  };
+
+  const handleResetPassword = (user: SystemUser) => {
+    resetPasswordMutation.mutate(user.id);
+  };
+
+  const handleSoftDelete = (user: SystemUser) => {
+    deleteUserMutation.mutate(user.id);
+  };
+
+  const openEdit = (user: SystemUser) => {
+    setEditForm({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      phone_number: user.phone_number || '',
+      role: user.role,
+      school_id: user.school_id || '',
+      email_verified: user.email_verified,
+      two_factor_enabled: user.two_factor_enabled,
+      max_sessions: user.max_sessions,
+      is_active: user.is_active,
     });
-
-    return filtered;
-  }, [users, searchTerm, filterRole, filterStatus, sortBy, sortOrder]);
-
-  const toggleSelectUser = (userId: string) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
-    } else {
-      newSelected.add(userId);
-    }
-    setSelectedUsers(newSelected);
+    setEditUser(user);
   };
 
-  const toggleSelectAll = () => {
-    if (selectedUsers.size === filteredUsers.length) {
-      setSelectedUsers(new Set());
-    } else {
-      setSelectedUsers(new Set(filteredUsers.map(u => u.id)));
-    }
-  };
+  const availableRoles = currentUserRole === 'school_admin'
+    ? ['school_admin', 'teacher', 'parent']
+    : ['super_admin', 'school_admin', 'teacher', 'parent', 'student'];
 
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
+  // Detail Row Component
+  const DetailRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) => (
+    <div className="flex items-start gap-3 py-2">
+      <Icon className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium">{value}</p>
+      </div>
+    </div>
+  );
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'Active': return 'bg-emerald-100 text-emerald-700';
-      case 'Locked': return 'bg-red-100 text-red-700';
-      case 'Inactive': return 'bg-slate-100 text-slate-700';
-      case 'Not Verified': return 'bg-amber-100 text-amber-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch(role) {
-      case 'super_admin': return 'bg-purple-100 text-purple-700';
-      case 'school_admin': return 'bg-blue-100 text-blue-700';
-      case 'teacher': return 'bg-green-100 text-green-700';
-      case 'parent': return 'bg-orange-100 text-orange-700';
-      case 'student': return 'bg-teal-100 text-teal-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
-  };
-
-  const getInitials = (firstName: string, lastName: string) => {
-    const first = firstName?.charAt(0)?.toUpperCase() || '';
-    const last = lastName?.charAt(0)?.toUpperCase() || '';
-    return first + last || 'U';
-  };
-
-  const formatLastLogin = (dateString: string | null) => {
-    if (!dateString) return 'Never Logged In';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Role', 'School', 'Status', 'Last Login', 'Sessions'];
-    const csvData = filteredUsers.map(user => [
-      user.name,
-      user.email,
-      user.role,
-      user.schoolName || 'Platform Level',
-      user.displayStatus,
-      formatLastLogin(user.lastLogin),
-      `${user.activeSessions}/${user.maxSessions}`
-    ]);
-    
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
+  // Role-specific form field
+  const RoleSchoolFields = ({ form, setForm, isEdit }: { form: AddUserForm; setForm: (f: AddUserForm) => void; isEdit?: boolean }) => (
+    <>
+      <div className="space-y-2">
+        <Label>Role *</Label>
+        <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v, max_sessions: defaultMaxSessions(v), school_id: v === 'super_admin' ? '' : form.school_id })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {availableRoles.map(r => <SelectItem key={r} value={r}>{roleLabels[r]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {form.role !== 'super_admin' && currentUserRole === 'super_admin' && (
+        <div className="space-y-2">
+          <Label>School</Label>
+          <Select value={form.school_id} onValueChange={(v) => setForm({ ...form, school_id: v })}>
+            <SelectTrigger><SelectValue placeholder="Select school" /></SelectTrigger>
+            <SelectContent>
+              {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {form.role !== 'super_admin' && currentUserRole === 'school_admin' && (
+        <div className="space-y-2">
+          <Label>School</Label>
+          <Input value="Auto-assigned (your school)" disabled />
+        </div>
+      )}
+    </>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">User Management</h1>
-            <p className="text-slate-600 text-base">Manage your team members and their permissions</p>
+    <div className="min-h-screen p-6 space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatsCard title="Total Users" value={stats.total} icon={Users} iconClassName="bg-primary/10 text-primary" />
+        <StatsCard title="Super Admins" value={stats.superAdmins} icon={Crown} iconClassName="bg-destructive/10 text-destructive" />
+        <StatsCard title="School Admins" value={stats.schoolAdmins} icon={School} iconClassName="bg-chart-2/20 text-chart-2" />
+        <StatsCard title="Active Users" value={stats.active} icon={UserCheck} iconClassName="bg-chart-4/20 text-chart-4" />
+        <StatsCard title="Locked Users" value={stats.locked} icon={Lock} iconClassName="bg-destructive/10 text-destructive" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex flex-1 gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search by name or email..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9" />
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <UserPlus size={18} />
-            Add User
-          </button>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Role" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="super_admin">Super Admin</SelectItem>
+              <SelectItem value="school_admin">School Admin</SelectItem>
+              <SelectItem value="teacher">Teacher</SelectItem>
+              <SelectItem value="parent">Parent</SelectItem>
+              <SelectItem value="student">Student</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="locked">Locked</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="not_verified">Not Verified</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm text-slate-600 mb-2">Total Users</div>
-                <div className="text-3xl font-bold text-slate-900">{stats.totalUsers}</div>
-              </div>
-              <div className="p-3 rounded-lg bg-blue-600">
-                <User className="text-white" size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm text-slate-600 mb-2">Super Admins</div>
-                <div className="text-3xl font-bold text-slate-900">{stats.superAdmins}</div>
-              </div>
-              <div className="p-3 rounded-lg bg-purple-600">
-                <Shield className="text-white" size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm text-slate-600 mb-2">School Admins</div>
-                <div className="text-3xl font-bold text-slate-900">{stats.schoolAdmins}</div>
-              </div>
-              <div className="p-3 rounded-lg bg-indigo-600">
-                <ShieldCheck className="text-white" size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm text-slate-600 mb-2">Active Users</div>
-                <div className="text-3xl font-bold text-slate-900">{stats.activeUsers}</div>
-              </div>
-              <div className="p-3 rounded-lg bg-emerald-600">
-                <Check className="text-white" size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm text-slate-600 mb-2">Locked Users</div>
-                <div className="text-3xl font-bold text-slate-900">{stats.lockedUsers}</div>
-              </div>
-              <div className="p-3 rounded-lg bg-red-600">
-                <Lock className="text-white" size={20} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-            <button onClick={fetchUsers} className="ml-2 underline">Retry</button>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              />
-            </div>
-
-            {/* Role Filter */}
-            <div className="relative">
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer min-w-[180px] text-sm font-medium text-slate-700"
-              >
-                {roleFilters.map(filter => (
-                  <option key={filter.value} value={filter.value}>{filter.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-            </div>
-
-            {/* Status Filter */}
-            <div className="relative">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer min-w-[180px] text-sm font-medium text-slate-700"
-              >
-                {statusFilters.map(filter => (
-                  <option key={filter.value} value={filter.value}>{filter.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-            </div>
-
-            {/* Export Button */}
-            <button 
-              onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              <Download size={18} className="text-slate-600" />
-              <span className="text-slate-700 font-medium text-sm">Export</span>
-            </button>
-            
-            {/* Refresh Button */}
-            <button 
-              onClick={fetchUsers}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              <RefreshCw size={18} className="text-slate-600" />
-              <span className="text-slate-700 font-medium text-sm">Refresh</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Users Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto min-w-[1200px]">
-            <table className="table-auto w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-4 text-left w-12">
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => handleSort('name')}
-                  >
-                    <div className="flex items-center gap-2">
-                      User
-                      {sortBy === 'name' && (
-                        <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => handleSort('email')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Email
-                      {sortBy === 'email' && (
-                        <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => handleSort('role')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Role
-                      {sortBy === 'role' && (
-                        <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 min-w-[180px]">
-                    School
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => handleSort('status')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Status
-                      {sortBy === 'status' && (
-                        <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:text-blue-600 transition-colors whitespace-nowrap"
-                    onClick={() => handleSort('lastLogin')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Last Login
-                      {sortBy === 'lastLogin' && (
-                        <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 whitespace-nowrap">
-                    Sessions
-                  </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-700 w-[180px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((user) => (
-                  <tr 
-                    key={user.id} 
-                    className="hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="px-6 py-4 align-middle">
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.has(user.id)}
-                        onChange={() => toggleSelectUser(user.id)}
-                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <div className="flex items-center gap-3">
-                        <div className="relative flex-shrink-0">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${getRoleColor(user.role)}`}>
-                            {getInitials(user.firstName, user.lastName)}
-                          </div>
-                          {user.isLocked && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                              <Lock size={10} className="text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-900 text-sm flex items-center gap-2 flex-wrap">
-                            {user.name}
-                            {user.loginAttempts > 3 && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700" title={`${user.loginAttempts} failed login attempts`}>
-                                <AlertTriangle size={10} className="mr-1" />
-                                {user.loginAttempts}
-                              </span>
-                            )}
-                            {user.emailVerified && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700" title="Email Verified">
-                                <ShieldCheck size={10} className="mr-1" />
-                                Verified
-                              </span>
-                            )}
-                            {user.twoFactorEnabled && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700" title="2FA Enabled">
-                                <Key size={10} className="mr-1" />
-                                2FA
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <div className="flex items-center gap-2 text-slate-600 text-sm">
-                        <Mail size={14} className="text-slate-400 flex-shrink-0" />
-                        <span className="truncate max-w-[200px]" title={user.email}>{user.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <div className="flex items-center justify-start">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getRoleColor(user.role)}`}>
-                          {roleLabels[user.role] || user.role}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <span className="text-slate-700 text-sm break-words">
-                        {user.schoolId ? user.schoolName || 'Unknown School' : 'Platform Level'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <div className="flex items-center justify-start">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${getStatusColor(user.displayStatus)}`}>
-                          {user.displayStatus}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-middle whitespace-nowrap">
-                      <span className="text-sm text-slate-500">{formatLastLogin(user.lastLogin)}</span>
-                    </td>
-                    <td className="px-6 py-4 align-middle whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <span className={`text-sm font-medium ${user.activeSessions > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
-                          {user.activeSessions}
-                        </span>
-                        <span className="text-slate-400">/</span>
-                        <span className="text-sm text-slate-500">{user.maxSessions}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-middle">
-                      <div className="flex items-center justify-end gap-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button 
-                              onClick={() => setEditingUser(user)}
-                              className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                            >
-                              <Eye size={18} className="text-blue-600" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>View Details</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button 
-                              onClick={() => toggleUserStatus(user.id, user.isActive)}
-                              className={`p-2 rounded-lg transition-colors ${user.isActive ? 'hover:bg-amber-100' : 'hover:bg-green-100'}`}
-                            >
-                              {user.isActive ? (
-                                <EyeOff size={18} className="text-amber-600" />
-                              ) : (
-                                <Check size={18} className="text-green-600" />
-                              )}
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{user.isActive ? 'Deactivate User' : 'Activate User'}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        {user.isLocked && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button 
-                                onClick={() => unlockUser(user.id)}
-                                className="p-2 hover:bg-green-100 rounded-lg transition-colors"
-                              >
-                                <Unlock size={18} className="text-green-600" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Unlock User</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button 
-                              onClick={() => setShowResetPasswordModal(user)}
-                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                            >
-                              <Key size={18} className="text-slate-600" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Reset Password</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button 
-                              onClick={() => setShowDeleteConfirmModal(user)}
-                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={18} className="text-red-600" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Delete User</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="animate-spin mx-auto text-blue-600 mb-2" size={32} />
-              <div className="text-slate-500 text-sm">Loading users...</div>
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-slate-400 text-base mb-2">No users found</div>
-              <div className="text-slate-500 text-sm">Try adjusting your search or filters</div>
-            </div>
-          ) : null}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-              <div className="text-sm text-slate-600">
-                Showing <span className="font-medium">{(currentPage - 1) * usersPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * usersPerPage, filteredUsers.length)}</span> of <span className="font-medium">{filteredUsers.length}</span> users
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === page 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button 
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetch()}><Download className="h-4 w-4 mr-2" />Refresh</Button>
+          <Button onClick={() => { setAddForm({ ...emptyForm }); setShowAdvanced(false); setAddOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />Add User
+          </Button>
         </div>
       </div>
 
-      {/* Add User Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">Add New User</h2>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={18} className="text-slate-600" />
-                </button>
-              </div>
-            </div>
-            
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target as HTMLFormElement);
-                const userData = {
-                  firstName: formData.get('firstName') as string,
-                  lastName: formData.get('lastName') as string,
-                  email: formData.get('email') as string,
-                  role: formData.get('role') as string,
-                };
-                
-                await addUser(userData);
-                setShowAddModal(false);
-                (e.target as HTMLFormElement).reset();
-              }}
-              className="p-6 space-y-4"
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="John"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Doe"
-                  />
-                </div>
-              </div>
+      {/* Users Table */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>School</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Last Login</TableHead>
+                <TableHead>Sessions</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">Loading users...</TableCell></TableRow>
+              ) : filtered.length === 0 ? (
+                <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">No users found.</TableCell></TableRow>
+              ) : (
+                filtered.map((user) => {
+                  const status = getUserStatus(user);
+                  const locked = isLocked(user);
+                  return (
+                    <TableRow key={user.id} className={locked ? 'bg-destructive/5' : ''}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                              {user.first_name?.[0]}{user.last_name?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium">{user.first_name} {user.last_name}</span>
+                            {locked && (<Tooltip><TooltipTrigger><Lock className="h-3.5 w-3.5 text-destructive" /></TooltipTrigger><TooltipContent>Account Locked</TooltipContent></Tooltip>)}
+                            {user.email_verified && (<Tooltip><TooltipTrigger><CheckCircle2 className="h-3.5 w-3.5 text-chart-4" /></TooltipTrigger><TooltipContent>Email Verified</TooltipContent></Tooltip>)}
+                            {user.two_factor_enabled && (<Tooltip><TooltipTrigger><Smartphone className="h-3.5 w-3.5 text-primary" /></TooltipTrigger><TooltipContent>2FA Enabled</TooltipContent></Tooltip>)}
+                            {user.login_attempts > 3 && (
+                              <Tooltip><TooltipTrigger>
+                                <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">{user.login_attempts}</span>
+                              </TooltipTrigger><TooltipContent>Failed login attempts: {user.login_attempts}</TooltipContent></Tooltip>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell><Badge variant="outline" className={roleBadgeClasses[user.role]}>{roleLabels[user.role]}</Badge></TableCell>
+                      <TableCell>{user.school_name ? <span className="text-sm">{user.school_name}</span> : <span className="text-xs text-muted-foreground italic">Platform Level</span>}</TableCell>
+                      <TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {user.last_login ? format(new Date(user.last_login), 'MMM d, yyyy HH:mm') : <span className="italic text-xs">Never Logged In</span>}
+                      </TableCell>
+                      <TableCell><span className="text-sm font-mono">{user.active_sessions}/{user.max_sessions}</span></TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setViewUser(user)}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEdit(user)}><Edit className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleToggleActive(user)}>
+                              {user.is_active ? <><UserX className="h-4 w-4 mr-2" /> Deactivate</> : <><UserCheck className="h-4 w-4 mr-2" /> Activate</>}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleResetPassword(user)}><KeyRound className="h-4 w-4 mr-2" /> Reset Password</DropdownMenuItem>
+                            {locked && <DropdownMenuItem onClick={() => handleUnlock(user)}><Unlock className="h-4 w-4 mr-2" /> Unlock</DropdownMenuItem>}
+                            {currentUserRole === 'super_admin' && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleSoftDelete(user)} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Delete</DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  placeholder="john@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Role *
-                </label>
-                <select
-                  name="role"
-                  required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  {currentUser?.role === 'super_admin' ? (
-                    <>
-                      <option value="school_admin">School Admin</option>
-                      <option value="teacher">Teacher</option>
-                      <option value="parent">Parent</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="teacher">Teacher</option>
-                      <option value="parent">Parent</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                >
-                  Add User
-                </button>
-              </div>
-            </form>
-          </div>
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Showing {filtered.length} of {usersData?.pagination?.total || 0} users</p>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled={page === 1} 
+            onClick={() => setPage(p => p - 1)}
+          >
+            Previous
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled={page >= (usersData?.pagination?.pages || 1)} 
+            onClick={() => setPage(p => p + 1)}
+          >
+            Next
+          </Button>
         </div>
-      )}
+      </div>
 
-      {/* Edit User Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">User Details</h2>
-                <button
-                  onClick={() => setEditingUser(null)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={18} className="text-slate-600" />
-                </button>
+      {/* ADD USER DIALOG */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>Create a new user account. An invite email will be sent for first-login password setup.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="add-fn">First Name *</Label>
+                <Input id="add-fn" value={addForm.first_name} onChange={(e) => setAddForm({ ...addForm, first_name: e.target.value })} placeholder="John" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-ln">Last Name *</Label>
+                <Input id="add-ln" value={addForm.last_name} onChange={(e) => setAddForm({ ...addForm, last_name: e.target.value })} placeholder="Doe" />
               </div>
             </div>
-            
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target as HTMLFormElement);
-                const userData = {
-                  firstName: formData.get('firstName') as string,
-                  lastName: formData.get('lastName') as string,
-                  email: formData.get('email') as string,
-                  role: formData.get('role') as string,
-                  isActive: editingUser.isActive,
-                };
-                
-                await updateUser(editingUser.id, userData);
-                setEditingUser(null);
-              }}
-              className="p-6 space-y-4"
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    defaultValue={editingUser.firstName}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    defaultValue={editingUser.lastName}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-email">Email *</Label>
+              <Input id="add-email" type="email" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} placeholder="john@school.com" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-phone">Phone Number</Label>
+              <Input id="add-phone" value={addForm.phone_number} onChange={(e) => setAddForm({ ...addForm, phone_number: e.target.value })} placeholder="+254 7XX XXX XXX" />
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  defaultValue={editingUser.email}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-              </div>
+            <Separator />
+            <RoleSchoolFields form={addForm} setForm={setAddForm} />
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Role
-                </label>
-                <select
-                  name="role"
-                  defaultValue={editingUser.role}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  {roleFilters.filter(f => f.value !== 'all').map(filter => (
-                    <option key={filter.value} value={filter.value}>{filter.label}</option>
-                  ))}
-                </select>
-              </div>
+            <Separator />
+            <div className="space-y-2">
+              <Label>Account Status</Label>
+              <Select value={addForm.is_active ? 'active' : 'inactive'} onValueChange={(v) => setAddForm({ ...addForm, is_active: v === 'active' })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* User Info Display */}
-              <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Status:</span>
-                  <span className={`font-medium ${getStatusColor(editingUser.displayStatus)}`}>
-                    {editingUser.displayStatus}
-                  </span>
+            {/* Advanced Security Toggle */}
+            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setShowAdvanced(!showAdvanced)}>
+              <Shield className="h-4 w-4 mr-1" /> {showAdvanced ? 'Hide' : 'Show'} Security Settings
+            </Button>
+            {showAdvanced && (
+              <div className="space-y-3 rounded-lg border p-4 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="add-ev" checked={addForm.email_verified} onCheckedChange={(c) => setAddForm({ ...addForm, email_verified: !!c })} />
+                  <Label htmlFor="add-ev" className="text-sm">Email Verified</Label>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">School:</span>
-                  <span className="text-slate-900">{editingUser.schoolId ? editingUser.schoolName || 'Unknown' : 'Platform Level'}</span>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="add-2fa" checked={addForm.two_factor_enabled} onCheckedChange={(c) => setAddForm({ ...addForm, two_factor_enabled: !!c })} />
+                  <Label htmlFor="add-2fa" className="text-sm">Enable 2FA</Label>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Sessions:</span>
-                  <span className="text-slate-900">{editingUser.activeSessions} / {editingUser.maxSessions}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Login Attempts:</span>
-                  <span className={`font-medium ${editingUser.loginAttempts > 3 ? 'text-red-600' : 'text-slate-900'}`}>
-                    {editingUser.loginAttempts}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Email Verified:</span>
-                  <span className="text-slate-900">{editingUser.emailVerified ? 'Yes' : 'No'}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">2FA Enabled:</span>
-                  <span className="text-slate-900">{editingUser.twoFactorEnabled ? 'Yes' : 'No'}</span>
+                <div className="space-y-2">
+                  <Label htmlFor="add-ms" className="text-sm">Max Sessions</Label>
+                  <Input id="add-ms" type="number" min={1} max={20} value={addForm.max_sessions} onChange={(e) => setAddForm({ ...addForm, max_sessions: parseInt(e.target.value) || 5 })} />
                 </div>
               </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
-                >
-                  Close
-                </button>
-              </div>
-            </form>
+            )}
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddUser} disabled={submitting || createUserMutation.isPending}>
+              {createUserMutation.isPending ? 'Adding...' : 'Add User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Reset Password Modal */}
-      {showResetPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">Reset Password</h2>
-                <button
-                  onClick={() => setShowResetPasswordModal(null)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={18} className="text-slate-600" />
-                </button>
+      {/* VIEW USER DIALOG */}
+      <Dialog open={!!viewUser} onOpenChange={() => setViewUser(null)}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {viewUser && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-3 pb-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                    {viewUser.first_name?.[0]}{viewUser.last_name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-lg">{viewUser.first_name} {viewUser.last_name}</p>
+                  <Badge variant="outline" className={roleBadgeClasses[viewUser.role]}>{roleLabels[viewUser.role]}</Badge>
+                </div>
+              </div>
+              <Separator />
+              <DetailRow icon={Mail} label="Email" value={viewUser.email} />
+              <DetailRow icon={Phone} label="Phone" value={viewUser.phone_number || '—'} />
+              <DetailRow icon={School} label="School" value={viewUser.school_name || 'Platform Level'} />
+              <DetailRow icon={CheckCircle2} label="Email Verified" value={viewUser.email_verified ? 'Yes' : 'No'} />
+              <DetailRow icon={Smartphone} label="2FA Enabled" value={viewUser.two_factor_enabled ? 'Yes' : 'No'} />
+              <Separator />
+              <DetailRow icon={Activity} label="Login Attempts" value={viewUser.login_attempts} />
+              <DetailRow icon={Lock} label="Locked Until" value={viewUser.locked_until ? format(new Date(viewUser.locked_until), 'MMM d, yyyy HH:mm') : 'Not Locked'} />
+              <DetailRow icon={Users} label="Active Sessions" value={`${viewUser.active_sessions} / ${viewUser.max_sessions}`} />
+              <DetailRow icon={Calendar} label="Created At" value={format(new Date(viewUser.created_at), 'MMM d, yyyy HH:mm')} />
+              <DetailRow icon={Calendar} label="Last Login" value={viewUser.last_login ? format(new Date(viewUser.last_login), 'MMM d, yyyy HH:mm') : 'Never'} />
+              <DetailRow icon={Shield} label="Status" value={<Badge variant={getUserStatus(viewUser).variant}>{getUserStatus(viewUser).label}</Badge>} />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewUser(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT USER DIALOG */}
+      <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update user information. Email, password, created_at, and login_attempts cannot be changed here.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name *</Label>
+                <Input value={editForm.first_name} onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name *</Label>
+                <Input value={editForm.last_name} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} />
               </div>
             </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Key size={20} className="text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    Reset password for {showResetPasswordModal.name}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {showResetPasswordModal.email}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-sm text-slate-600">
-                Are you sure you want to reset this user's password? An email with password reset instructions will be sent to the user.
-              </p>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowResetPasswordModal(null)}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const token = getAuthToken();
-                      if (!token) {
-                        throw new Error('Authentication required');
-                      }
-
-                      const response = await fetch(`${API_URL}/api/users/${showResetPasswordModal.id}/reset-password`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${token}`
-                        }
-                      });
-
-                      const data = await response.json();
-
-                      if (!response.ok || !data.success) {
-                        throw new Error(data.message || 'Failed to reset password');
-                      }
-
-                      alert('Password reset email sent successfully!');
-                      setShowResetPasswordModal(null);
-                    } catch (err: unknown) {
-                      console.error('Error resetting password:', err);
-                      alert(getErrorMessage(err, 'Failed to reset password'));
-                    }
-                  }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                >
-                  Send Reset Email
-                </button>
-              </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input value={editForm.email} disabled className="bg-muted/50" />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input value={editForm.phone_number} onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })} />
+            </div>
+            <Separator />
+            <RoleSchoolFields form={editForm} setForm={setEditForm} isEdit />
+            <Separator />
+            <div className="space-y-2">
+              <Label>Max Sessions</Label>
+              <Input type="number" min={1} max={20} value={editForm.max_sessions} onChange={(e) => setEditForm({ ...editForm, max_sessions: parseInt(e.target.value) || 5 })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Account Status</Label>
+              <Select value={editForm.is_active ? 'active' : 'inactive'} onValueChange={(v) => setEditForm({ ...editForm, is_active: v === 'active' })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirmModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">Delete User</h2>
-                <button
-                  onClick={() => setShowDeleteConfirmModal(null)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X size={18} className="text-slate-600" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg">
-                <div className="p-2 bg-red-100 rounded-full">
-                  <AlertTriangle size={20} className="text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    Delete {showDeleteConfirmModal.name}?
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {showDeleteConfirmModal.email}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-sm text-slate-600">
-                Are you sure you want to delete this user? This action cannot be undone. All user data, including their account and associated records will be permanently removed.
-              </p>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteConfirmModal(null)}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const token = getAuthToken();
-                      if (!token) {
-                        throw new Error('Authentication required');
-                      }
-
-                      const response = await fetch(`${API_URL}/api/users/${showDeleteConfirmModal.id}`, {
-                        method: 'DELETE',
-                        headers: {
-                          'Authorization': `Bearer ${token}`
-                        }
-                      });
-
-                      const data = await response.json();
-
-                      if (!response.ok || !data.success) {
-                        throw new Error(data.message || 'Failed to delete user');
-                      }
-
-                      setUsers(users.filter(u => u.id !== showDeleteConfirmModal.id));
-                      const newSelected = new Set(selectedUsers);
-                      newSelected.delete(showDeleteConfirmModal.id);
-                      setSelectedUsers(newSelected);
-                      setShowDeleteConfirmModal(null);
-                    } catch (err: unknown) {
-                      console.error('Error deleting user:', err);
-                      alert(getErrorMessage(err, 'Failed to delete user'));
-                    }
-                  }}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
-                >
-                  Delete User
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        * {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-        }
-      `}</style>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
+            <Button onClick={handleEditUser} disabled={submitting || updateUserMutation.isPending}>
+              {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
