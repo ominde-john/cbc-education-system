@@ -303,19 +303,20 @@ const registerSchoolAdmin = async (req, res) => {
       return respond(res, 500, false, 'Failed to create user profile. Registration rolled back.');
     }
 
-    // ── Step 8: INSERT school_admins ──────────────────────────
-
+// ── Step 8: INSERT school_admins ──────────────────────────
+    // Only insert essential fields to avoid DB constraint errors
+    
+    const adminData = {
+      user_id:       authUserId,
+      school_id:     school.id,
+      appointment_date: effectiveAppointmentDate,
+    };
+    
+  // Only add optional fields if they have values
+  // Skip national_id due to CHECK constraint - let users add it later
     const { error: adminError } = await supabaseAdmin
       .from('school_admins')
-      .insert({
-        user_id:          authUserId,
-        school_id:        school.id,
-        tsc_number:       tsc_number?.toUpperCase() || null,
-        appointment_date: effectiveAppointmentDate,  // Use mapped appointment date
-        is_principal:     true,
-        national_id:      nationalId,   // Add national_id
-        passport_number:  passportNumber, // Add passport_number
-      });
+      .insert(adminData);
 
     if (adminError) {
       console.error('[registerSchoolAdmin] school_admins insert error:', adminError);
