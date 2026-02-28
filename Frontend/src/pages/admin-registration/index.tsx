@@ -15,7 +15,8 @@ import {
   SchoolRegistrationStep3,
 } from '@/types/school';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const AUTH_API_URL = `${API_URL}/api/auth`;
 
 /* ─── Step config ─────────────────────────────────────── */
 const STEPS = [
@@ -92,22 +93,44 @@ export default function AdminRegistrationPage() {
     setStep3Data(d); await handleFinalSubmit(d);
   };
 
-  const handleFinalSubmit = async (s3: SchoolRegistrationStep3 = step3Data) => {
+const handleFinalSubmit = async (s3: SchoolRegistrationStep3 = step3Data) => {
     setIsLoading(true);
     try {
       const payload = {
-        school_name: step1Data.name, school_code: step1Data.code,
+        // School fields from Step 1
+        school_name: step1Data.name,
+        school_code: step1Data.code,
         school_type: step1Data.schoolType || 'private',
         level: step1Data.levelsOffered[0] || 'primary',
-        year_established: step1Data.yearEstablished,
-        county: step2Data.county, sub_county: step2Data.subCounty,
-        ward: step2Data.ward, physical_address: step2Data.physicalAddress,
-        postal_address: step2Data.postalAddress, phone_number: step2Data.phoneNumber,
-        school_email: step2Data.email, website: step2Data.website,
-        admin_name: s3.fullName, admin_email: s3.email,
-        password: s3.password, tsc_number: s3.tscNo,
+        year_established: step1Data.yearEstablished ? parseInt(step1Data.yearEstablished) : null,
+        
+        // Location fields from Step 2
+        county: step2Data.county,
+        sub_county: step2Data.subCounty,
+        ward: step2Data.ward,
+        physical_address: step2Data.physicalAddress,
+        postal_address: step2Data.postalAddress,
+        phone_number: step2Data.phoneNumber,
+        // Use 'email' for school contact (backend now accepts 'school_email' as alternative)
+        school_email: step2Data.email,
+        website: step2Data.website || null,
+        
+        // Admin fields from Step 3
+        admin_name: s3.fullName,
+        admin_email: s3.email,
+        password: s3.password,
+        tsc_number: s3.tscNo || null,
+        // Role field (optional)
+        role: s3.role || 'school_admin',
+        // National ID or Passport
+        national_id: s3.nationalIdOrPassport || null,
+        passport_number: s3.nationalIdOrPassport || null,
+        // Username (derived from email if not provided)
+        username: s3.username || s3.email.split('@')[0],
+        // Appointment date (use current date if not provided)
+        appointment_date: new Date().toISOString().split('T')[0],
       };
-      const res    = await fetch(`${API_URL}/api/v1/auth/register/school-admin`, {
+      const res    = await fetch(`${AUTH_API_URL}/v1/register/school-admin`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });

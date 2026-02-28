@@ -1,10 +1,31 @@
-# TODO - Redirect Signup to Admin Registration
+# School Registration API Fixes - TODO List
 
-## Task
-Divert the get started page (Frontend/src/pages/website-pages/signup.tsx) to use the admin-registration steps
+## Status: In Progress
 
-## Steps
-- [x] 1. Analyze codebase and understand structure
-- [ ] 2. Create main admin-registration page (index.tsx) that combines all steps
-- [ ] 3. Update App.tsx to add route for /admin-register
-- [ ] 4. Modify signup.tsx to redirect to /admin-register
+### Completed:
+- [ ] None yet
+
+### In Progress:
+- [ ] 1. Fix Backend Controller (schoolRegistration.controller.js)
+- [ ] 2. Update Backend Validator (school.validator.js)
+- [ ] 3. Fix Frontend Payload (index.tsx)
+
+---
+
+## Details:
+
+### 1. Backend Controller Fix
+- Map `school_email` → `email` for school contact
+- Add handling for `national_id`/`passport_number` fields
+- Add `appointment_date` handling (use current date if not provided)
+- Add `role` field handling
+- Add `username` handling
+
+### 2. Backend Validator Update
+- Add `school_email` field mapping
+- Make `confirm_password` optional for API
+- Add `role`, `national_id`, `passport_number`, `username` fields
+
+### 3. Frontend Payload Fix
+- Change `school_email` to `email`
+- Add missing fields: `role`, `national_id`, `passport_number`, `username`, `appointment_date`

@@ -1,16 +1,34 @@
 const OpenAI = require("openai");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
-  defaultHeaders: {
-    "HTTP-Referer": "https://cbc-education-systems.onrender.com",
-    "X-Title": "CBC Education Systems",
-  },
-});
+// Check for API key - support both OpenRouter and direct OpenAI
+const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+
+// Only instantiate OpenAI client if API key is provided
+let openai = null;
+if (apiKey) {
+  openai = new OpenAI({
+    apiKey: apiKey,
+    baseURL: process.env.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1" : undefined,
+    defaultHeaders: process.env.OPENROUTER_API_KEY ? {
+      "HTTP-Referer": "https://cbc-education-systems.onrender.com",
+      "X-Title": "CBC Education Systems",
+    } : undefined,
+  });
+} else {
+  console.error("WARNING: API key is missing. Please set either OPENROUTER_API_KEY or OPENAI_API_KEY in your .env file.");
+  console.error("Get your API key from: https://openrouter.ai/keys or https://platform.openai.com/api-keys");
+}
 
 exports.chat = async (req, res) => {
   try {
+    // Check if API key is available
+    if (!openai) {
+      return res.status(503).json({ 
+        error: "AI service is not configured. Please add your API key to the .env file.",
+        instructions: "Get your API key from https://openrouter.ai/keys or https://platform.openai.com/api-keys"
+      });
+    }
+
     const { messages, systemPrompt } = req.body;
 
     if (!messages || !Array.isArray(messages)) {

@@ -109,10 +109,26 @@ const registerSchoolAdmin = async (req, res) => {
     physical_address, postal_address, website,
     // Admin fields
     admin_name, admin_email, password,
-    tsc_number, appointment_date,
+    tsc_number, appointment_date, role,
+    // New fields from frontend
+    school_email, national_id, passport_number, username,
   } = req.body;
 
   try {
+
+    // ── Field Mapping: Handle frontend field name variations ─────────────────
+    // Frontend sends 'school_email' but we use 'email' for school contact
+    const schoolContactEmail = school_email || admin_email;
+
+    // Handle national_id vs passport_number
+    const nationalId = national_id || null;
+    const passportNumber = passport_number || null;
+
+    // Handle appointment_date - use current date if not provided
+    const effectiveAppointmentDate = appointment_date || new Date().toISOString().split('T')[0];
+
+    // Handle username - derive from email if not provided
+    const effectiveUsername = username || (admin_email ? admin_email.split('@')[0] : null);
 
     // ── Step 1: Check school code uniqueness ──────────────────
 
@@ -166,7 +182,7 @@ const registerSchoolAdmin = async (req, res) => {
         level,
         school_type,
         phone_number:      normalizedPhone,
-        email:             normalizedEmail,   // school contact email
+        email:             schoolContactEmail,   // Use mapped school email
         county:            county.trim(),
         sub_county:        sub_county.trim(),
         ward:              ward?.trim() || null,
@@ -272,8 +288,10 @@ const registerSchoolAdmin = async (req, res) => {
         user_id:          authUserId,
         school_id:        school.id,
         tsc_number:       tsc_number?.toUpperCase() || null,
-        appointment_date: appointment_date || new Date().toISOString().split('T')[0],
+        appointment_date: effectiveAppointmentDate,  // Use mapped appointment date
         is_principal:     true,
+        national_id:      nationalId,   // Add national_id
+        passport_number:  passportNumber, // Add passport_number
       });
 
     if (adminError) {

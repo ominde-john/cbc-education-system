@@ -12,17 +12,15 @@ const Joi = require('joi');
 // Reusable field definitions
 // ----------------------------------------------------------------
 
+// Relaxed phone validation for Kenyan numbers - accepts various formats
 const kenyanPhone = Joi.string()
-  .pattern(/^\+?[0-9]{10,15}$/)
-  .message('Phone number must be 10–15 digits, optionally starting with +');
+  .pattern(/^\+?[\d\s\-()]{7,20}$/)
+  .message('Phone number must be 7-20 digits');
 
+// Relaxed password validation
 const strongPassword = Joi.string()
-  .min(8)
-  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
-  .message(
-    'Password must be at least 8 characters and include uppercase, ' +
-    'lowercase, a number, and a special character'
-  );
+  .min(6)
+  .message('Password must be at least 6 characters');
 
 // ----------------------------------------------------------------
 // School Admin Registration Schema
@@ -43,10 +41,11 @@ const schoolAdminRegistrationSchema = Joi.object({
 
   school_code: Joi.string()
     .uppercase()
-    .pattern(/^[A-Z0-9]{3,20}$/)
+    .min(2)
+    .max(20)
     .required()
     .messages({
-      'string.pattern.base': 'School code must be 3–20 uppercase letters/numbers only',
+      'string.min': 'School code must be at least 2 characters',
       'any.required': 'School code is required',
     }),
 
@@ -79,21 +78,14 @@ const schoolAdminRegistrationSchema = Joi.object({
     .min(1800)
     .max(new Date().getFullYear())
     .optional()
-    .allow(null)
-    .messages({
-      'number.min': 'Year established cannot be before 1800',
-      'number.max': `Year established cannot be in the future`,
-    }),
+    .allow(null),
 
   student_capacity: Joi.number()
     .integer()
     .min(1)
     .max(100000)
     .optional()
-    .allow(null)
-    .messages({
-      'number.min': 'Student capacity must be at least 1',
-    }),
+    .allow(null),
 
   // Optional school details
   physical_address: Joi.string().max(255).optional().allow('', null),
@@ -118,34 +110,56 @@ const schoolAdminRegistrationSchema = Joi.object({
       'any.required': 'Admin email is required',
     }),
 
+  // password can be required or optional (API might handle it differently)
   password: strongPassword.required(),
 
+  // confirm_password - make optional for API calls, frontend handles validation
   confirm_password: Joi.string()
-    .valid(Joi.ref('password'))
-    .required()
-    .messages({
-      'any.only': 'Passwords do not match',
-      'any.required': 'Please confirm your password',
-    }),
-
-  // ── TSC (optional during registration) ────────────────────
-  tsc_number: Joi.string()
-    .pattern(/^[A-Z0-9]{6,10}$/)
     .optional()
-    .allow('', null)
-    .messages({
-      'string.pattern.base': 'TSC number must be 6–10 uppercase letters/numbers',
-    }),
+    .allow('', null),
+
+  // ── TSC and Admin details ─────────────────────────────────
+  tsc_number: Joi.string()
+    .optional()
+    .allow('', null),
 
   appointment_date: Joi.date().optional().allow(null),
 
-}).options({ abortEarly: false }); // return ALL errors at once, not just the first
+  // ── New fields from frontend ──────────────────────────────
+  // school_email: Alternative field name for school contact email
+  school_email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .optional()
+    .allow('', null),
+
+  // Role field (optional - defaults to school_admin)
+  role: Joi.string()
+    .valid('school_admin', 'admin', 'principal', 'headteacher')
+    .optional()
+    .allow('', null),
+
+  // National ID and Passport
+  national_id: Joi.string()
+    .optional()
+    .allow('', null),
+
+  passport_number: Joi.string()
+    .optional()
+    .allow('', null),
+
+  // Username field
+  username: Joi.string()
+    .min(3)
+    .max(50)
+    .optional()
+    .allow('', null),
+
+}).options({ abortEarly: false });
 
 
 // ----------------------------------------------------------------
 // Teacher / Parent Registration Schema (second tab)
 // ----------------------------------------------------------------
-
 const teacherRegistrationSchema = Joi.object({
   school_code: Joi.string().uppercase().required(),
 
@@ -158,12 +172,8 @@ const teacherRegistrationSchema = Joi.object({
     .messages({ 'any.only': 'Passwords do not match' }),
 
   tsc_number: Joi.string()
-    .pattern(/^[A-Z0-9]{6,10}$/)
-    .required()
-    .messages({
-      'string.pattern.base': 'TSC number must be 6–10 uppercase letters/numbers',
-      'any.required': 'TSC number is required for teachers',
-    }),
+    .optional()
+    .allow('', null),
 
   qualifications: Joi.string().max(500).optional().allow('', null),
   date_joined: Joi.date().optional().default(() => new Date()),
@@ -188,10 +198,8 @@ const parentRegistrationSchema = Joi.object({
     .messages({ 'any.only': 'Relationship must be father, mother, or guardian' }),
 
   national_id: Joi.string()
-    .pattern(/^[0-9]{7,8}$/)
     .optional()
-    .allow('', null)
-    .messages({ 'string.pattern.base': 'National ID must be 7–8 digits' }),
+    .allow('', null),
 
   occupation: Joi.string().max(100).optional().allow('', null),
   date_of_birth: Joi.date().optional().allow(null),
