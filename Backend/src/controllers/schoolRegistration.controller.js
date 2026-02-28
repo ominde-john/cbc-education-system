@@ -18,23 +18,35 @@ const { createClient } = require('@supabase/supabase-js');
 // NEVER expose this key to the frontend.
 // ----------------------------------------------------------------
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://flkgcmrrpgcpemcitzht.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://ywcrsgaxftooovqipkdr.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+console.log('🔧 Supabase URL:', supabaseUrl ? 'Set' : 'NOT SET');
+console.log('🔧 Service Role Key:', supabaseServiceKey ? 'Set (length: ' + supabaseServiceKey.length + ')' : 'NOT SET');
 
 if (!supabaseServiceKey) {
   console.error('❌ FATAL: SUPABASE_SERVICE_ROLE_KEY is not set. Admin operations require this key.');
+  console.error('🔧 Please set SUPABASE_SERVICE_ROLE_KEY in your .env file');
 }
 
-const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseServiceKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession:   false,
-    },
-  }
-);
+let supabaseAdmin = null;
+
+// Only create the client if we have the required keys
+if (supabaseUrl && supabaseServiceKey) {
+  supabaseAdmin = createClient(
+    supabaseUrl,
+    supabaseServiceKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession:   false,
+      },
+    }
+  );
+  console.log('✅ Supabase admin client initialized successfully');
+} else {
+  console.error('❌ Cannot initialize Supabase admin client: missing configuration');
+}
 
 // ----------------------------------------------------------------
 // HELPER — normalize Kenyan phone numbers to +254XXXXXXXXX
@@ -99,6 +111,16 @@ const respond = (res, statusCode, success, message, data = null, errors = null) 
 //   9. Seed id_sequences for this school
 //   10. Return tokens + school info
 // ================================================================
+
+if (!supabaseAdmin) {
+  console.error('[registerSchoolAdmin] Supabase admin client is not initialized');
+  return respond(res, 500, false, 'Server configuration error. Please contact support.');
+}
+
+if (!supabaseAdmin) {
+  console.error('[registerSchoolAdmin] Supabase admin client is not initialized');
+  return respond(res, 500, false, 'Server configuration error. Please contact support.');
+}
 
 const registerSchoolAdmin = async (req, res) => {
   const {
@@ -351,7 +373,11 @@ const registerSchoolAdmin = async (req, res) => {
 
   } catch (err) {
     console.error('[registerSchoolAdmin] Unexpected error:', err);
-    return respond(res, 500, false, 'An unexpected error occurred. Please try again.');
+    console.error('[registerSchoolAdmin] Error stack:', err.stack);
+    
+    // Provide more detailed error message
+    const errorMessage = err.message || 'Unknown error';
+    return respond(res, 500, false, `An unexpected error occurred: ${errorMessage}`);
   }
 };
 

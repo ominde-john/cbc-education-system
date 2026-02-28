@@ -93,15 +93,32 @@ export default function AdminRegistrationPage() {
     setStep3Data(d); await handleFinalSubmit(d);
   };
 
-const handleFinalSubmit = async (s3: SchoolRegistrationStep3 = step3Data) => {
+  // Map frontend LevelOffered values to backend expected values
+  const mapLevelToBackend = (level: string): string => {
+    const levelMap: Record<string, string> = {
+      'Pre-Primary': 'ecde',
+      'Lower Primary Education (Grade 1-3)': 'primary',
+      'Upper Primary Education (Grade 4-6)': 'primary',
+      'Junior Secondary School (JSS) (Grade 7-9)': 'junior_secondary',
+      'Senior Secondary School (SSS) (Grade 10-12)': 'senior_secondary',
+    };
+    return levelMap[level] || 'primary';
+  };
+
+  const handleFinalSubmit = async (s3: SchoolRegistrationStep3 = step3Data) => {
     setIsLoading(true);
     try {
+      // Map the first selected level to backend format
+      const backendLevel = step1Data.levelsOffered[0] 
+        ? mapLevelToBackend(step1Data.levelsOffered[0])
+        : 'primary';
+
       const payload = {
         // School fields from Step 1
         school_name: step1Data.name,
         school_code: step1Data.code,
         school_type: step1Data.schoolType || 'private',
-        level: step1Data.levelsOffered[0] || 'primary',
+        level: backendLevel,
         year_established: step1Data.yearEstablished ? parseInt(step1Data.yearEstablished) : null,
         
         // Location fields from Step 2
