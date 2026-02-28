@@ -123,7 +123,7 @@ export default function Header() {
               <Link to="/login">Log in</Link>
             </Button>
             <Button size="sm" className="rounded-full px-5" asChild>
-              <Link to="/signup">
+              <Link to="/admin-register">
                 Get Started
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
@@ -190,7 +190,7 @@ export default function Header() {
                     <Link to="/login">Log in</Link>
                   </Button>
                   <Button asChild onClick={closeMenus}>
-                    <Link to="/signup">Start Free</Link>
+                    <Link to="/admin-register">Start Free</Link>
                   </Button>
                 </div>
               </nav>

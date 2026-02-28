@@ -30,7 +30,7 @@ import ClientsPage from '@/pages/website-pages/ClientsPage';
 import Feature from "@/pages/website-pages/Features";
 
 // Admin Registration
-import SchoolRegistration from "@/pages/admin-registration/SchoolRegistration";
+import AdminRegistrationPage from "@/pages/admin-registration";
 
 // Student Pages
 import LearningMaterials from "@/pages/student/LearningMaterials";
@@ -171,6 +171,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/signup" element={<GetStartedPage />} />
+      <Route path="/admin-register" element={<AdminRegistrationPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/features" element={<Feature />} />
 
@@ -243,7 +244,6 @@ function AppRoutes() {
       />
 
       {/* ── Admin Registration ── */}
-      <Route path="/admin/register-school" element={<SchoolRegistration />} />
 
       {/* ── Admin Login (redirects to unified login) ── */}
       <Route path="/admin-login" element={<Navigate to="/login" replace />} />
