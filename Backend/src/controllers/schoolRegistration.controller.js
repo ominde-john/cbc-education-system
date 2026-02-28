@@ -202,6 +202,7 @@ const registerSchoolAdmin = async (req, res) => {
         name:              school_name.trim(),
         code:              normalizedCode,
         level,
+        levels_offered: [level],
         school_type,
         phone_number:      normalizedPhone,
         email:             schoolContactEmail,   // Use mapped school email
