@@ -86,15 +86,6 @@ export default function LoginPage() {
 
             {/* LEFT – Roles */}
             <div className="md:w-[45%] bg-primary/[0.04] p-8 flex flex-col animate-slide-in-left">
-              {/* Back */}
-              <button
-                onClick={handleGoBack}
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 text-sm self-start"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-
               {/* Logo */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-black mb-3 shadow-lg">
@@ -137,7 +128,7 @@ export default function LoginPage() {
             </div>
 
             {/* RIGHT – Form */}
-            <div className="md:w-[55%] p-8 md:p-10 flex flex-col justify-center animate-slide-in-right">
+            <div className="%] p-8 md:p-10md:w-[55 flex flex-col justify-center animate-slide-in-right">
               <div className="mb-8">
                 <h1 className="text-3xl font-bold text-foreground">Sign in</h1>
                 <p className="text-muted-foreground mt-1">to access your account</p>
@@ -212,10 +203,29 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="text-center mt-6">
-                <button type="button" className="text-sm text-primary hover:underline transition-colors">
-                  Forgot password?
-                </button>
+              {/* Bottom section with Forgot password and Back button */}
+              <div className="mt-6 pt-6 border-t border-border/30">
+                <div className="flex flex-col gap-4">
+                  <button 
+                    type="button" 
+                    className="text-sm text-primary hover:underline transition-colors text-left w-fit"
+                  >
+                    Forgot password?
+                  </button>
+                  
+                  {/* Back Button with glassmorphism background - aligned left */}
+                  <div className="relative group w-fit">
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/40 to-white/20 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm group-hover:shadow-md transition-shadow duration-300" />
+                    <button
+                      type="button"
+                      onClick={() => navigate('/')}
+                      className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F3F6FA] border border-gray-200/50 text-gray-700 font-medium text-sm hover:bg-[#E8ECF2] hover:shadow-md transition-all duration-200"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to Home
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
