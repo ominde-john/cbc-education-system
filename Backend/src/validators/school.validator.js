@@ -14,8 +14,9 @@ const Joi = require('joi');
 
 // Relaxed phone validation for Kenyan numbers - accepts various formats
 const kenyanPhone = Joi.string()
-  .pattern(/^\+?[\d\s\-()]{7,20}$/)
-  .message('Phone number must be 7-20 digits');
+  .min(7)
+  .max(25)
+  .message('Phone number must be 7-25 characters');
 
 // Relaxed password validation
 const strongPassword = Joi.string()
@@ -90,7 +91,7 @@ const schoolAdminRegistrationSchema = Joi.object({
   // Optional school details
   physical_address: Joi.string().max(255).optional().allow('', null),
   postal_address: Joi.string().max(100).optional().allow('', null),
-  website: Joi.string().uri().optional().allow('', null),
+  website: Joi.string().optional().allow('', null),
 
   // ── Admin (user) fields ────────────────────────────────────
   admin_name: Joi.string()
@@ -133,8 +134,9 @@ const schoolAdminRegistrationSchema = Joi.object({
     .allow('', null),
 
   // Role field (optional - defaults to school_admin)
+  // Accepts multiple formats including Administrator from frontend
   role: Joi.string()
-    .valid('school_admin', 'admin', 'principal', 'headteacher')
+    .valid('school_admin', 'admin', 'principal', 'headteacher', 'Administrator')
     .optional()
     .allow('', null),
 
@@ -215,6 +217,7 @@ const validate = (schema) => (req, res, next) => {
   const { error, value } = schema.validate(req.body);
 
   if (error) {
+    console.log('[Validator] Full error:', JSON.stringify(error.details, null, 2));
     const errors = error.details.map((d) => ({
       field:   d.path.join('.'),
       message: d.message.replace(/['"]/g, ''),
