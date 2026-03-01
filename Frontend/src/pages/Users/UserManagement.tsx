@@ -27,7 +27,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from '@/components/ui/tooltip';
-import StatsCard from '@/components/dashboard/StatCard';
+import UserStatsCard from '@/components/dashboard/UserStatsCard';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -496,15 +496,20 @@ const UserManagement = () => {
     </>
   );
 
+  // StatsCard Component - Using UserStatsCard with gradient backgrounds
+  const StatsCard = ({ title, value, type }: { title: string; value: number; type: 'total' | 'super_admin' | 'school_admin' | 'active' | 'locked' }) => (
+    <UserStatsCard title={title} value={value} type={type} />
+  );
+
   return (
     <div className="min-h-screen p-6 space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatsCard title="Total Users" value={stats.total} icon={Users} iconClassName="bg-primary/10 text-primary" />
-        <StatsCard title="Super Admins" value={stats.superAdmins} icon={Crown} iconClassName="bg-destructive/10 text-destructive" />
-        <StatsCard title="School Admins" value={stats.schoolAdmins} icon={School} iconClassName="bg-chart-2/20 text-chart-2" />
-        <StatsCard title="Active Users" value={stats.active} icon={UserCheck} iconClassName="bg-chart-4/20 text-chart-4" />
-        <StatsCard title="Locked Users" value={stats.locked} icon={Lock} iconClassName="bg-destructive/10 text-destructive" />
+        <StatsCard title="Total Users" value={stats.total} type="total" />
+        <StatsCard title="Super Admins" value={stats.superAdmins} type="super_admin" />
+        <StatsCard title="School Admins" value={stats.schoolAdmins} type="school_admin" />
+        <StatsCard title="Active Users" value={stats.active} type="active" />
+        <StatsCard title="Locked Users" value={stats.locked} type="locked" />
       </div>
 
       {/* Filters */}
