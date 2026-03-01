@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,23 +21,42 @@ import { format, differenceInBusinessDays, isWithinInterval, parseISO, isBefore,
 import { cn } from '@/lib/utils';
 import {
   CalendarDays, Plus, Edit2, Trash2, Eye, AlertTriangle, CheckCircle2,
-  Clock, CalendarIcon, ChevronRight, BookOpen, FileText, Sparkles, Info
+  Clock, CalendarIcon, ChevronRight, BookOpen, FileText, Sparkles, Info, Loader2
 } from 'lucide-react';
 
-// Types
+// Use environment variable for API URL
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (import.meta.env.PROD) {
+    return 'https://cbc-education-system-1.onrender.com';
+  }
+  return '';
+};
+
+const API_URL = getApiUrl();
+
+// Types - matching backend response
 interface AcademicYear {
   id: string;
+  school_id: string;
+  name: string;
   year: number;
-  startDate: string;
-  endDate: string;
-  status: 'active' | 'upcoming' | 'closed';
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+  is_active: boolean;
+  created_at: string;
+  created_by: string | null;
+  updated_at: string;
+  updated_by: string | null;
 }
 
 interface Term {
   id: string;
   name: string;
-  code: string;
-  academicYear: number;
+  year: number;
   startDate: string;
   endDate: string;
   midtermDate?: string;
@@ -45,53 +64,9 @@ interface Term {
   holidays: { date: string; name: string }[];
   notes: string;
   status: 'active' | 'upcoming' | 'completed';
+  is_current: boolean;
+  is_active: boolean;
 }
-
-// Mock Data
-const mockYears: AcademicYear[] = [
-  { id: '1', year: 2025, startDate: '2025-01-06', endDate: '2025-11-28', status: 'active' },
-  { id: '2', year: 2026, startDate: '2026-01-05', endDate: '2026-11-27', status: 'upcoming' },
-  { id: '3', year: 2024, startDate: '2024-01-08', endDate: '2024-11-29', status: 'closed' },
-];
-
-const mockTerms: Term[] = [
-  {
-    id: '1', name: 'Term 1', code: 'TRM1-2025', academicYear: 2025,
-    startDate: '2025-01-06', endDate: '2025-04-04', midtermDate: '2025-02-14',
-    closingDate: '2025-04-04',
-    holidays: [{ date: '2025-02-14', name: 'Midterm Break Start' }, { date: '2025-02-21', name: 'Midterm Break End' }],
-    notes: 'Standard CBC Term 1 schedule.', status: 'completed',
-  },
-  {
-    id: '2', name: 'Term 2', code: 'TRM2-2025', academicYear: 2025,
-    startDate: '2025-04-28', endDate: '2025-08-01', midtermDate: '2025-06-06',
-    closingDate: '2025-08-01',
-    holidays: [{ date: '2025-05-01', name: 'Labour Day' }, { date: '2025-06-01', name: 'Madaraka Day' }],
-    notes: 'Includes national assessment week in July.', status: 'active',
-  },
-  {
-    id: '3', name: 'Term 3', code: 'TRM3-2025', academicYear: 2025,
-    startDate: '2025-08-25', endDate: '2025-11-28', midtermDate: '2025-10-10',
-    closingDate: '2025-11-28',
-    holidays: [{ date: '2025-10-10', name: 'Huduma Day' }, { date: '2025-10-20', name: 'Mashujaa Day' }],
-    notes: 'Final term with end-of-year assessments.', status: 'upcoming',
-  },
-  {
-    id: '4', name: 'Term 1', code: 'TRM1-2026', academicYear: 2026,
-    startDate: '2026-01-05', endDate: '2026-04-03', midtermDate: '2026-02-13',
-    closingDate: '2026-04-03', holidays: [], notes: '', status: 'upcoming',
-  },
-  {
-    id: '5', name: 'Term 2', code: 'TRM2-2026', academicYear: 2026,
-    startDate: '2026-04-27', endDate: '2026-07-31', closingDate: '2026-07-31',
-    holidays: [], notes: '', status: 'upcoming',
-  },
-  {
-    id: '6', name: 'Term 3', code: 'TRM3-2026', academicYear: 2026,
-    startDate: '2026-08-24', endDate: '2026-11-27', closingDate: '2026-11-27',
-    holidays: [], notes: '', status: 'upcoming',
-  },
-];
 
 const statusConfig = {
   active: { label: 'Active', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300', icon: CheckCircle2 },
@@ -116,7 +91,7 @@ function detectConflicts(terms: Term[]): string[] {
   for (let i = 0; i < terms.length; i++) {
     for (let j = i + 1; j < terms.length; j++) {
       const a = terms[i], b = terms[j];
-      if (a.academicYear !== b.academicYear) continue;
+      if (a.year !== b.year) continue;
       const aStart = parseISO(a.startDate), aEnd = parseISO(a.endDate);
       const bStart = parseISO(b.startDate), bEnd = parseISO(b.endDate);
       if (isBefore(aStart, bEnd) && isAfter(aEnd, bStart)) {
@@ -126,6 +101,155 @@ function detectConflicts(terms: Term[]): string[] {
   }
   return warnings;
 }
+
+// Helper to get auth token
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('cbc_access_token');
+};
+
+// API functions
+const fetchAcademicYears = async (schoolId: string): Promise<AcademicYear[]> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/academic-terms/school/${schoolId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch academic terms');
+  }
+  
+  const data = await response.json();
+  return data.data || [];
+};
+
+const fetchCurrentTerm = async (schoolId: string): Promise<AcademicYear | null> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/academic-terms/school/${schoolId}/current`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    return null;
+  }
+  
+  const data = await response.json();
+  return data.data || null;
+};
+
+const createAcademicTerm = async (termData: {
+  school_id: string;
+  name: string;
+  year: number;
+  start_date: string;
+  end_date: string;
+  is_current?: boolean;
+  is_active?: boolean;
+}): Promise<AcademicYear> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/academic-terms`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(termData),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to create academic term');
+  }
+  
+  const data = await response.json();
+  return data.data;
+};
+
+const updateAcademicTerm = async (id: string, termData: {
+  name?: string;
+  year?: number;
+  start_date?: string;
+  end_date?: string;
+  is_current?: boolean;
+  is_active?: boolean;
+}): Promise<AcademicYear> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/academic-terms/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(termData),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update academic term');
+  }
+  
+  const data = await response.json();
+  return data.data;
+};
+
+const setCurrentTerm = async (id: string): Promise<AcademicYear> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/academic-terms/${id}/set-current`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to set current term');
+  }
+  
+  const data = await response.json();
+  return data.data;
+};
+
+const toggleTermStatus = async (id: string): Promise<AcademicYear> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/academic-terms/${id}/toggle-status`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to toggle term status');
+  }
+  
+  const data = await response.json();
+  return data.data;
+};
+
+const deleteAcademicTerm = async (id: string): Promise<void> => {
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/api/v1/academic-terms/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to delete academic term');
+  }
+};
 
 // Date Picker helper
 const DatePickerField = ({ label, value, onChange }: { label: string; value?: string; onChange: (d: string) => void }) => (
@@ -152,22 +276,106 @@ const DatePickerField = ({ label, value, onChange }: { label: string; value?: st
 );
 
 const Calendar = () => {
-  const [selectedYear, setSelectedYear] = useState<string>('2025');
-  const [terms, setTerms] = useState<Term[]>(mockTerms);
-  const [years] = useState<AcademicYear[]>(mockYears);
+  // Get user from localStorage
+  const [userData, setUserData] = useState<{ schoolId: string | null; role: string } | null>(null);
+  const [terms, setTerms] = useState<Term[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState<string>('');
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [currentTermId, setCurrentTermId] = useState<string | null>(null);
   const [detailTerm, setDetailTerm] = useState<Term | null>(null);
   const [editTerm, setEditTerm] = useState<Term | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('terms');
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Initialize user data from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('cbc_user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUserData({ schoolId: user.schoolId, role: user.role });
+      } catch (e) {
+        console.error('Failed to parse user data:', e);
+      }
+    }
+  }, []);
+
+  // Fetch academic years when schoolId is available
+  const loadAcademicTerms = useCallback(async () => {
+    if (!userData?.schoolId) return;
+    
+    setLoading(true);
+    try {
+      const data = await fetchAcademicYears(userData.schoolId);
+      
+      // Transform backend data to frontend format
+      const transformedTerms: Term[] = data.map(t => ({
+        id: t.id,
+        name: t.name,
+        year: t.year,
+        startDate: t.start_date,
+        endDate: t.end_date,
+        closingDate: t.end_date,
+        holidays: [],
+        notes: '',
+        status: t.is_active ? (t.is_current ? 'active' : 'upcoming') : 'completed',
+        is_current: t.is_current,
+        is_active: t.is_active,
+      }));
+      
+      setTerms(transformedTerms);
+      
+      // Set current term
+      const current = data.find((t: AcademicYear) => t.is_current);
+      if (current) {
+        setCurrentTermId(current.id);
+        setSelectedYear(String(current.year));
+      } else if (data.length > 0) {
+        // Use first term's year if no current term
+        setSelectedYear(String(data[0].year));
+      }
+      
+      // Extract available years
+      const years = [...new Set(data.map((t: AcademicYear) => t.year))].sort((a, b) => b - a);
+      setAvailableYears(years);
+      
+      // If no years yet, set default
+      if (years.length === 0) {
+        const currentYear = new Date().getFullYear();
+        setAvailableYears([currentYear, currentYear + 1]);
+        setSelectedYear(String(currentYear));
+      }
+    } catch (error) {
+      console.error('Failed to load academic terms:', error);
+      toast.error('Failed to load academic terms');
+      // Set default years on error
+      const currentYear = new Date().getFullYear();
+      setAvailableYears([currentYear, currentYear + 1]);
+      setSelectedYear(String(currentYear));
+    } finally {
+      setLoading(false);
+    }
+  }, [userData?.schoolId]);
+
+  useEffect(() => {
+    if (userData?.schoolId) {
+      loadAcademicTerms();
+    }
+  }, [userData?.schoolId, loadAcademicTerms]);
 
   const yearNum = parseInt(selectedYear);
-  const filteredTerms = useMemo(() => terms.filter(t => t.academicYear === yearNum), [terms, yearNum]);
-  const currentYear = years.find(y => y.year === yearNum);
+  const filteredTerms = useMemo(() => terms.filter(t => t.year === yearNum), [terms, yearNum]);
   const conflicts = useMemo(() => detectConflicts(filteredTerms), [filteredTerms]);
 
-  const [newTerm, setNewTerm] = useState<Partial<Term>>({ academicYear: yearNum, holidays: [], notes: '' });
+  const [newTerm, setNewTerm] = useState<Partial<Term>>({ holidays: [], notes: '' });
 
-  const handleAddTerm = () => {
+  const handleAddTerm = async () => {
+    if (!userData?.schoolId) {
+      toast.error('School ID not found. Please login again.');
+      return;
+    }
     if (!newTerm.name || !newTerm.startDate || !newTerm.endDate) {
       toast.error('Please fill in Term Name, Start Date and End Date.');
       return;
@@ -176,66 +384,235 @@ const Calendar = () => {
       toast.error('Start date must be before end date.');
       return;
     }
-    const term: Term = {
-      id: crypto.randomUUID(),
-      name: newTerm.name!,
-      code: `TRM${filteredTerms.length + 1}-${yearNum}`,
-      academicYear: yearNum,
-      startDate: newTerm.startDate!,
-      endDate: newTerm.endDate!,
-      midtermDate: newTerm.midtermDate,
-      closingDate: newTerm.endDate!,
-      holidays: [],
-      notes: newTerm.notes || '',
-      status: 'upcoming',
-    };
-    setTerms(prev => [...prev, term]);
-    setShowAddDialog(false);
-    setNewTerm({ academicYear: yearNum, holidays: [], notes: '' });
-    toast.success(`${term.name} added successfully.`);
+
+    setActionLoading(true);
+    try {
+      const created = await createAcademicTerm({
+        school_id: userData.schoolId,
+        name: newTerm.name!,
+        year: yearNum,
+        start_date: newTerm.startDate!,
+        end_date: newTerm.endDate!,
+        is_current: false,
+        is_active: true,
+      });
+      
+      const newTermData: Term = {
+        id: created.id,
+        name: created.name,
+        year: created.year,
+        startDate: created.start_date,
+        endDate: created.end_date,
+        closingDate: created.end_date,
+        holidays: [],
+        notes: '',
+        status: 'upcoming',
+        is_current: created.is_current,
+        is_active: created.is_active,
+      };
+      
+      setTerms(prev => [...prev, newTermData]);
+      
+      // Update available years
+      if (!availableYears.includes(yearNum)) {
+        setAvailableYears(prev => [...prev, yearNum].sort((a, b) => b - a));
+      }
+      
+      setShowAddDialog(false);
+      setNewTerm({ holidays: [], notes: '' });
+      toast.success(`${created.name} added successfully.`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add term');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleDeleteTerm = (id: string) => {
-    setTerms(prev => prev.filter(t => t.id !== id));
-    toast.success('Term deleted.');
+  const handleDeleteTerm = async (id: string) => {
+    if (currentTermId === id) {
+      toast.error('Cannot delete the current active term. Set another term as current first.');
+      return;
+    }
+    
+    setActionLoading(true);
+    try {
+      await deleteAcademicTerm(id);
+      setTerms(prev => prev.filter(t => t.id !== id));
+      toast.success('Term deleted.');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete term');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editTerm) return;
     if (isAfter(parseISO(editTerm.startDate), parseISO(editTerm.endDate))) {
       toast.error('Start date must be before end date.');
       return;
     }
-    setTerms(prev => prev.map(t => t.id === editTerm.id ? editTerm : t));
-    setEditTerm(null);
-    toast.success('Term updated.');
+
+    setActionLoading(true);
+    try {
+      const updated = await updateAcademicTerm(editTerm.id, {
+        name: editTerm.name,
+        year: editTerm.year,
+        start_date: editTerm.startDate,
+        end_date: editTerm.endDate,
+      });
+      
+      setTerms(prev => prev.map(t => t.id === editTerm.id ? {
+        ...t,
+        name: updated.name,
+        year: updated.year,
+        startDate: updated.start_date,
+        endDate: updated.end_date,
+        closingDate: updated.end_date,
+      } : t));
+      
+      setEditTerm(null);
+      toast.success('Term updated.');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update term');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleAutoGenerate = () => {
+  const handleSetCurrent = async (id: string) => {
+    setActionLoading(true);
+    try {
+      const updated = await setCurrentTerm(id);
+      
+      setTerms(prev => prev.map(t => ({
+        ...t,
+        is_current: t.id === id,
+        status: t.id === id ? 'active' : (t.is_active ? 'upcoming' : 'completed'),
+      })));
+      
+      setCurrentTermId(id);
+      if (String(updated.year) !== selectedYear) {
+        setSelectedYear(String(updated.year));
+      }
+      
+      toast.success(`${updated.name} is now the current term.`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to set current term');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (id: string) => {
+    setActionLoading(true);
+    try {
+      const updated = await toggleTermStatus(id);
+      
+      setTerms(prev => prev.map(t => t.id === id ? {
+        ...t,
+        is_active: updated.is_active,
+        status: updated.is_active ? (updated.is_current ? 'active' : 'upcoming') : 'completed',
+      } : t));
+      
+      toast.success(`Term ${updated.is_active ? 'activated' : 'deactivated'}.`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to toggle term status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAutoGenerate = async () => {
+    if (!userData?.schoolId) {
+      toast.error('School ID not found. Please login again.');
+      return;
+    }
     if (filteredTerms.length >= 3) {
       toast.info('3 terms already exist for this year.');
       return;
     }
-    const generated: Term[] = [
-      { id: crypto.randomUUID(), name: 'Term 1', code: `TRM1-${yearNum}`, academicYear: yearNum, startDate: `${yearNum}-01-06`, endDate: `${yearNum}-04-04`, midtermDate: `${yearNum}-02-14`, closingDate: `${yearNum}-04-04`, holidays: [], notes: 'Auto-generated.', status: 'upcoming' },
-      { id: crypto.randomUUID(), name: 'Term 2', code: `TRM2-${yearNum}`, academicYear: yearNum, startDate: `${yearNum}-04-28`, endDate: `${yearNum}-08-01`, midtermDate: `${yearNum}-06-06`, closingDate: `${yearNum}-08-01`, holidays: [], notes: 'Auto-generated.', status: 'upcoming' },
-      { id: crypto.randomUUID(), name: 'Term 3', code: `TRM3-${yearNum}`, academicYear: yearNum, startDate: `${yearNum}-08-25`, endDate: `${yearNum}-11-28`, midtermDate: `${yearNum}-10-10`, closingDate: `${yearNum}-11-28`, holidays: [], notes: 'Auto-generated.', status: 'upcoming' },
-    ];
-    const existing = terms.filter(t => t.academicYear !== yearNum);
-    setTerms([...existing, ...generated]);
-    toast.success(`3 terms auto-generated for ${yearNum}.`);
+
+    setActionLoading(true);
+    try {
+      // Generate 3 terms
+      const termNames = ['Term 1', 'Term 2', 'Term 3'];
+      const newTerms: Term[] = [];
+      
+      for (let i = 0; i < 3; i++) {
+        const termData = {
+          school_id: userData.schoolId,
+          name: termNames[i],
+          year: yearNum,
+          start_date: `${yearNum}-01-06`,
+          end_date: `${yearNum}-04-04`,
+          is_current: i === 0, // First term is current
+          is_active: true,
+        };
+        
+        // Adjust dates for each term
+        if (i === 1) {
+          termData.start_date = `${yearNum}-04-28`;
+          termData.end_date = `${yearNum}-08-01`;
+        } else if (i === 2) {
+          termData.start_date = `${yearNum}-08-25`;
+          termData.end_date = `${yearNum}-11-28`;
+        }
+        
+        const created = await createAcademicTerm(termData);
+        newTerms.push({
+          id: created.id,
+          name: created.name,
+          year: created.year,
+          startDate: created.start_date,
+          endDate: created.end_date,
+          closingDate: created.end_date,
+          holidays: [],
+          notes: 'Auto-generated.',
+          status: created.is_current ? 'active' : 'upcoming',
+          is_current: created.is_current,
+          is_active: created.is_active,
+        });
+        
+        if (created.is_current) {
+          setCurrentTermId(created.id);
+        }
+      }
+      
+      setTerms(prev => [...prev.filter(t => t.year !== yearNum), ...newTerms]);
+      
+      // Update available years
+      if (!availableYears.includes(yearNum)) {
+        setAvailableYears(prev => [...prev, yearNum].sort((a, b) => b - a));
+      }
+      
+      toast.success(`3 terms auto-generated for ${yearNum}.`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to auto-generate terms');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Summary stats
   const totalDays = filteredTerms.reduce((sum, t) => sum + calcInstructionDays(t.startDate, t.endDate, t.holidays), 0);
-  const activeTerm = filteredTerms.find(t => t.status === 'active');
+  const activeTerm = filteredTerms.find(t => t.is_current);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading academic terms...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <div className="p-4 md:p-6 space-y-6">
-        {/* Breadcrumb */}
-     
-
         {/* Page Title + Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -245,20 +622,20 @@ const Calendar = () => {
           <div className="flex items-center gap-3">
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue />
+                <SelectValue placeholder="Select year" />
               </SelectTrigger>
               <SelectContent>
-                {years.map(y => (
-                  <SelectItem key={y.id} value={String(y.year)}>{y.year} Academic Year</SelectItem>
+                {availableYears.map(y => (
+                  <SelectItem key={y} value={String(y)}>{y} Academic Year</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={handleAutoGenerate} className="gap-2">
-              <Sparkles className="h-4 w-4" />
+            <Button variant="outline" onClick={handleAutoGenerate} className="gap-2" disabled={actionLoading}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               <span className="hidden sm:inline">Auto-Generate</span>
             </Button>
-            <Button onClick={() => { setNewTerm({ academicYear: yearNum, holidays: [], notes: '' }); setShowAddDialog(true); }} className="gap-2">
-              <Plus className="h-4 w-4" />
+            <Button onClick={() => { setNewTerm({ holidays: [], notes: '' }); setShowAddDialog(true); }} className="gap-2" disabled={actionLoading}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Add Term
             </Button>
           </div>
@@ -325,24 +702,6 @@ const Calendar = () => {
           </Card>
         </div>
 
-        {/* Academic Year Info */}
-        {currentYear && (
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">{currentYear.year} Academic Year</CardTitle>
-                  <CardDescription>{format(parseISO(currentYear.startDate), 'MMM d, yyyy')} — {format(parseISO(currentYear.endDate), 'MMM d, yyyy')}</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  {(() => { const s = statusConfig[currentYear.status]; return <Badge className={cn('gap-1', s.color)}><s.icon className="h-3 w-3" />{s.label}</Badge>; })()}
-                  <Button variant="outline" size="sm"><Edit2 className="h-3.5 w-3.5 mr-1" />Edit Year</Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        )}
-
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
@@ -362,9 +721,16 @@ const Calendar = () => {
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">{term.name}</CardTitle>
-                        <Badge className={cn('gap-1', sc.color)}><sc.icon className="h-3 w-3" />{sc.label}</Badge>
+                        <div className="flex items-center gap-2">
+                          {term.is_current && (
+                            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 gap-1">
+                              <CheckCircle2 className="h-3 w-3" />Current
+                            </Badge>
+                          )}
+                          <Badge className={cn('gap-1', sc.color)}><sc.icon className="h-3 w-3" />{sc.label}</Badge>
+                        </div>
                       </div>
-                      <CardDescription className="font-mono text-xs">{term.code}</CardDescription>
+                      <CardDescription className="font-mono text-xs">Year {term.year}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="grid grid-cols-2 gap-3 text-sm">
@@ -376,23 +742,15 @@ const Calendar = () => {
                           <p className="text-muted-foreground text-xs">End Date</p>
                           <p className="font-medium">{format(parseISO(term.endDate), 'MMM d, yyyy')}</p>
                         </div>
-                        {term.midtermDate && (
-                          <div>
-                            <p className="text-muted-foreground text-xs">Midterm</p>
-                            <p className="font-medium">{format(parseISO(term.midtermDate), 'MMM d')}</p>
-                          </div>
-                        )}
                         <div>
                           <p className="text-muted-foreground text-xs">Instruction Days</p>
                           <p className="font-bold text-primary">{days} days</p>
                         </div>
-                      </div>
-                      {term.holidays.length > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Info className="h-3 w-3" />
-                          {term.holidays.length} holiday(s) registered
+                        <div>
+                          <p className="text-muted-foreground text-xs">Status</p>
+                          <p className="font-medium">{term.is_active ? 'Active' : 'Inactive'}</p>
                         </div>
-                      )}
+                      </div>
                       <Separator />
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => setDetailTerm(term)}>
@@ -401,10 +759,15 @@ const Calendar = () => {
                         <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => setEditTerm({ ...term })}>
                           <Edit2 className="h-3.5 w-3.5" />Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive" onClick={() => handleDeleteTerm(term.id)}>
+                        <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive" onClick={() => handleDeleteTerm(term.id)} disabled={actionLoading}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
+                      {!term.is_current && term.is_active && (
+                        <Button variant="outline" size="sm" className="w-full gap-1 text-amber-600 hover:text-amber-700" onClick={() => handleSetCurrent(term.id)} disabled={actionLoading}>
+                          <CheckCircle2 className="h-3.5 w-3.5" />Set as Current
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -425,12 +788,11 @@ const Calendar = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Code</TableHead>
                     <TableHead>Term</TableHead>
                     <TableHead>Start</TableHead>
                     <TableHead>End</TableHead>
-                    <TableHead>Midterm</TableHead>
                     <TableHead>Days</TableHead>
+                    <TableHead>Current</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -440,18 +802,23 @@ const Calendar = () => {
                     const sc = statusConfig[term.status];
                     return (
                       <TableRow key={term.id}>
-                        <TableCell className="font-mono text-xs">{term.code}</TableCell>
                         <TableCell className="font-medium">{term.name}</TableCell>
                         <TableCell>{format(parseISO(term.startDate), 'MMM d, yyyy')}</TableCell>
                         <TableCell>{format(parseISO(term.endDate), 'MMM d, yyyy')}</TableCell>
-                        <TableCell>{term.midtermDate ? format(parseISO(term.midtermDate), 'MMM d') : '—'}</TableCell>
                         <TableCell className="font-bold text-primary">{calcInstructionDays(term.startDate, term.endDate, term.holidays)}</TableCell>
+                        <TableCell>
+                          {term.is_current ? (
+                            <Badge className="bg-amber-100 text-amber-800">Current</Badge>
+                          ) : (
+                            <Button variant="ghost" size="sm" onClick={() => handleSetCurrent(term.id)} disabled={actionLoading}>Set</Button>
+                          )}
+                        </TableCell>
                         <TableCell><Badge className={cn('gap-1', sc.color)}>{sc.label}</Badge></TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTerm(term)}><Eye className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditTerm({ ...term })}><Edit2 className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteTerm(term.id)}><Trash2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteTerm(term.id)} disabled={actionLoading}><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -472,7 +839,7 @@ const Calendar = () => {
                     return (
                       <div key={term.id} className="flex gap-4 pb-8 last:pb-0">
                         <div className="flex flex-col items-center">
-                          <div className={cn('h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold', term.status === 'active' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+                          <div className={cn('h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold', term.is_current ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
                             {i + 1}
                           </div>
                           {i < filteredTerms.length - 1 && <div className="w-0.5 flex-1 bg-border mt-2" />}
@@ -480,6 +847,7 @@ const Calendar = () => {
                         <div className="flex-1 pt-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold">{term.name}</h3>
+                            {term.is_current && <Badge className="bg-amber-100 text-amber-800 text-xs">Current</Badge>}
                             <Badge className={cn('gap-1 text-xs', sc.color)}>{sc.label}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -502,43 +870,22 @@ const Calendar = () => {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{detailTerm?.name} Details</DialogTitle>
-            <DialogDescription>Term code: {detailTerm?.code}</DialogDescription>
+            <DialogDescription>Academic term for {detailTerm?.year}</DialogDescription>
           </DialogHeader>
           {detailTerm && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div><p className="text-muted-foreground text-xs">Start Date</p><p className="font-medium">{format(parseISO(detailTerm.startDate), 'PPP')}</p></div>
                 <div><p className="text-muted-foreground text-xs">End Date</p><p className="font-medium">{format(parseISO(detailTerm.endDate), 'PPP')}</p></div>
-                {detailTerm.midtermDate && <div><p className="text-muted-foreground text-xs">Midterm Break</p><p className="font-medium">{format(parseISO(detailTerm.midtermDate), 'PPP')}</p></div>}
-                <div><p className="text-muted-foreground text-xs">Closing Date</p><p className="font-medium">{format(parseISO(detailTerm.closingDate), 'PPP')}</p></div>
                 <div><p className="text-muted-foreground text-xs">Instruction Days</p><p className="font-bold text-primary">{calcInstructionDays(detailTerm.startDate, detailTerm.endDate, detailTerm.holidays)}</p></div>
-                <div><p className="text-muted-foreground text-xs">Status</p><Badge className={cn('gap-1 mt-1', statusConfig[detailTerm.status].color)}>{statusConfig[detailTerm.status].label}</Badge></div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {detailTerm.is_current && <Badge className="bg-amber-100 text-amber-800">Current</Badge>}
+                    <Badge className={cn('gap-1', statusConfig[detailTerm.status].color)}>{statusConfig[detailTerm.status].label}</Badge>
+                  </div>
+                </div>
               </div>
-              {detailTerm.holidays.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-medium mb-2">Holidays & Closures</p>
-                    <div className="space-y-1">
-                      {detailTerm.holidays.map((h, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm bg-muted/50 rounded-lg px-3 py-2">
-                          <span>{h.name}</span>
-                          <span className="text-muted-foreground">{format(parseISO(h.date), 'MMM d')}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-              {detailTerm.notes && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-medium mb-1">Notes</p>
-                    <p className="text-sm text-muted-foreground">{detailTerm.notes}</p>
-                  </div>
-                </>
-              )}
             </div>
           )}
         </DialogContent>
@@ -561,16 +908,14 @@ const Calendar = () => {
                 <DatePickerField label="Start Date" value={editTerm.startDate} onChange={d => setEditTerm({ ...editTerm, startDate: d })} />
                 <DatePickerField label="End Date" value={editTerm.endDate} onChange={d => setEditTerm({ ...editTerm, endDate: d, closingDate: d })} />
               </div>
-              <DatePickerField label="Midterm Date (optional)" value={editTerm.midtermDate} onChange={d => setEditTerm({ ...editTerm, midtermDate: d })} />
-              <div className="space-y-1.5">
-                <Label>Notes</Label>
-                <Textarea value={editTerm.notes} onChange={e => setEditTerm({ ...editTerm, notes: e.target.value })} rows={3} />
-              </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTerm(null)}>Cancel</Button>
-            <Button onClick={handleSaveEdit}>Save Changes</Button>
+            <Button onClick={handleSaveEdit} disabled={actionLoading}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -598,7 +943,6 @@ const Calendar = () => {
               <DatePickerField label="Start Date" value={newTerm.startDate} onChange={d => setNewTerm({ ...newTerm, startDate: d })} />
               <DatePickerField label="End Date" value={newTerm.endDate} onChange={d => setNewTerm({ ...newTerm, endDate: d })} />
             </div>
-            <DatePickerField label="Midterm Date (optional)" value={newTerm.midtermDate} onChange={d => setNewTerm({ ...newTerm, midtermDate: d })} />
             <div className="space-y-1.5">
               <Label>Notes</Label>
               <Textarea value={newTerm.notes || ''} onChange={e => setNewTerm({ ...newTerm, notes: e.target.value })} rows={3} placeholder="Additional notes..." />
@@ -606,7 +950,10 @@ const Calendar = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={handleAddTerm}>Add Term</Button>
+            <Button onClick={handleAddTerm} disabled={actionLoading}>
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Add Term
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
