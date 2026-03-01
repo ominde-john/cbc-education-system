@@ -15,7 +15,24 @@ import {
   SchoolRegistrationStep3,
 } from '@/types/school';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Use environment variable for API URL, fallback to relative path for development
+// In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
+// Use empty string (relative path) in development to leverage Vite proxy
+// Production fallback: Use Render backend URL when deployed on Vercel
+const getApiUrl = () => {
+  // If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In production (build), use the Render backend
+  if (import.meta.env.PROD) {
+    return 'https://cbc-education-system-1.onrender.com';
+  }
+  // In development, use relative path to leverage Vite proxy
+  return '';
+};
+
+const API_URL = getApiUrl();
 const AUTH_API_URL = `${API_URL}/api/auth`;
 
 /* ─── Step config ─────────────────────────────────────── */
