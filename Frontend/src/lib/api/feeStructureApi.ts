@@ -3,17 +3,13 @@
  * Handles all HTTP requests to the fee-structures backend API
  */
 
-// API URL - uses environment variable or falls back to proxy path in development
+// API URL - uses environment variable or falls back to relative proxy path
 const getApiUrl = (): string => {
   // If VITE_API_URL is explicitly set, use it
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // In production (build), use the Render backend
-  if (import.meta.env.PROD) {
-    return 'https://cbc-education-system-1.onrender.com';
-  }
-  // In development, use relative path to leverage Vite proxy (/api -> localhost:3001)
+  // Use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
   return '';
 };
 

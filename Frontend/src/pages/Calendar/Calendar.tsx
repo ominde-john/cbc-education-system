@@ -27,9 +27,7 @@ const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  if (import.meta.env.PROD) {
-    return 'https://cbc-education-system-1.onrender.com';
-  }
+  // Use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
   return '';
 };
 

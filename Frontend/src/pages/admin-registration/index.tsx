@@ -15,20 +15,14 @@ import {
   SchoolRegistrationStep3,
 } from '@/types/school';
 
-// Use environment variable for API URL, fallback to relative path for development
-// In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
-// Use empty string (relative path) in development to leverage Vite proxy
-// Production fallback: Use Render backend URL when deployed on Vercel
+// Use environment variable for API URL, fallback to relative path
+// In production, use empty string (relative path) so requests are proxied through Vercel (avoids CORS on custom domains)
 const getApiUrl = () => {
   // If VITE_API_URL is explicitly set, use it
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // In production (build), use the Render backend
-  if (import.meta.env.PROD) {
-    return 'https://cbc-education-system-1.onrender.com';
-  }
-  // In development, use relative path to leverage Vite proxy
+  // Use relative path in all environments to leverage the proxy
   return '';
 };
 
