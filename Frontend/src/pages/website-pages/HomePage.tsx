@@ -477,7 +477,7 @@ export default function HomePage() {
               <span className="text-sm font-medium text-white/90">Leading CBE Platform</span>
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-[4rem] font-bold text-white leading-[1.1] mb-6">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.2] mb-6">
               National Optimized Network for Education Achievement{' '}
               <span className="relative inline-block">
                 <span className="relative z-10 bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
