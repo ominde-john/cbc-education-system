@@ -1,31 +1,24 @@
-# School Registration API Fixes - TODO List
+#
 
-## Status: In Progress
+## Tasks
+- [ ] Create API service file for fee structures
+- [ ] Modify FeeStructure.tsx to fetch data from API
+- [ ] Add loading and error states
+- [ ] Connect CRUD operations to API
 
-### Completed:
-- [ ] None yet
+## Implementation Details
 
-### In Progress:
-- [ ] 1. Fix Backend Controller (schoolRegistration.controller.js)
-- [ ] 2. Update Backend Validator (school.validator.js)
-- [ ] 3. Fix Frontend Payload (index.tsx)
+### API Service (Frontend/src/lib/api/feeStructureApi.ts)
+- GET /api/v1/fee-structures - List all fee structures
+- GET /api/v1/fee-structures/:id - Get single fee structure
+- POST /api/v1/fee-structures - Create fee structure
+- PUT /api/v1/fee-structures/:id - Update fee structure
+- DELETE /api/v1/fee-structures/:id - Delete fee structure
+- GET /api/v1/fee-structures/summary - Get fee summary
 
----
-
-## Details:
-
-### 1. Backend Controller Fix
-- Map `school_email` → `email` for school contact
-- Add handling for `national_id`/`passport_number` fields
-- Add `appointment_date` handling (use current date if not provided)
-- Add `role` field handling
-- Add `username` handling
-
-### 2. Backend Validator Update
-- Add `school_email` field mapping
-- Make `confirm_password` optional for API
-- Add `role`, `national_id`, `passport_number`, `username` fields
-
-### 3. Frontend Payload Fix
-- Change `school_email` to `email`
-- Add missing fields: `role`, `national_id`, `passport_number`, `username`, `appointment_date`
+### FeeStructure.tsx Changes
+- Replace SEED data with API fetch
+- Transform API response to match component's data structure
+- Add loading/error states
+- Connect edit modal to PUT API
+- Connect delete to DELETE API

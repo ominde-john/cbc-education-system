@@ -4,48 +4,45 @@ import {
   Edit2, Save, X, Plus, Download, FileText,
   TrendingUp, Users, Wallet, ChevronDown, ChevronUp,
   Music, Dumbbell, Bus, Home, Heart,
-  Library, AlertCircle, CheckCircle, Layers
+  Library, AlertCircle, CheckCircle, Layers, ArrowLeft
 } from "lucide-react";
 
-const TOKENS = {
-  bg: "#F4F6F9",
-  surface: "#FFFFFF",
-  border: "#E4E7EE",
-  text: { primary: "#0F1624", secondary: "#4B5568", muted: "#8A94A6" },
-  accent: "#1A56DB",
-  accentSoft: "#EBF0FF",
-  levels: {
-    "Lower Primary":    { bg: "#FFF7ED", border: "#FB923C", badge: "#EA580C" },
-    "Upper Primary":    { bg: "#F0FDF4", border: "#4ADE80", badge: "#16A34A" },
-    "Junior Secondary": { bg: "#EFF6FF", border: "#60A5FA", badge: "#1D4ED8" },
-    "Senior Secondary": { bg: "#FDF4FF", border: "#C084FC", badge: "#7E22CE" },
-  },
-};
+const FEE_FIELDS = [
+  { key:"tuitionFee",       label:"Tuition Fee",        icon:School,        color:"#dc2626", desc:"Core learning fees per term" },
+  { key:"admissionFee",     label:"Admission Fee",       icon:GraduationCap, color:"#d97706", desc:"One-time registration" },
+  { key:"uniformFee",       label:"Uniform Fee",         icon:Shirt,         color:"#7c3aed", desc:"School uniform & PE kit" },
+  { key:"booksNStationery", label:"Books & Stationery",  icon:BookOpen,      color:"#b45309", desc:"CBC textbooks & materials" },
+  { key:"examFee",          label:"Exam / CATS Fee",     icon:FileText,      color:"#0d9488", desc:"Continuous assessment tests" },
+  { key:"ictFee",           label:"ICT Fee",             icon:Calculator,    color:"#4f46e5", desc:"Computer lab & digital tools" },
+  { key:"activityFee",      label:"Activity Fee",        icon:Layers,        color:"#ea580c", desc:"Clubs, trips & CBC projects" },
+  { key:"sportsFee",        label:"Sports Fee",          icon:Dumbbell,      color:"#059669", desc:"Physical education & sports" },
+  { key:"artsFee",          label:"Arts & Music",        icon:Music,         color:"#be185d", desc:"Performing & creative arts" },
+  { key:"libraryFee",       label:"Library Fee",         icon:Library,       color:"#92400e", desc:"Reading & resource access" },
+  { key:"medicalFee",       label:"Medical Fee",         icon:Heart,         color:"#dc2626", desc:"Health & first aid" },
+  { key:"transportFee",     label:"Transport Fee",       icon:Bus,           color:"#0369a1", desc:"School bus (optional)" },
+  { key:"boardingFee",      label:"Boarding Fee",        icon:Home,          color:"#7c3aed", desc:"Accommodation & meals" },
+];
 
-const CBC_META = {
+interface FeeData {
+  id: string; className: string; level: string; totalStudents: number; isBoarding: boolean;
+  [key: string]: any;
+}
+
+const CBC_META: Record<string, { grades: string[] }> = {
   "Lower Primary":    { grades: ["PP1","PP2","Grade 1","Grade 2","Grade 3"] },
   "Upper Primary":    { grades: ["Grade 4","Grade 5","Grade 6"] },
   "Junior Secondary": { grades: ["Grade 7","Grade 8","Grade 9"] },
   "Senior Secondary": { grades: ["Grade 10","Grade 11","Grade 12"] },
 };
 
-const FEE_FIELDS = [
-  { key:"tuitionFee",       label:"Tuition Fee",        icon:School,        color:"#1A56DB", desc:"Core learning fees per term" },
-  { key:"admissionFee",     label:"Admission Fee",       icon:GraduationCap, color:"#0891B2", desc:"One-time registration" },
-  { key:"uniformFee",       label:"Uniform Fee",         icon:Shirt,         color:"#7C3AED", desc:"School uniform & PE kit" },
-  { key:"booksNStationery", label:"Books & Stationery",  icon:BookOpen,      color:"#B45309", desc:"CBC textbooks & materials" },
-  { key:"examFee",          label:"Exam / CATS Fee",     icon:FileText,      color:"#0F766E", desc:"Continuous assessment tests" },
-  { key:"ictFee",           label:"ICT Fee",             icon:Calculator,    color:"#4338CA", desc:"Computer lab & digital tools" },
-  { key:"activityFee",      label:"Activity Fee",        icon:Layers,        color:"#D97706", desc:"Clubs, trips & CBC projects" },
-  { key:"sportsFee",        label:"Sports Fee",          icon:Dumbbell,      color:"#059669", desc:"Physical education & sports" },
-  { key:"artsFee",          label:"Arts & Music",        icon:Music,         color:"#BE185D", desc:"Performing & creative arts" },
-  { key:"libraryFee",       label:"Library Fee",         icon:Library,       color:"#92400E", desc:"Reading & resource access" },
-  { key:"medicalFee",       label:"Medical Fee",         icon:Heart,         color:"#DC2626", desc:"Health & first aid" },
-  { key:"transportFee",     label:"Transport Fee",       icon:Bus,           color:"#0369A1", desc:"School bus (optional)" },
-  { key:"boardingFee",      label:"Boarding Fee",        icon:Home,          color:"#6D28D9", desc:"Accommodation & meals" },
-];
+const LEVEL_STYLES: Record<string, { bg: string; border: string; badge: string; badgeText: string }> = {
+  "Lower Primary":    { bg: "#fff7ed", border: "#fed7aa", badge: "#ea580c", badgeText: "#9a3412" },
+  "Upper Primary":    { bg: "#f0fdf4", border: "#bbf7d0", badge: "#16a34a", badgeText: "#166534" },
+  "Junior Secondary": { bg: "#eff6ff", border: "#bfdbfe", badge: "#2563eb", badgeText: "#1e40af" },
+  "Senior Secondary": { bg: "#fdf4ff", border: "#e9d5ff", badge: "#9333ea", badgeText: "#6b21a8" },
+};
 
-const SEED = [
+const SEED: FeeData[] = [
   { id:"pp1", className:"PP1",      level:"Lower Primary",    tuitionFee:8000,  admissionFee:3000, uniformFee:4500, booksNStationery:3500, activityFee:1000, transportFee:3000, boardingFee:0,     libraryFee:500,  medicalFee:800,  examFee:0,    ictFee:500,  sportsFee:500, artsFee:300, totalStudents:45,  isBoarding:false },
   { id:"pp2", className:"PP2",      level:"Lower Primary",    tuitionFee:8000,  admissionFee:3000, uniformFee:4500, booksNStationery:3500, activityFee:1000, transportFee:3000, boardingFee:0,     libraryFee:500,  medicalFee:800,  examFee:0,    ictFee:500,  sportsFee:500, artsFee:300, totalStudents:48,  isBoarding:false },
   { id:"g1",  className:"Grade 1",  level:"Lower Primary",    tuitionFee:9000,  admissionFee:3000, uniformFee:4500, booksNStationery:4000, activityFee:1200, transportFee:3000, boardingFee:0,     libraryFee:600,  medicalFee:900,  examFee:500,  ictFee:600,  sportsFee:500, artsFee:400, totalStudents:52,  isBoarding:false },
@@ -62,181 +59,87 @@ const SEED = [
   { id:"g12", className:"Grade 12", level:"Senior Secondary", tuitionFee:22000, admissionFee:6000, uniformFee:8500, booksNStationery:10000,activityFee:3000, transportFee:6000, boardingFee:45000, libraryFee:1500, medicalFee:2000, examFee:4000, ictFee:2000, sportsFee:1200,artsFee:1000,totalStudents:78,  isBoarding:true  },
 ];
 
-const fmt = (n) => `KSh ${Number(n).toLocaleString("en-KE")}`;
-const termTotal  = (f) => FEE_FIELDS.reduce((s, { key }) => s + (f[key] || 0), 0);
-const annualTotal = (f) => {
+const fmt = (n: number) => `KSh ${Number(n).toLocaleString("en-KE")}`;
+const termTotal  = (f: FeeData) => FEE_FIELDS.reduce((s, { key }) => s + (f[key] || 0), 0);
+const annualTotal = (f: FeeData) => {
   const perTerm = ["tuitionFee","booksNStationery","activityFee","examFee","ictFee","sportsFee","artsFee","libraryFee","medicalFee","transportFee","boardingFee"];
   const once    = ["admissionFee","uniformFee"];
   return perTerm.reduce((s,k) => s+(f[k]||0)*3,0) + once.reduce((s,k) => s+(f[k]||0),0);
 };
 
-// ── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, sub }) {
-  return (
-    <div style={{
-      background: "rgba(255,255,255,0.15)",
-      border: "1px solid rgba(255,255,255,0.25)",
-      borderRadius: 12, padding: "18px 20px",
-      display: "flex", gap: 14, alignItems: "center",
-      backdropFilter: "blur(6px)",
-    }}>
-      <div style={{
-        width: 44, height: 44, borderRadius: 10,
-        background: "rgba(255,255,255,0.20)",
-        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-      }}>
-        <Icon size={19} color="white" />
-      </div>
-      <div>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.65)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
-        <div style={{ fontSize: 21, fontWeight: 800, color: "white", lineHeight: 1 }}>{value}</div>
-        {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>{sub}</div>}
-      </div>
-    </div>
-  );
-}
-
-// ── Single fee row in card ────────────────────────────────────────────────────
-function FeeRow({ field, value }) {
+function FeeRow({ field, value }: { field: typeof FEE_FIELDS[number]; value: number }) {
   const { icon: Icon, label, color, desc } = field;
   if (!value) return null;
   return (
-    <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "10px 0", borderBottom: `1px solid ${TOKENS.border}`,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8, background: `${color}18`,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
+    <div className="flex justify-between items-center py-2.5 border-b border-gray-100">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
           <Icon size={14} color={color} />
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TOKENS.text.primary }}>{label}</div>
-          <div style={{ fontSize: 10, color: TOKENS.text.muted, marginTop: 1 }}>{desc}</div>
+        <div className="min-w-0">
+          <div className="text-[13px] font-semibold text-gray-900">{label}</div>
+          <div className="text-[10px] text-gray-500 mt-px">{desc}</div>
         </div>
       </div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: TOKENS.text.primary, whiteSpace: "nowrap", paddingLeft: 12, flexShrink: 0 }}>
-        {fmt(value)}
-      </div>
+      <div className="text-[13px] font-bold text-gray-900 whitespace-nowrap pl-3 flex-shrink-0">{fmt(value)}</div>
     </div>
   );
 }
 
-// ── Fee Card ─────────────────────────────────────────────────────────────────
-function FeeCard({ fee, onEdit, lvl }) {
+function FeeCard({ fee, onEdit, lvl }: { fee: FeeData; onEdit: (f: FeeData) => void; lvl: { bg: string; border: string; badge: string; badgeText: string } }) {
   const [expanded, setExpanded] = useState(false);
-  const [hovered, setHovered]   = useState(false);
   const tt = termTotal(fee);
   const at = annualTotal(fee);
   const activeFields = FEE_FIELDS.filter(f => fee[f.key] > 0);
   const visible = expanded ? activeFields : activeFields.slice(0, 5);
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: TOKENS.surface,
-        border: `1px solid ${TOKENS.border}`,
-        borderRadius: 14,
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        boxShadow: hovered ? "0 8px 28px rgba(15,22,36,0.10)" : "0 1px 4px rgba(0,0,0,0.04)",
-        transition: "box-shadow 0.2s",
-      }}
-    >
-      {/* Colour stripe */}
-      <div style={{ height: 4, background: lvl.badge, flexShrink: 0 }} />
-
-      {/* Header */}
-      <div style={{ padding: "18px 20px 14px", borderBottom: `1px solid ${TOKENS.border}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 19, fontWeight: 800, color: TOKENS.text.primary }}>{fee.className}</span>
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
-                background: lvl.bg, color: lvl.badge, border: `1px solid ${lvl.border}`, whiteSpace: "nowrap",
-              }}>
-                {fee.level}
-              </span>
+    <div className="bg-white border border-gray-200 rounded-[14px] overflow-hidden flex flex-col shadow-sm hover:shadow-lg transition-shadow">
+      <div className="h-1 flex-shrink-0" style={{ background: lvl.badge }} />
+      <div className="px-5 pt-[18px] pb-3.5 border-b border-gray-100">
+        <div className="flex justify-between items-start gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="text-[19px] font-extrabold text-gray-900">{fee.className}</span>
+              <span className="text-[10px] font-bold px-2.5 py-[3px] rounded-[20px] whitespace-nowrap" style={{ background: lvl.bg, color: lvl.badgeText, border: `1px solid ${lvl.border}` }}>{fee.level}</span>
             </div>
-            <div style={{ display: "flex", gap: 14, fontSize: 11, color: TOKENS.text.muted, flexWrap: "wrap" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Users size={11} /> {fee.totalStudents} students</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {fee.isBoarding ? <Home size={11} /> : <Bus size={11} />}
-                {fee.isBoarding ? "Boarding" : "Day School"}
-              </span>
+            <div className="flex gap-3.5 text-[11px] text-gray-600 flex-wrap">
+              <span className="flex items-center gap-1"><Users size={11} /> {fee.totalStudents} students</span>
+              <span className="flex items-center gap-1">{fee.isBoarding ? <Home size={11} /> : <Bus size={11} />} {fee.isBoarding ? "Boarding" : "Day School"}</span>
             </div>
           </div>
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: TOKENS.text.muted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Per Term</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: lvl.badge, lineHeight: 1 }}>{fmt(tt)}</div>
+          <div className="text-right flex-shrink-0">
+            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Per Term</div>
+            <div className="text-[22px] font-extrabold leading-none" style={{ color: lvl.badge }}>{fmt(tt)}</div>
           </div>
         </div>
       </div>
-
-      {/* Fee rows */}
-      <div style={{ padding: "2px 20px 0", flex: 1 }}>
+      <div className="px-5 pt-0.5 flex-1">
         {visible.map(f => <FeeRow key={f.key} field={f} value={fee[f.key] || 0} />)}
       </div>
-
-      {/* Expand toggle */}
       {activeFields.length > 5 && (
-        <div style={{ padding: "10px 20px 4px" }}>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              width: "100%", padding: "9px", border: `1px solid ${TOKENS.border}`,
-              borderRadius: 9, background: TOKENS.bg, cursor: "pointer",
-              fontSize: 12, fontWeight: 600, color: TOKENS.text.secondary,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}
-          >
-            {expanded
-              ? <><ChevronUp size={13} /> Show less</>
-              : <><ChevronDown size={13} /> {activeFields.length - 5} more fee components</>}
+        <div className="px-5 pt-2.5 pb-1">
+          <button onClick={() => setExpanded(!expanded)} className="w-full py-2 border border-gray-200 rounded-[9px] bg-gray-50 cursor-pointer text-xs font-semibold text-gray-700 flex items-center justify-center gap-1.5 hover:bg-gray-100 transition-colors">
+            {expanded ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> {activeFields.length - 5} more fee components</>}
           </button>
         </div>
       )}
-
-      {/* Totals box */}
-      <div style={{ margin: "12px 20px 16px", background: TOKENS.bg, borderRadius: 10, padding: "14px 16px", border: `1px solid ${TOKENS.border}` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: TOKENS.text.secondary }}>Per Term Total</span>
-          <span style={{ fontSize: 15, fontWeight: 800, color: TOKENS.text.primary }}>{fmt(tt)}</span>
+      <div className="mx-5 my-3 bg-gray-50 rounded-[10px] p-3.5 border border-gray-200">
+        <div className="flex justify-between items-center mb-2.5">
+          <span className="text-xs font-semibold text-gray-600">Per Term Total</span>
+          <span className="text-[15px] font-extrabold text-gray-900">{fmt(tt)}</span>
         </div>
-        <div style={{ height: 1, background: TOKENS.border, marginBottom: 10 }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: TOKENS.text.secondary }}>
-            Annual Total <span style={{ fontSize: 11, fontWeight: 400, color: TOKENS.text.muted }}>(3 terms)</span>
-          </span>
-          <span style={{ fontSize: 15, fontWeight: 800, color: TOKENS.accent }}>{fmt(at)}</span>
+        <div className="h-px bg-gray-200 mb-2.5" />
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-semibold text-gray-600">Annual Total <span className="text-[11px] font-normal text-gray-500">(3 terms)</span></span>
+          <span className="text-[15px] font-extrabold text-red-600">{fmt(at)}</span>
         </div>
       </div>
-
-      {/* Action buttons */}
-      <div style={{ display: "flex", gap: 8, padding: "0 20px 18px" }}>
-        <button
-          onClick={() => onEdit(fee)}
-          style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            padding: "10px", border: `1px solid ${TOKENS.border}`, borderRadius: 9,
-            background: "white", cursor: "pointer", fontSize: 13, fontWeight: 600, color: TOKENS.text.secondary,
-          }}
-        >
+      <div className="flex gap-2 px-5 pb-[18px]">
+        <button onClick={() => onEdit(fee)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-[9px] bg-white cursor-pointer text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
           <Edit2 size={13} /> Edit
         </button>
-        <button
-          style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            padding: "10px", border: "none", borderRadius: 9, background: TOKENS.accent,
-            cursor: "pointer", fontSize: 13, fontWeight: 700, color: "white",
-          }}
-        >
+        <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-none rounded-[9px] bg-red-600 cursor-pointer text-[13px] font-bold text-white hover:bg-red-700 transition-colors">
           <Download size={13} /> Receipt
         </button>
       </div>
@@ -244,74 +147,47 @@ function FeeCard({ fee, onEdit, lvl }) {
   );
 }
 
-// ── Edit Modal ────────────────────────────────────────────────────────────────
-function EditModal({ fee, onSave, onCancel }) {
-  const [form, setForm] = useState({ ...fee });
-  const set = (k, v) => setForm(p => ({ ...p, [k]: Number(v) || 0 }));
+function EditModal({ fee, onSave, onCancel }: { fee: FeeData; onSave: (f: FeeData) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<FeeData>({ ...fee });
+  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: Number(v) || 0 }));
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(15,22,36,0.62)",
-      zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
-    }}>
-      <div style={{
-        background: "white", borderRadius: 16, width: "100%", maxWidth: 660,
-        maxHeight: "90vh", overflowY: "auto",
-        boxShadow: "0 32px 80px rgba(0,0,0,0.28)",
-      }}>
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "20px 24px", borderBottom: `1px solid ${TOKENS.border}`,
-          position: "sticky", top: 0, background: "white", zIndex: 1,
-        }}>
+    <div className="fixed inset-0 bg-black/60 z-[500] flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl w-full max-w-[660px] max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200 sticky top-0 bg-white z-[1]">
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: TOKENS.text.primary }}>Edit Fees — {fee.className}</div>
-            <div style={{ fontSize: 12, color: TOKENS.text.muted, marginTop: 2 }}>All amounts in Kenya Shillings (KSh)</div>
+            <div className="text-base font-extrabold text-gray-900">Edit Fees — {fee.className}</div>
+            <div className="text-xs text-gray-500 mt-0.5">All amounts in Kenya Shillings (KSh)</div>
           </div>
-          <button onClick={onCancel} style={{ width: 34, height: 34, background: TOKENS.bg, border: "none", cursor: "pointer", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <X size={16} color={TOKENS.text.secondary} />
+          <button onClick={onCancel} className="w-[34px] h-[34px] bg-gray-100 border-none cursor-pointer rounded-lg flex items-center justify-center hover:bg-gray-200">
+            <X size={16} className="text-gray-600" />
           </button>
         </div>
-
-        <div style={{ padding: "20px 24px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 16px" }}>
+        <div className="p-6">
+          <div className="grid grid-cols-2 gap-3.5">
             {FEE_FIELDS.map(({ key, label, icon: Icon, color }) => (
               <div key={key}>
-                <label style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, fontSize: 11, fontWeight: 700, color: TOKENS.text.secondary, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <label className="flex items-center gap-[5px] mb-1.5 text-[11px] font-bold text-gray-600 uppercase tracking-wider">
                   <Icon size={11} color={color} /> {label}
                 </label>
-                <input
-                  type="number" value={form[key] || 0} onChange={e => set(key, e.target.value)}
-                  style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${TOKENS.border}`, borderRadius: 8, fontSize: 14, fontWeight: 600, color: TOKENS.text.primary, outline: "none", boxSizing: "border-box" }}
-                  onFocus={e => e.target.style.borderColor = TOKENS.accent}
-                  onBlur={e => e.target.style.borderColor = TOKENS.border}
-                />
+                <input type="number" value={form[key] || 0} onChange={e => set(key, e.target.value)} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-900 outline-none focus:border-red-500 bg-white" />
               </div>
             ))}
             <div>
-              <label style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, fontSize: 11, fontWeight: 700, color: TOKENS.text.secondary, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                <Users size={11} color="#6B7280" /> Total Students
-              </label>
-              <input
-                type="number" value={form.totalStudents || 0}
-                onChange={e => setForm(p => ({ ...p, totalStudents: Number(e.target.value) }))}
-                style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${TOKENS.border}`, borderRadius: 8, fontSize: 14, fontWeight: 600, color: TOKENS.text.primary, outline: "none", boxSizing: "border-box" }}
-              />
+              <label className="flex items-center gap-[5px] mb-1.5 text-[11px] font-bold text-gray-600 uppercase tracking-wider"><Users size={11} /> Total Students</label>
+              <input type="number" value={form.totalStudents || 0} onChange={e => setForm(p => ({ ...p, totalStudents: Number(e.target.value) }))} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-900 outline-none focus:border-red-500 bg-white" />
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end", paddingBottom: 4 }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: TOKENS.text.secondary }}>
-                <input type="checkbox" checked={form.isBoarding} onChange={e => setForm(p => ({ ...p, isBoarding: e.target.checked }))} style={{ width: 16, height: 16, accentColor: TOKENS.accent }} />
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2 cursor-pointer text-[13px] font-semibold text-gray-700">
+                <input type="checkbox" checked={form.isBoarding} onChange={e => setForm(p => ({ ...p, isBoarding: e.target.checked }))} className="w-4 h-4 accent-red-600" />
                 Boarding School
               </label>
             </div>
           </div>
         </div>
-
-        <div style={{ display: "flex", gap: 10, padding: "16px 24px", borderTop: `1px solid ${TOKENS.border}`, position: "sticky", bottom: 0, background: "white" }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "11px", border: `1px solid ${TOKENS.border}`, borderRadius: 9, background: "white", cursor: "pointer", fontSize: 14, fontWeight: 600, color: TOKENS.text.secondary }}>
-            Cancel
-          </button>
-          <button onClick={() => onSave(form)} style={{ flex: 2, padding: "11px", border: "none", borderRadius: 9, background: TOKENS.accent, cursor: "pointer", fontSize: 14, fontWeight: 700, color: "white", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <div className="flex gap-2.5 p-6 pt-4 border-t border-gray-200 sticky bottom-0 bg-white">
+          <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-200 rounded-[9px] bg-white cursor-pointer text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+          <button onClick={() => onSave(form)} className="flex-[2] py-2.5 border-none rounded-[9px] bg-red-600 cursor-pointer text-sm font-bold text-white flex items-center justify-center gap-2 hover:bg-red-700 transition-colors">
             <Save size={15} /> Save Changes
           </button>
         </div>
@@ -320,17 +196,18 @@ function EditModal({ fee, onSave, onCancel }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// MAIN
-// ══════════════════════════════════════════════════════════════════════════════
-export default function CBCFeeStructure() {
-  const [fees, setFees]          = useState(SEED);
-  const [editTarget, setEdit]    = useState(null);
-  const [activeLevel, setActive] = useState("All");
-  const [toast, setToast]        = useState(null);
+interface FeeStructureProps {
+  onBack?: () => void;
+}
 
-  const notify = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleSave = (updated) => {
+export default function FeeStructure({ onBack }: FeeStructureProps) {
+  const [fees, setFees]          = useState(SEED);
+  const [editTarget, setEdit]    = useState<FeeData | null>(null);
+  const [activeLevel, setActive] = useState("All");
+  const [toast, setToast]        = useState<string | null>(null);
+
+  const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const handleSave = (updated: FeeData) => {
     setFees(f => f.map(x => x.id === updated.id ? updated : x));
     setEdit(null);
     notify("Fee structure updated successfully.");
@@ -338,141 +215,73 @@ export default function CBCFeeStructure() {
 
   const levels = ["All", ...Object.keys(CBC_META)];
   const shown  = activeLevel === "All" ? Object.keys(CBC_META) : [activeLevel];
-
   const totalStudents = fees.reduce((s, f) => s + f.totalStudents, 0);
   const totalRevenue  = fees.reduce((s, f) => s + termTotal(f) * f.totalStudents, 0);
   const avgFee        = fees.reduce((s, f) => s + termTotal(f), 0) / fees.length;
 
   return (
-    <div style={{ minHeight: "100vh", background: TOKENS.bg, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        button, input { font-family: inherit; }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-card { animation: fadeUp 0.25s ease both; }
-        @keyframes toastIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-        .toast { animation: toastIn 0.2s ease both; }
-        ::-webkit-scrollbar { width:5px; height:5px; }
-        ::-webkit-scrollbar-thumb { background:#D1D5DB; border-radius:4px; }
-      `}</style>
-
-      {/* Toast */}
+    <div className="min-h-screen bg-gray-50 font-sans">
       {toast && (
-        <div className="toast" style={{
-          position: "fixed", bottom: 26, right: 26, zIndex: 900,
-          background: "#111827", color: "white", padding: "12px 18px", borderRadius: 12,
-          fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 10,
-          boxShadow: "0 8px 28px rgba(0,0,0,0.22)",
-        }}>
-          <CheckCircle size={16} color="#4ADE80" /> {toast}
+        <div className="fixed bottom-6 right-6 z-[900] bg-gray-900 text-white px-[18px] py-3 rounded-xl text-[13px] font-semibold flex items-center gap-2.5 shadow-lg animate-fade-in">
+          <CheckCircle size={16} className="text-green-400" /> {toast}
         </div>
       )}
-
       {editTarget && <EditModal fee={editTarget} onSave={handleSave} onCancel={() => setEdit(null)} />}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          HEADER — same green as FeeManagement hero
-      ══════════════════════════════════════════════════════════════════ */}
-      <div style={{
-        background: "linear-gradient(to bottom right, #166534, #16a34a, #10b981)",
-        position: "relative", overflow: "hidden",
-      }}>
-        {/* Grid watermark */}
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.06,
-          backgroundImage: "linear-gradient(white 1px,transparent 1px),linear-gradient(90deg,white 1px,transparent 1px)",
-          backgroundSize: "34px 34px",
-        }} />
-        {/* Glow blob */}
-        <div style={{
-          position: "absolute", top: -60, right: -60, width: 300, height: 300,
-          borderRadius: "50%", background: "rgba(255,255,255,0.12)",
-          filter: "blur(70px)", pointerEvents: "none",
-        }} />
-
-        {/* Breadcrumb bar */}
-        <div style={{
-          borderBottom: "1px solid rgba(255,255,255,0.15)",
-          padding: "12px 32px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          gap: 12, flexWrap: "wrap", position: "relative",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <School size={15} color="white" />
-            </div>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>CBC School Management</span>
-            <span style={{ color: "rgba(255,255,255,0.35)", margin: "0 2px" }}>›</span>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>Fee Structure</span>
+      {/* HERO */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-red-700 to-red-600 shadow-lg">
+        <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: "linear-gradient(white 1px,transparent 1px),linear-gradient(90deg,white 1px,transparent 1px)", backgroundSize: "34px 34px" }} />
+        <div className="border-b border-white/20 px-8 py-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            {onBack && (
+              <button onClick={onBack} className="w-8 h-8 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center cursor-pointer text-white hover:bg-white/30 transition-colors">
+                <ArrowLeft size={14} />
+              </button>
+            )}
+            <div className="w-8 h-8 rounded-lg bg-white/30 flex items-center justify-center"><School size={15} color="white" /></div>
+            <span className="text-[13px] font-bold text-white">CBC School Management</span>
+            <span className="text-white/50 mx-0.5">›</span>
+            <span className="text-[13px] text-white/80">Fee Structure</span>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 16px",
-              background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)",
-              borderRadius: 8, color: "white", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            }}>
-              <FileText size={13} /> Report
-            </button>
-            <button style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 16px",
-              background: "white", border: "none", borderRadius: 8,
-              color: "#16a34a", cursor: "pointer", fontSize: 12, fontWeight: 700,
-            }}>
-              <Plus size={13} /> Add Grade
-            </button>
+          <div className="flex gap-2.5">
+            <button className="flex items-center gap-1.5 px-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white cursor-pointer text-xs font-semibold hover:bg-white/30 transition-colors"><FileText size={13} /> Report</button>
+            <button className="flex items-center gap-1.5 px-4 py-2 bg-white border-none rounded-lg text-red-600 cursor-pointer text-xs font-bold hover:bg-gray-100 transition-colors"><Plus size={13} /> Add Grade</button>
           </div>
         </div>
-
-        {/* Hero body */}
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "36px 32px 42px", position: "relative" }}>
-          <div style={{ marginBottom: 30 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.55)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
-              Republic of Kenya · Ministry of Education · 2025
-            </div>
-            <h1 style={{ fontSize: 30, fontWeight: 900, color: "white", lineHeight: 1.2, marginBottom: 6 }}>
-              CBC Fee Structure
-            </h1>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>
-              Competency Based Curriculum — PP1 through Grade 12 · Academic Year 2025
-            </p>
+        <div className="max-w-[1400px] mx-auto px-8 pt-9 pb-[42px] relative">
+          <div className="mb-[30px]">
+            <div className="text-[10px] font-bold text-white/70 tracking-[0.14em] uppercase mb-2.5">Republic of Kenya · Ministry of Education · 2025</div>
+            <h1 className="text-[30px] font-black text-white leading-tight mb-1.5">CBC Fee Structure</h1>
+            <p className="text-sm text-white/80">Competency Based Curriculum — PP1 through Grade 12 · Academic Year 2025</p>
           </div>
-
-          {/* Stats row */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(195px, 1fr))", gap: 14 }}>
-            <StatCard icon={School}     label="CBC Grades"     value={fees.length}                    sub="PP1 – Grade 12" />
-            <StatCard icon={Users}      label="Total Students" value={totalStudents.toLocaleString()} sub="Enrolled 2025" />
-            <StatCard icon={Wallet}     label="Avg Term Fee"   value={fmt(Math.round(avgFee))}        sub="Per student / term" />
-            <StatCard icon={TrendingUp} label="Term Revenue"   value={fmt(totalRevenue)}              sub="Projected" />
+          <div className="grid grid-cols-4 gap-3.5">
+            {[
+              { icon: School, label: "CBC Grades", value: fees.length, sub: "PP1 – Grade 12" },
+              { icon: Users, label: "Total Students", value: totalStudents.toLocaleString(), sub: "Enrolled 2025" },
+              { icon: Wallet, label: "Avg Term Fee", value: fmt(Math.round(avgFee)), sub: "Per student / term" },
+              { icon: TrendingUp, label: "Term Revenue", value: fmt(totalRevenue), sub: "Projected" },
+            ].map(s => (
+              <div key={s.label} className="bg-white/20 border border-white/30 rounded-xl px-5 py-[18px] flex gap-3.5 items-center backdrop-blur-sm">
+                <div className="w-11 h-11 rounded-[10px] bg-white/30 flex items-center justify-center flex-shrink-0"><s.icon size={19} color="white" /></div>
+                <div>
+                  <div className="text-[10px] font-bold text-white/70 tracking-widest uppercase mb-[3px]">{s.label}</div>
+                  <div className="text-[21px] font-extrabold text-white leading-none">{s.value}</div>
+                  {s.sub && <div className="text-[11px] text-white/70 mt-1">{s.sub}</div>}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── LEVEL TABS ───────────────────────────────────────────────────── */}
-      <div style={{
-        background: "white", borderBottom: `1px solid ${TOKENS.border}`,
-        position: "sticky", top: 0, zIndex: 100,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-      }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 32px", display: "flex", overflowX: "auto" }}>
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-[100] shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-8 flex overflow-x-auto">
           {levels.map(lvl => {
             const isActive = activeLevel === lvl;
-            const color = lvl === "All" ? "#16a34a" : (TOKENS.levels[lvl]?.badge ?? "#16a34a");
+            const color = lvl === "All" ? "#dc2626" : (LEVEL_STYLES[lvl]?.badge ?? "#dc2626");
             return (
-              <button
-                key={lvl}
-                onClick={() => setActive(lvl)}
-                style={{
-                  padding: "15px 22px", border: "none", background: "transparent", cursor: "pointer",
-                  fontSize: 13, fontWeight: isActive ? 700 : 500,
-                  color: isActive ? color : TOKENS.text.muted,
-                  borderBottom: `2.5px solid ${isActive ? color : "transparent"}`,
-                  transition: "all 0.15s", whiteSpace: "nowrap",
-                }}
-              >
+              <button key={lvl} onClick={() => setActive(lvl)} className="px-[22px] py-[15px] border-none bg-transparent cursor-pointer text-[13px] whitespace-nowrap transition-all" style={{ fontWeight: isActive ? 700 : 500, color: isActive ? color : "#6b7280", borderBottom: `2.5px solid ${isActive ? color : "transparent"}` }}>
                 {lvl}
               </button>
             );
@@ -480,45 +289,40 @@ export default function CBCFeeStructure() {
         </div>
       </div>
 
-      {/* ── CONTENT ──────────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "36px 28px 64px" }}>
-        {shown.map((level) => {
-          const lvlFees     = fees.filter(f => f.level === level);
-          const lvl         = TOKENS.levels[level];
+      {/* Cards */}
+      <div className="max-w-[1400px] mx-auto px-7 pt-9 pb-16">
+        {shown.map(level => {
+          const lvlFees = fees.filter(f => f.level === level);
+          const lvl = LEVEL_STYLES[level];
           const lvlStudents = lvlFees.reduce((s, f) => s + f.totalStudents, 0);
-          if (!lvlFees.length) return null;
+          if (!lvlFees.length || !lvl) return null;
 
           return (
-            <div key={level} className="fade-card" style={{ marginBottom: 52 }}>
-              {/* Section heading */}
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
-                <div style={{ padding: "6px 18px", borderRadius: 8, background: lvl.bg, border: `1px solid ${lvl.border}`, flexShrink: 0 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: lvl.badge }}>{level}</span>
+            <div key={level} className="mb-[52px] animate-fade-in">
+              <div className="flex items-center gap-3.5 mb-[22px]">
+                <div className="px-[18px] py-1.5 rounded-lg flex-shrink-0" style={{ background: lvl.bg, border: `1px solid ${lvl.border}` }}>
+                  <span className="text-[13px] font-extrabold" style={{ color: lvl.badgeText }}>{level}</span>
                 </div>
-                <div style={{ height: 1, flex: 1, background: TOKENS.border }} />
-                <div style={{ fontSize: 12, color: TOKENS.text.muted, whiteSpace: "nowrap", flexShrink: 0 }}>
+                <div className="h-px flex-1 bg-gray-200" />
+                <div className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
                   {CBC_META[level].grades.join(" · ")} &nbsp;·&nbsp; {lvlStudents.toLocaleString()} students
                 </div>
               </div>
-
-              {/* Cards grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 18 }}>
-                {lvlFees.map(fee => (
-                  <FeeCard key={fee.id} fee={fee} onEdit={setEdit} lvl={lvl} />
-                ))}
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[18px]">
+                {lvlFees.map(fee => <FeeCard key={fee.id} fee={fee} onEdit={setEdit} lvl={lvl} />)}
               </div>
             </div>
           );
         })}
 
         {/* Notes */}
-        <div style={{ background: "white", border: `1px solid ${TOKENS.border}`, borderRadius: 14, padding: "24px 28px", display: "flex", gap: 16, alignItems: "flex-start" }}>
-          <div style={{ width: 36, height: 36, borderRadius: 9, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <AlertCircle size={17} color="#16a34a" />
+        <div className="bg-white border border-gray-200 rounded-[14px] p-6 flex gap-4 items-start shadow-sm">
+          <div className="w-9 h-9 rounded-[9px] bg-red-100 flex items-center justify-center flex-shrink-0">
+            <AlertCircle size={17} className="text-red-600" />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: TOKENS.text.primary, marginBottom: 16 }}>Important Notes</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px 28px" }}>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-extrabold text-gray-900 mb-4">Important Notes</div>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5">
               {[
                 ["Per-Term Fees", "Tuition, Books, Activity, Exams, ICT, Sports, Arts, Library, Medical & Transport are charged each term (3 terms/year)."],
                 ["One-Off Fees", "Admission and Uniform fees are charged once on enrollment, not per term."],
@@ -526,8 +330,8 @@ export default function CBCFeeStructure() {
                 ["Bursaries", "NG-CDF bursaries apply to day schools. Boarding subsidies available for needy Senior Secondary students."],
               ].map(([title, body]) => (
                 <div key={title}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: TOKENS.text.primary, marginBottom: 5 }}>{title}</div>
-                  <div style={{ fontSize: 12, color: TOKENS.text.muted, lineHeight: 1.7 }}>{body}</div>
+                  <div className="text-xs font-bold text-gray-900 mb-1">{title}</div>
+                  <div className="text-xs text-gray-600 leading-relaxed">{body}</div>
                 </div>
               ))}
             </div>
@@ -537,3 +341,4 @@ export default function CBCFeeStructure() {
     </div>
   );
 }
+

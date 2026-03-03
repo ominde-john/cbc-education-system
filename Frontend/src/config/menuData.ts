@@ -235,8 +235,8 @@ export const menuSections: MenuSection[] = [
             icon: Receipt,
           },
           {
-            id: "fee-collection",
-            label: "Collection",
+            id: "fee-structure",
+            label: "Fee-Struucture",
             href: "/school-admin/fees/collection",
             icon: Banknote,
           },

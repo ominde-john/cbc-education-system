@@ -14,6 +14,7 @@ const schoolsRoutes = require("./routes/schools.routes");
 const registerRoutes = require("./routes/register.routes");
 const passwordRoutes = require("./routes/password.routes");
 const academicTermsRoutes = require("./routes/academicTermsRoutes");
+const feeStructureRoutes = require("./routes/feeStructure.routes");
 
 const app = express();
 
@@ -159,6 +160,7 @@ app.use("/api/register", registerRoutes);
 app.use("/api/password", passwordRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/v1/academic-terms", academicTermsRoutes);
+app.use("/api/v1/fee-structures", feeStructureRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
