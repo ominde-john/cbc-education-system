@@ -478,17 +478,17 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-[4rem] font-bold text-white leading-[1.1] mb-6">
-              Mastery-Based Learning{' '}
+              National Optimized Network for Education Achievement{' '}
               <span className="relative inline-block">
                 <span className="relative z-10 bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  for Every Student
+                  & Administration (NONEAA)
                 </span>
                 <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 blur-xl" />
               </span>
             </h1>
             
             <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl leading-relaxed">
-              Nonea empowers K-12 schools with a complete Competency-Based Education system.
+              Noneaa empowers K-12 schools with a complete Competency-Based Education system.
               Track progress, manage curriculum, and achieve excellence through personalized pathways.
             </p>
 
