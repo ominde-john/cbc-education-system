@@ -88,7 +88,7 @@ export default function CurriculumPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Curriculum</h1>
         <p className="text-muted-foreground mt-1">
-          Manage CBC learning areas, strands, and competencies aligned to KICD standards
+          Manage CBE learning areas, strands, and competencies aligned to KICD standards
         </p>
       </div>
 

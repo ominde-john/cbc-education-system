@@ -74,7 +74,7 @@ export default function GetStartedPage() {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CBC Education System</h1>
+              <h1 className="text-2xl font-bold text-gray-900">CBE Education System</h1>
               <p className="text-gray-600 text-sm">Transforming Education Together</p>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function GetStartedPage() {
             {/* Benefits Grid */}
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: GraduationCap, label: 'CBC Compliant', color: 'from-gray-800 to-gray-900' },
+                { icon: GraduationCap, label: 'CBE Compliant', color: 'from-gray-800 to-gray-900' },
                 { icon: Users, label: 'Parent Portal', color: 'from-gray-700 to-gray-800' },
                 { icon: Shield, label: 'Secure Platform', color: 'from-gray-600 to-gray-700' },
                 { icon: BarChart3, label: 'Real Analytics', color: 'from-gray-500 to-gray-600' },
@@ -150,7 +150,7 @@ export default function GetStartedPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Join Our Platform</h3>
-                <p className="text-gray-600">Start your journey with CBC Education System</p>
+                <p className="text-gray-600">Start your journey with CBE Education System</p>
               </div>
 
               {/* User Type Selection */}
@@ -415,7 +415,7 @@ export default function GetStartedPage() {
                       <Users className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-2xl font-bold text-gray-900">Join as Teacher or Parent</h3>
-                    <p className="text-gray-600">Connect with your school's CBC Education System</p>
+                    <p className="text-gray-600">Connect with your school's CBE Education System</p>
                   </div>
 
                   <div className="space-y-4">
@@ -487,14 +487,14 @@ export default function GetStartedPage() {
           <div>
             <h4 className="text-gray-800 font-semibold mb-2">Contact</h4>
             <div className="space-y-2 text-gray-500 text-sm">
-              <div>• support@cbc.edu</div>
+              <div>• support@cbe.edu</div>
               <div>• +254 700 000 000</div>
               <div>• Mon-Fri, 8AM-5PM</div>
             </div>
           </div>
         </div>
         <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-500 text-sm">
-          © 2026 CBC Education System • All Rights Reserved • Ministry of Education Licensed
+          © 2026 CBE Education System • All Rights Reserved • Ministry of Education Licensed
         </div>
       </footer>
     </div>

@@ -1,4 +1,4 @@
-// CBC Curriculum Data Types
+// CBE Curriculum Data Types
 export interface CurriculumCompetency {
   id: string;
   code: string;

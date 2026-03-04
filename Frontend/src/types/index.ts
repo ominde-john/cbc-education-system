@@ -1,4 +1,4 @@
-// CBC/CBE Platform Types
+// CBE Platform Types
 export * from './enums';
 export * from './user';
 export * from './school';

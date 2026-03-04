@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
                 <Shield className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">CBC Education Admin</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">CBE Education Admin</h1>
             <p className="text-slate-300 text-sm">Secure Administrator Portal</p>
           </div>
 
@@ -181,7 +181,7 @@ export default function AdminLoginPage() {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-white/20 text-center">
             <p className="text-xs text-slate-400">
-              © 2024 CBC Education System • Secure Access Only
+              © 2024 CBE Education System • Secure Access Only
             </p>
           </div>
         </div>

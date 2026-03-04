@@ -1,6 +1,6 @@
-# CBC Education Platform - Frontend
+# CBE Education Platform - Frontend
 
-This is the frontend application for the CBC Education Platform, built with React, TypeScript, and Vite.
+This is the frontend application for the CBE Education Platform, built with React, TypeScript, and Vite.
 
 ## Getting Started
 

@@ -76,7 +76,7 @@ export default function PrivacyPage() {
                   <p>
                     At Noneaa Africa, we are committed to protecting your privacy and ensuring the security of your personal information.
                     This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Competency-Based
-                    Curriculum (CBC) platform designed for Kenyan schools and educational institutions.
+                    Curriculum (CBE) platform designed for Kenyan schools and educational institutions.
                   </p>
                   <p>
                     By using our services, you agree to the collection and use of information in accordance with this policy.

@@ -20,7 +20,7 @@ export const clients: Client[] = [
     category: 'primary',
     students: 850,
     since: 2021,
-    description: 'Leading primary school implementing CBC curriculum',
+    description: 'Leading primary school implementing CBE curriculum',
     website: 'https://makini.ac.ke'
   },
   {
@@ -30,7 +30,7 @@ export const clients: Client[] = [
     category: 'primary',
     students: 720,
     since: 2022,
-    description: 'Innovative CBC-focused primary education',
+    description: 'Innovative CBE-focused primary education',
   },
   {
     id: 3,
@@ -73,7 +73,7 @@ export const clients: Client[] = [
     category: 'secondary',
     students: 1200,
     since: 2021,
-    description: 'Premier boys secondary school adopting CBC',
+    description: 'Premier boys secondary school adopting CBE',
   },
   {
     id: 8,
@@ -125,7 +125,7 @@ export const clients: Client[] = [
     category: 'international',
     students: 950,
     since: 2020,
-    description: 'Leading international school with CBC integration',
+    description: 'Leading international school with CBE integration',
   },
   {
     id: 14,

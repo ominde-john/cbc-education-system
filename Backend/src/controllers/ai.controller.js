@@ -11,7 +11,7 @@ if (apiKey) {
     baseURL: process.env.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1" : undefined,
     defaultHeaders: process.env.OPENROUTER_API_KEY ? {
       "HTTP-Referer": "https://cbc-education-systems.onrender.com",
-      "X-Title": "CBC Education Systems",
+      "X-Title": "CBE Education Systems",
     } : undefined,
   });
 } else {

@@ -1,7 +1,7 @@
 {
-  "name": "cbc-education-backend",
+  "name": "cbe-education-backend",
   "version": "1.0.0",
-  "description": "Enterprise-grade CBC Education System backend with secure authentication",
+  "description": "Enterprise-grade CBE Education System backend with secure authentication",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

@@ -17,7 +17,7 @@ console.log('[feeStructureApi] API_URL:', API_URL, 'PROD:', import.meta.env.PROD
 
 // Get auth token from localStorage
 const getAuthToken = (): string | null => {
-  return localStorage.getItem('cbc_access_token');
+  return localStorage.getItem('cbe_access_token');
 };
 
 // Common fetch options with auth header
@@ -257,7 +257,7 @@ const mapCategoryToKey = (category: string): string | null => {
 };
 
 /**
- * Determine CBC level from grade
+ * Determine CBE level from grade
  */
 const getLevelFromGrade = (grade: string): string => {
   const lowerPrimary = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3'];
