@@ -101,7 +101,8 @@ const getFeeStructures = async (req, res) => {
     let idx = 2;
 
     if (grade_level) {
-      queryText += ` AND fs.grade_level = $${idx++}`;
+      // When filtering by a specific grade, also include records with null grade_level (All Grades)
+      queryText += ` AND (fs.grade_level = $${idx++} OR fs.grade_level IS NULL)`;
       params.push(grade_level);
     }
     if (category) {

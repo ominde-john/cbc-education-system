@@ -1,343 +1,1092 @@
-import { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
-  School, BookOpen, Shirt, GraduationCap, Calculator,
-  Edit2, Save, X, Plus, Download, FileText,
-  TrendingUp, Users, Wallet, ChevronDown, ChevronUp,
-  Music, Dumbbell, Bus, Home, Heart,
-  Library, AlertCircle, CheckCircle, Layers, ArrowLeft
-} from "lucide-react";
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { 
+  Plus, 
+  RefreshCw, 
+  MoreHorizontal, 
+  Pencil, 
+  Trash2, 
+  Filter, 
+  Download,
+  Printer,
+  FileDown,
+  FileText,
+  Loader2,
+  AlertCircle,
+  School,
+  GraduationCap,
+  DollarSign
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  getFeeStructures, 
+  createFeeStructure, 
+  updateFeeStructure, 
+  deleteFeeStructure,
+  FeeStructure,
+  CreateFeeStructurePayload,
+  UpdateFeeStructurePayload
+} from '@/lib/api/feeStructureApi';
 
-const FEE_FIELDS = [
-  { key:"tuitionFee",       label:"Tuition Fee",        icon:School,        color:"#dc2626", desc:"Core learning fees per term" },
-  { key:"admissionFee",     label:"Admission Fee",       icon:GraduationCap, color:"#d97706", desc:"One-time registration" },
-  { key:"uniformFee",       label:"Uniform Fee",         icon:Shirt,         color:"#7c3aed", desc:"School uniform & PE kit" },
-  { key:"booksNStationery", label:"Books & Stationery",  icon:BookOpen,      color:"#b45309", desc:"CBC textbooks & materials" },
-  { key:"examFee",          label:"Exam / CATS Fee",     icon:FileText,      color:"#0d9488", desc:"Continuous assessment tests" },
-  { key:"ictFee",           label:"ICT Fee",             icon:Calculator,    color:"#4f46e5", desc:"Computer lab & digital tools" },
-  { key:"activityFee",      label:"Activity Fee",        icon:Layers,        color:"#ea580c", desc:"Clubs, trips & CBC projects" },
-  { key:"sportsFee",        label:"Sports Fee",          icon:Dumbbell,      color:"#059669", desc:"Physical education & sports" },
-  { key:"artsFee",          label:"Arts & Music",        icon:Music,         color:"#be185d", desc:"Performing & creative arts" },
-  { key:"libraryFee",       label:"Library Fee",         icon:Library,       color:"#92400e", desc:"Reading & resource access" },
-  { key:"medicalFee",       label:"Medical Fee",         icon:Heart,         color:"#dc2626", desc:"Health & first aid" },
-  { key:"transportFee",     label:"Transport Fee",       icon:Bus,           color:"#0369a1", desc:"School bus (optional)" },
-  { key:"boardingFee",      label:"Boarding Fee",        icon:Home,          color:"#7c3aed", desc:"Accommodation & meals" },
+// Academic year types (matching backend)
+interface AcademicYear {
+  id: string;
+  name: string;
+  year: number;
+  is_current: boolean;
+  term_names?: string[];
+}
+
+// Categories from backend
+const VALID_CATEGORIES = [
+  'tuition', 'activity', 'uniform', 'transport',
+  'meals', 'examination', 'registration', 'other',
 ];
 
-interface FeeData {
-  id: string; className: string; level: string; totalStudents: number; isBoarding: boolean;
-  [key: string]: any;
-}
-
-const CBC_META: Record<string, { grades: string[] }> = {
-  "Lower Primary":    { grades: ["PP1","PP2","Grade 1","Grade 2","Grade 3"] },
-  "Upper Primary":    { grades: ["Grade 4","Grade 5","Grade 6"] },
-  "Junior Secondary": { grades: ["Grade 7","Grade 8","Grade 9"] },
-  "Senior Secondary": { grades: ["Grade 10","Grade 11","Grade 12"] },
-};
-
-const LEVEL_STYLES: Record<string, { bg: string; border: string; badge: string; badgeText: string }> = {
-  "Lower Primary":    { bg: "#fff7ed", border: "#fed7aa", badge: "#ea580c", badgeText: "#9a3412" },
-  "Upper Primary":    { bg: "#f0fdf4", border: "#bbf7d0", badge: "#16a34a", badgeText: "#166534" },
-  "Junior Secondary": { bg: "#eff6ff", border: "#bfdbfe", badge: "#2563eb", badgeText: "#1e40af" },
-  "Senior Secondary": { bg: "#fdf4ff", border: "#e9d5ff", badge: "#9333ea", badgeText: "#6b21a8" },
-};
-
-const SEED: FeeData[] = [
-  { id:"pp1", className:"PP1",      level:"Lower Primary",    tuitionFee:8000,  admissionFee:3000, uniformFee:4500, booksNStationery:3500, activityFee:1000, transportFee:3000, boardingFee:0,     libraryFee:500,  medicalFee:800,  examFee:0,    ictFee:500,  sportsFee:500, artsFee:300, totalStudents:45,  isBoarding:false },
-  { id:"pp2", className:"PP2",      level:"Lower Primary",    tuitionFee:8000,  admissionFee:3000, uniformFee:4500, booksNStationery:3500, activityFee:1000, transportFee:3000, boardingFee:0,     libraryFee:500,  medicalFee:800,  examFee:0,    ictFee:500,  sportsFee:500, artsFee:300, totalStudents:48,  isBoarding:false },
-  { id:"g1",  className:"Grade 1",  level:"Lower Primary",    tuitionFee:9000,  admissionFee:3000, uniformFee:4500, booksNStationery:4000, activityFee:1200, transportFee:3000, boardingFee:0,     libraryFee:600,  medicalFee:900,  examFee:500,  ictFee:600,  sportsFee:500, artsFee:400, totalStudents:52,  isBoarding:false },
-  { id:"g2",  className:"Grade 2",  level:"Lower Primary",    tuitionFee:9000,  admissionFee:3000, uniformFee:4500, booksNStationery:4000, activityFee:1200, transportFee:3000, boardingFee:0,     libraryFee:600,  medicalFee:900,  examFee:500,  ictFee:600,  sportsFee:500, artsFee:400, totalStudents:50,  isBoarding:false },
-  { id:"g3",  className:"Grade 3",  level:"Lower Primary",    tuitionFee:9000,  admissionFee:3000, uniformFee:4500, booksNStationery:4000, activityFee:1200, transportFee:3000, boardingFee:0,     libraryFee:600,  medicalFee:900,  examFee:500,  ictFee:600,  sportsFee:500, artsFee:400, totalStudents:49,  isBoarding:false },
-  { id:"g4",  className:"Grade 4",  level:"Upper Primary",    tuitionFee:11000, admissionFee:4000, uniformFee:5500, booksNStationery:5000, activityFee:1500, transportFee:3500, boardingFee:0,     libraryFee:800,  medicalFee:1000, examFee:800,  ictFee:800,  sportsFee:700, artsFee:500, totalStudents:55,  isBoarding:false },
-  { id:"g5",  className:"Grade 5",  level:"Upper Primary",    tuitionFee:11000, admissionFee:4000, uniformFee:5500, booksNStationery:5000, activityFee:1500, transportFee:3500, boardingFee:0,     libraryFee:800,  medicalFee:1000, examFee:800,  ictFee:800,  sportsFee:700, artsFee:500, totalStudents:54,  isBoarding:false },
-  { id:"g6",  className:"Grade 6",  level:"Upper Primary",    tuitionFee:12000, admissionFee:4000, uniformFee:5500, booksNStationery:5500, activityFee:1800, transportFee:3500, boardingFee:0,     libraryFee:900,  medicalFee:1100, examFee:1000, ictFee:900,  sportsFee:700, artsFee:500, totalStudents:51,  isBoarding:false },
-  { id:"g7",  className:"Grade 7",  level:"Junior Secondary", tuitionFee:15000, admissionFee:5000, uniformFee:7000, booksNStationery:6500, activityFee:2000, transportFee:5000, boardingFee:0,     libraryFee:1000, medicalFee:1500, examFee:1500, ictFee:1200, sportsFee:1000,artsFee:800, totalStudents:120, isBoarding:false },
-  { id:"g8",  className:"Grade 8",  level:"Junior Secondary", tuitionFee:15000, admissionFee:5000, uniformFee:7000, booksNStationery:6500, activityFee:2000, transportFee:5000, boardingFee:0,     libraryFee:1000, medicalFee:1500, examFee:1500, ictFee:1200, sportsFee:1000,artsFee:800, totalStudents:115, isBoarding:false },
-  { id:"g9",  className:"Grade 9",  level:"Junior Secondary", tuitionFee:16000, admissionFee:5000, uniformFee:7000, booksNStationery:7000, activityFee:2500, transportFee:5500, boardingFee:0,     libraryFee:1200, medicalFee:1700, examFee:2000, ictFee:1400, sportsFee:1000,artsFee:800, totalStudents:108, isBoarding:false },
-  { id:"g10", className:"Grade 10", level:"Senior Secondary", tuitionFee:18000, admissionFee:6000, uniformFee:8500, booksNStationery:8000, activityFee:2500, transportFee:5500, boardingFee:35000, libraryFee:1200, medicalFee:1700, examFee:2500, ictFee:1500, sportsFee:1200,artsFee:1000,totalStudents:95,  isBoarding:true  },
-  { id:"g11", className:"Grade 11", level:"Senior Secondary", tuitionFee:20000, admissionFee:6000, uniformFee:8500, booksNStationery:9000, activityFee:3000, transportFee:6000, boardingFee:40000, libraryFee:1500, medicalFee:2000, examFee:3000, ictFee:1800, sportsFee:1200,artsFee:1000,totalStudents:82,  isBoarding:true  },
-  { id:"g12", className:"Grade 12", level:"Senior Secondary", tuitionFee:22000, admissionFee:6000, uniformFee:8500, booksNStationery:10000,activityFee:3000, transportFee:6000, boardingFee:45000, libraryFee:1500, medicalFee:2000, examFee:4000, ictFee:2000, sportsFee:1200,artsFee:1000,totalStudents:78,  isBoarding:true  },
+// Frequencies from backend
+const VALID_FREQUENCIES = [
+  'per_term', 'per_year', 'once_off', 'monthly',
 ];
 
-const fmt = (n: number) => `KSh ${Number(n).toLocaleString("en-KE")}`;
-const termTotal  = (f: FeeData) => FEE_FIELDS.reduce((s, { key }) => s + (f[key] || 0), 0);
-const annualTotal = (f: FeeData) => {
-  const perTerm = ["tuitionFee","booksNStationery","activityFee","examFee","ictFee","sportsFee","artsFee","libraryFee","medicalFee","transportFee","boardingFee"];
-  const once    = ["admissionFee","uniformFee"];
-  return perTerm.reduce((s,k) => s+(f[k]||0)*3,0) + once.reduce((s,k) => s+(f[k]||0),0);
+// Valid grades from backend
+const VALID_GRADES = [
+  'PP1', 'PP2',
+  'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5',
+  'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9',
+  'Grade 10', 'Grade 11', 'Grade 12',
+];
+
+// Default academic years - these are placeholders
+// In production, fetch real academic years from /api/v1/academic-terms/school/:school_id
+const DEFAULT_ACADEMIC_YEARS: AcademicYear[] = [
+  { id: 'placeholder-1', name: 'Term 1 2025', year: 2025, is_current: true, term_names: ['Term 1', 'Term 2', 'Term 3'] },
+  { id: 'placeholder-2', name: 'Term 2 2024', year: 2024, is_current: false, term_names: ['Term 1', 'Term 2', 'Term 3'] },
+  { id: 'placeholder-3', name: 'Term 3 2024', year: 2024, is_current: false, term_names: ['Term 1', 'Term 2', 'Term 3'] },
+];
+
+// Helper to check if a string is a valid UUID
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
 };
 
-function FeeRow({ field, value }: { field: typeof FEE_FIELDS[number]; value: number }) {
-  const { icon: Icon, label, color, desc } = field;
-  if (!value) return null;
-  return (
-    <div className="flex justify-between items-center py-2.5 border-b border-gray-100">
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
-          <Icon size={14} color={color} />
-        </div>
-        <div className="min-w-0">
-          <div className="text-[13px] font-semibold text-gray-900">{label}</div>
-          <div className="text-[10px] text-gray-500 mt-px">{desc}</div>
-        </div>
-      </div>
-      <div className="text-[13px] font-bold text-gray-900 whitespace-nowrap pl-3 flex-shrink-0">{fmt(value)}</div>
-    </div>
-  );
+// Fetch academic years from backend
+const fetchAcademicYears = async (schoolId: string): Promise<AcademicYear[]> => {
+  try {
+    const token = localStorage.getItem('cbc_access_token');
+    const API_URL = import.meta.env.PROD 
+      ? 'https://cbc-education-system-1.onrender.com' 
+      : '';
+    
+    const response = await fetch(`${API_URL}/api/v1/academic-terms/school/${schoolId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch academic years');
+    }
+    
+    const data = await response.json();
+    if (data.success && data.data) {
+      return data.data.map((term: any) => ({
+        id: term.id,
+        name: term.name || `Term ${term.term_number} ${term.year}`,
+        year: term.year,
+        is_current: term.is_current,
+        term_names: term.term_names,
+      }));
+    }
+    return DEFAULT_ACADEMIC_YEARS;
+  } catch (error) {
+    console.error('[FeeStructure] Error fetching academic years:', error);
+    return DEFAULT_ACADEMIC_YEARS;
+  }
+};
+
+interface FeeStructuresTabProps {
+  // Add any props if needed
 }
 
-function FeeCard({ fee, onEdit, lvl }: { fee: FeeData; onEdit: (f: FeeData) => void; lvl: { bg: string; border: string; badge: string; badgeText: string } }) {
-  const [expanded, setExpanded] = useState(false);
-  const tt = termTotal(fee);
-  const at = annualTotal(fee);
-  const activeFields = FEE_FIELDS.filter(f => fee[f.key] > 0);
-  const visible = expanded ? activeFields : activeFields.slice(0, 5);
+export default function FeeStructuresTab({}: FeeStructuresTabProps) {
+  const { user } = useAuth();
+  
+  // State
+  const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>(DEFAULT_ACADEMIC_YEARS);
+  const [selectedYear, setSelectedYear] = useState<string>('');
+  const [selectedGrade, setSelectedGrade] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Dialog states
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedFee, setSelectedFee] = useState<FeeStructure | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState<{
+    name: string;
+    grade_level: string;
+    category: string;
+    amount: string;
+    frequency: string;
+    description: string;
+    is_mandatory: boolean;
+  }>({
+    name: '',
+    grade_level: '',
+    category: 'tuition',
+    amount: '',
+    frequency: 'per_term',
+    description: '',
+    is_mandatory: true,
+  });
 
-  return (
-    <div className="bg-white border border-gray-200 rounded-[14px] overflow-hidden flex flex-col shadow-sm hover:shadow-lg transition-shadow">
-      <div className="h-1 flex-shrink-0" style={{ background: lvl.badge }} />
-      <div className="px-5 pt-[18px] pb-3.5 border-b border-gray-100">
-        <div className="flex justify-between items-start gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-[19px] font-extrabold text-gray-900">{fee.className}</span>
-              <span className="text-[10px] font-bold px-2.5 py-[3px] rounded-[20px] whitespace-nowrap" style={{ background: lvl.bg, color: lvl.badgeText, border: `1px solid ${lvl.border}` }}>{fee.level}</span>
-            </div>
-            <div className="flex gap-3.5 text-[11px] text-gray-600 flex-wrap">
-              <span className="flex items-center gap-1"><Users size={11} /> {fee.totalStudents} students</span>
-              <span className="flex items-center gap-1">{fee.isBoarding ? <Home size={11} /> : <Bus size={11} />} {fee.isBoarding ? "Boarding" : "Day School"}</span>
-            </div>
-          </div>
-          <div className="text-right flex-shrink-0">
-            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Per Term</div>
-            <div className="text-[22px] font-extrabold leading-none" style={{ color: lvl.badge }}>{fmt(tt)}</div>
-          </div>
-        </div>
-      </div>
-      <div className="px-5 pt-0.5 flex-1">
-        {visible.map(f => <FeeRow key={f.key} field={f} value={fee[f.key] || 0} />)}
-      </div>
-      {activeFields.length > 5 && (
-        <div className="px-5 pt-2.5 pb-1">
-          <button onClick={() => setExpanded(!expanded)} className="w-full py-2 border border-gray-200 rounded-[9px] bg-gray-50 cursor-pointer text-xs font-semibold text-gray-700 flex items-center justify-center gap-1.5 hover:bg-gray-100 transition-colors">
-            {expanded ? <><ChevronUp size={13} /> Show less</> : <><ChevronDown size={13} /> {activeFields.length - 5} more fee components</>}
-          </button>
-        </div>
-      )}
-      <div className="mx-5 my-3 bg-gray-50 rounded-[10px] p-3.5 border border-gray-200">
-        <div className="flex justify-between items-center mb-2.5">
-          <span className="text-xs font-semibold text-gray-600">Per Term Total</span>
-          <span className="text-[15px] font-extrabold text-gray-900">{fmt(tt)}</span>
-        </div>
-        <div className="h-px bg-gray-200 mb-2.5" />
-        <div className="flex justify-between items-center">
-          <span className="text-xs font-semibold text-gray-600">Annual Total <span className="text-[11px] font-normal text-gray-500">(3 terms)</span></span>
-          <span className="text-[15px] font-extrabold text-red-600">{fmt(at)}</span>
-        </div>
-      </div>
-      <div className="flex gap-2 px-5 pb-[18px]">
-        <button onClick={() => onEdit(fee)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-[9px] bg-white cursor-pointer text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-          <Edit2 size={13} /> Edit
-        </button>
-        <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border-none rounded-[9px] bg-red-600 cursor-pointer text-[13px] font-bold text-white hover:bg-red-700 transition-colors">
-          <Download size={13} /> Receipt
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function EditModal({ fee, onSave, onCancel }: { fee: FeeData; onSave: (f: FeeData) => void; onCancel: () => void }) {
-  const [form, setForm] = useState<FeeData>({ ...fee });
-  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: Number(v) || 0 }));
-
-  return (
-    <div className="fixed inset-0 bg-black/60 z-[500] flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl w-full max-w-[660px] max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200 sticky top-0 bg-white z-[1]">
-          <div>
-            <div className="text-base font-extrabold text-gray-900">Edit Fees — {fee.className}</div>
-            <div className="text-xs text-gray-500 mt-0.5">All amounts in Kenya Shillings (KSh)</div>
-          </div>
-          <button onClick={onCancel} className="w-[34px] h-[34px] bg-gray-100 border-none cursor-pointer rounded-lg flex items-center justify-center hover:bg-gray-200">
-            <X size={16} className="text-gray-600" />
-          </button>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-2 gap-3.5">
-            {FEE_FIELDS.map(({ key, label, icon: Icon, color }) => (
-              <div key={key}>
-                <label className="flex items-center gap-[5px] mb-1.5 text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                  <Icon size={11} color={color} /> {label}
-                </label>
-                <input type="number" value={form[key] || 0} onChange={e => set(key, e.target.value)} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-900 outline-none focus:border-red-500 bg-white" />
-              </div>
-            ))}
-            <div>
-              <label className="flex items-center gap-[5px] mb-1.5 text-[11px] font-bold text-gray-600 uppercase tracking-wider"><Users size={11} /> Total Students</label>
-              <input type="number" value={form.totalStudents || 0} onChange={e => setForm(p => ({ ...p, totalStudents: Number(e.target.value) }))} className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-900 outline-none focus:border-red-500 bg-white" />
-            </div>
-            <div className="flex items-end pb-1">
-              <label className="flex items-center gap-2 cursor-pointer text-[13px] font-semibold text-gray-700">
-                <input type="checkbox" checked={form.isBoarding} onChange={e => setForm(p => ({ ...p, isBoarding: e.target.checked }))} className="w-4 h-4 accent-red-600" />
-                Boarding School
-              </label>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2.5 p-6 pt-4 border-t border-gray-200 sticky bottom-0 bg-white">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-gray-200 rounded-[9px] bg-white cursor-pointer text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
-          <button onClick={() => onSave(form)} className="flex-[2] py-2.5 border-none rounded-[9px] bg-red-600 cursor-pointer text-sm font-bold text-white flex items-center justify-center gap-2 hover:bg-red-700 transition-colors">
-            <Save size={15} /> Save Changes
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface FeeStructureProps {
-  onBack?: () => void;
-}
-
-export default function FeeStructure({ onBack }: FeeStructureProps) {
-  const [fees, setFees]          = useState(SEED);
-  const [editTarget, setEdit]    = useState<FeeData | null>(null);
-  const [activeLevel, setActive] = useState("All");
-  const [toast, setToast]        = useState<string | null>(null);
-
-  const notify = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const handleSave = (updated: FeeData) => {
-    setFees(f => f.map(x => x.id === updated.id ? updated : x));
-    setEdit(null);
-    notify("Fee structure updated successfully.");
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      grade_level: '',
+      category: 'tuition',
+      amount: '',
+      frequency: 'per_term',
+      description: '',
+      is_mandatory: true,
+    });
+    setSelectedFee(null);
   };
 
-  const levels = ["All", ...Object.keys(CBC_META)];
-  const shown  = activeLevel === "All" ? Object.keys(CBC_META) : [activeLevel];
-  const totalStudents = fees.reduce((s, f) => s + f.totalStudents, 0);
-  const totalRevenue  = fees.reduce((s, f) => s + termTotal(f) * f.totalStudents, 0);
-  const avgFee        = fees.reduce((s, f) => s + termTotal(f), 0) / fees.length;
+  // Fetch fee structures from API
+  const fetchFeeStructures = useCallback(async () => {
+    if (!user?.schoolId) {
+      console.warn('[FeeStructure] No schoolId found. User:', user);
+      setError('School ID not found. Please log in again.');
+      return;
+    }
+
+    console.log('[FeeStructure] User schoolId:', user.schoolId);
+    
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Build filters - only add filters with valid values
+      const filters: {
+        academic_year_id?: string;
+        grade_level?: string;
+        is_active?: boolean;
+      } = {};
+
+      // Only filter by year if it's a valid UUID (real academic year from backend)
+      if (selectedYear && isValidUUID(selectedYear)) {
+        filters.academic_year_id = selectedYear;
+      }
+
+      if (selectedGrade && selectedGrade !== 'all') {
+        filters.grade_level = selectedGrade;
+      }
+
+      filters.is_active = true;
+
+      console.log('[FeeStructure] Fetching with filters:', filters);
+      
+      const response = await getFeeStructures(filters);
+      console.log('[FeeStructure] Full Response:', JSON.stringify(response, null, 2));
+      
+      // Handle both nested and flat response formats
+      const feeStructuresData = (response as any).data?.fee_structures || (response as any).fee_structures || [];
+      console.log('[FeeStructure] fee_structures:', feeStructuresData);
+      setFeeStructures(feeStructuresData);
+    } catch (err: any) {
+      console.error('[FeeStructure] Error fetching:', err);
+      setError(err.message || 'Failed to load fee structures');
+      toast.error(err.message || 'Failed to load fee structures');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.schoolId, selectedYear, selectedGrade]);
+
+  // Fetch academic years on mount
+  useEffect(() => {
+    const loadAcademicYears = async () => {
+      if (user?.schoolId) {
+        const years = await fetchAcademicYears(user.schoolId);
+        setAcademicYears(years);
+        
+        // Set current year as default
+        const currentYear = years.find(ay => ay.is_current);
+        if (currentYear) {
+          setSelectedYear(currentYear.id);
+        }
+      }
+    };
+    
+    loadAcademicYears();
+  }, [user?.schoolId]);
+
+  // Fetch when year or grade changes
+  useEffect(() => {
+    // Always fetch when user is available and on mount
+    if (user?.schoolId) {
+      fetchFeeStructures();
+    }
+  }, [selectedYear, selectedGrade, user?.schoolId]);
+
+  // Group fees by grade
+  const groupedFees = feeStructures.reduce((acc, fee) => {
+    const grade = fee.grade_level || 'All Grades';
+    if (!acc[grade]) {
+      acc[grade] = [];
+    }
+    acc[grade].push(fee);
+    return acc;
+  }, {} as Record<string, FeeStructure[]>);
+
+  // Calculate totals by grade
+  const calculateGradeTotal = (fees: FeeStructure[]): number => {
+    return fees.reduce((sum, fee) => sum + Number(fee.amount), 0);
+  };
+
+  // Handle create
+  const handleCreate = async () => {
+    if (!formData.name || !formData.amount || !selectedYear) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload: CreateFeeStructurePayload = {
+        academic_year_id: selectedYear,
+        name: formData.name,
+        grade_level: formData.grade_level || undefined,
+        category: formData.category,
+        amount: parseFloat(formData.amount),
+        frequency: formData.frequency,
+        description: formData.description || undefined,
+        is_mandatory: formData.is_mandatory,
+      };
+
+      await createFeeStructure(payload);
+      toast.success('Fee structure created successfully');
+      setIsCreateDialogOpen(false);
+      resetForm();
+      fetchFeeStructures();
+    } catch (err: any) {
+      console.error('[FeeStructure] Create error:', err);
+      toast.error(err.message || 'Failed to create fee structure');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle update
+  const handleUpdate = async () => {
+    if (!selectedFee || !formData.name || !formData.amount) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload: UpdateFeeStructurePayload = {
+        name: formData.name,
+        grade_level: formData.grade_level || undefined,
+        category: formData.category,
+        amount: parseFloat(formData.amount),
+        frequency: formData.frequency,
+        description: formData.description || undefined,
+        is_mandatory: formData.is_mandatory,
+      };
+
+      await updateFeeStructure(selectedFee.id, payload);
+      toast.success('Fee structure updated successfully');
+      setIsEditDialogOpen(false);
+      resetForm();
+      fetchFeeStructures();
+    } catch (err: any) {
+      console.error('[FeeStructure] Update error:', err);
+      toast.error(err.message || 'Failed to update fee structure');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (!selectedFee) return;
+
+    setIsSubmitting(true);
+    try {
+      await deleteFeeStructure(selectedFee.id);
+      toast.success('Fee structure deleted successfully');
+      setIsDeleteDialogOpen(false);
+      resetForm();
+      fetchFeeStructures();
+    } catch (err: any) {
+      console.error('[FeeStructure] Delete error:', err);
+      toast.error(err.message || 'Failed to delete fee structure');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Open edit dialog
+  const openEditDialog = (fee: FeeStructure) => {
+    setSelectedFee(fee);
+    setFormData({
+      name: fee.name,
+      grade_level: fee.grade_level || '',
+      category: fee.category,
+      amount: String(fee.amount),
+      frequency: fee.frequency,
+      description: fee.description || '',
+      is_mandatory: fee.is_mandatory,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  // Open delete dialog
+  const openDeleteDialog = (fee: FeeStructure) => {
+    setSelectedFee(fee);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Get display name for frequency
+  const getFrequencyLabel = (freq: string): string => {
+    const labels: Record<string, string> = {
+      'per_term': 'Per Term',
+      'per_year': 'Per Year',
+      'once_off': 'Once Off',
+      'monthly': 'Monthly',
+    };
+    return labels[freq] || freq;
+  };
+
+  // Get category badge color
+  const getCategoryBadgeColor = (cat: string): string => {
+    const colors: Record<string, string> = {
+      'tuition': 'bg-blue-100 text-blue-800',
+      'activity': 'bg-green-100 text-green-800',
+      'uniform': 'bg-purple-100 text-purple-800',
+      'transport': 'bg-yellow-100 text-yellow-800',
+      'meals': 'bg-orange-100 text-orange-800',
+      'examination': 'bg-red-100 text-red-800',
+      'registration': 'bg-indigo-100 text-indigo-800',
+      'other': 'bg-gray-100 text-gray-800',
+    };
+    return colors[cat] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Current year name for display
+  const currentYearName = academicYears.find(ay => ay.id === selectedYear)?.name || 'Select Year';
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'school_admin' || user?.role === 'super_admin';
+
+  // Export to CSV function
+  const exportToCSV = () => {
+    if (feeStructures.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const headers = ['Academic Year', 'Term', 'Grade Level', 'Fee Name', 'Category', 'Frequency', 'Amount', 'Mandatory'];
+    const rows = feeStructures.map(fee => [
+      currentYearName,
+      'All Terms',
+      fee.grade_level || 'All Grades',
+      fee.name,
+      fee.category.charAt(0).toUpperCase() + fee.category.slice(1),
+      getFrequencyLabel(fee.frequency),
+      Number(fee.amount).toString(),
+      fee.is_mandatory ? 'Yes' : 'No'
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `fee_structure_${selectedGrade}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Fee structure exported to CSV');
+  };
+
+  // Export to PDF function
+  const exportToPDF = () => {
+    if (feeStructures.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Unable to open print window');
+      return;
+    }
+
+    const gradeFilter = selectedGrade === 'all' ? 'All Grades' : selectedGrade;
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Fee Structure - ${currentYearName}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+          .header h1 { font-size: 24px; margin-bottom: 5px; }
+          .header p { font-size: 14px; color: #666; }
+          .filters { margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+          .filters p { font-size: 13px; margin: 3px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }
+          th { background-color: #333; color: white; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          .amount { text-align: right; font-weight: bold; }
+          .mandatory-yes { color: green; font-weight: bold; }
+          .mandatory-no { color: #888; }
+          .footer { margin-top: 30px; text-align: right; font-size: 12px; color: #666; }
+          .summary { margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 5px; }
+          .summary-row { display: flex; justify-content: space-between; padding: 5px 0; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Fee Structure Report</h1>
+          <p>School Management System</p>
+        </div>
+        
+        <div class="filters">
+          <p><strong>Academic Year:</strong> ${currentYearName}</p>
+          <p><strong>Grade Level:</strong> ${gradeFilter}</p>
+          <p><strong>Total Fee Items:</strong> ${feeStructures.length}</p>
+          <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Grade Level</th>
+              <th>Fee Name</th>
+              <th>Category</th>
+              <th>Frequency</th>
+              <th>Amount (KES)</th>
+              <th>Mandatory</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${feeStructures.map(fee => `
+              <tr>
+                <td>${fee.grade_level || 'All Grades'}</td>
+                <td>${fee.name}</td>
+                <td>${fee.category.charAt(0).toUpperCase() + fee.category.slice(1)}</td>
+                <td>${getFrequencyLabel(fee.frequency)}</td>
+                <td class="amount">${Number(fee.amount).toLocaleString()}</td>
+                <td class="${fee.is_mandatory ? 'mandatory-yes' : 'mandatory-no'}">${fee.is_mandatory ? 'Yes' : 'No'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="summary">
+          <div class="summary-row">
+            <span><strong>Total Fee Items:</strong></span>
+            <span>${feeStructures.length}</span>
+          </div>
+          <div class="summary-row">
+            <span><strong>Total Amount:</strong></span>
+            <span><strong>KES ${feeStructures.reduce((sum, fee) => sum + Number(fee.amount), 0).toLocaleString()}</strong></span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Generated from CBC Education System on ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+    
+    toast.success('Preparing PDF for download...');
+  };
+
+  // Handle export based on format
+  const handleExport = (format: 'csv' | 'pdf') => {
+    if (format === 'csv') {
+      exportToCSV();
+    } else {
+      exportToPDF();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-[900] bg-gray-900 text-white px-[18px] py-3 rounded-xl text-[13px] font-semibold flex items-center gap-2.5 shadow-lg animate-fade-in">
-          <CheckCircle size={16} className="text-green-400" /> {toast}
+    <div className="space-y-4">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Fee Structure</h2>
+          <p className="text-muted-foreground">Manage fee structures by grade and academic year</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchFeeStructures}
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Refresh
+          </Button>
+          
+          {isAdmin && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Fee
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Create New Fee Structure</DialogTitle>
+                  <DialogDescription>
+                    Add a new fee structure for a specific grade and category.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Fee Name *</Label>
+                    <Input
+                      id="name"
+                      placeholder="e.g., Grade 4 Tuition Fee"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="grade">Grade Level</Label>
+                      <Select
+                        value={formData.grade_level}
+                        onValueChange={(value) => setFormData({ ...formData, grade_level: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VALID_GRADES.map((grade) => (
+                            <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="category">Category *</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VALID_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="amount">Amount (KES) *</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="0.00"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="frequency">Frequency *</Label>
+                      <Select
+                        value={formData.frequency}
+                        onValueChange={(value) => setFormData({ ...formData, frequency: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VALID_FREQUENCIES.map((freq) => (
+                            <SelectItem key={freq} value={freq}>
+                              {getFrequencyLabel(freq)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Input
+                      id="description"
+                      placeholder="Optional description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => { setIsCreateDialogOpen(false); resetForm(); }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreate} disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Create Fee
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          
+          {/* Print Dropdown */}
+          {feeStructures.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => window.print()}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Termly
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.print()}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Yearly
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
+          {/* Download Dropdown */}
+          {feeStructures.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Label className="mb-2 block">Academic Year</Label>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select academic year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {academicYears.map((year) => (
+                    <SelectItem key={year.id} value={year.id}>
+                      {year.name} {year.is_current && '(Current)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex-1">
+              <Label className="mb-2 block">Grade Level</Label>
+              <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select grade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Grades</SelectItem>
+                  {VALID_GRADES.map((grade) => (
+                    <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-end">
+              <Button 
+                variant="outline" 
+                onClick={() => { setSelectedYear(''); setSelectedGrade('all'); }}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Error State */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <span>{error}</span>
+              <Button variant="link" onClick={fetchFeeStructures}>
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-muted-foreground">Loading fee structures...</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Fee Structure Table */}
+      {!isLoading && !error && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <School className="h-5 w-5" />
+              Fee Structure - {currentYearName}
+            </CardTitle>
+            <CardDescription>
+              {feeStructures.length > 0 
+                ? `${feeStructures.length} fee item(s) configured`
+                : 'No fee structures found. Click "Add Fee" to create one.'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {feeStructures.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Grade</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Frequency</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Mandatory</TableHead>
+                    {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {feeStructures.map((fee) => (
+                    <TableRow key={fee.id}>
+                      <TableCell className="font-medium">
+                        {fee.grade_level || 'All Grades'}
+                      </TableCell>
+                      <TableCell>{fee.name}</TableCell>
+                      <TableCell>
+                        <Badge className={getCategoryBadgeColor(fee.category)}>
+                          {fee.category.charAt(0).toUpperCase() + fee.category.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{getFrequencyLabel(fee.frequency)}</TableCell>
+                      <TableCell className="font-medium">
+                        KES {Number(fee.amount).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        {fee.is_mandatory ? (
+                          <Badge variant="default">Yes</Badge>
+                        ) : (
+                          <Badge variant="outline">Optional</Badge>
+                        )}
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openEditDialog(fee)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => openDeleteDialog(fee)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold">No Fee Structures</h3>
+                <p className="text-muted-foreground max-w-md">
+                  No fee structures found for the selected filters. 
+                  {isAdmin && ' Click "Add Fee" to create your first fee structure.'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Summary Cards */}
+      {!isLoading && feeStructures.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Fee Items</CardDescription>
+              <CardTitle className="text-3xl">{feeStructures.length}</CardTitle>
+            </CardHeader>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Revenue (if all paid)</CardDescription>
+              <CardTitle className="text-3xl">
+                KES {feeStructures.reduce((sum, fee) => sum + Number(fee.amount), 0).toLocaleString()}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Grade Levels Configured</CardDescription>
+              <CardTitle className="text-3xl">
+                {Object.keys(groupedFees).length}
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
       )}
-      {editTarget && <EditModal fee={editTarget} onSave={handleSave} onCancel={() => setEdit(null)} />}
 
-      {/* HERO */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-red-700 to-red-600 shadow-lg">
-        <div className="absolute inset-0 pointer-events-none opacity-10" style={{ backgroundImage: "linear-gradient(white 1px,transparent 1px),linear-gradient(90deg,white 1px,transparent 1px)", backgroundSize: "34px 34px" }} />
-        <div className="border-b border-white/20 px-8 py-3 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5">
-            {onBack && (
-              <button onClick={onBack} className="w-8 h-8 rounded-lg bg-white/20 border border-white/30 flex items-center justify-center cursor-pointer text-white hover:bg-white/30 transition-colors">
-                <ArrowLeft size={14} />
-              </button>
-            )}
-            <div className="w-8 h-8 rounded-lg bg-white/30 flex items-center justify-center"><School size={15} color="white" /></div>
-            <span className="text-[13px] font-bold text-white">CBC School Management</span>
-            <span className="text-white/50 mx-0.5">›</span>
-            <span className="text-[13px] text-white/80">Fee Structure</span>
-          </div>
-          <div className="flex gap-2.5">
-            <button className="flex items-center gap-1.5 px-4 py-2 bg-white/20 border border-white/30 rounded-lg text-white cursor-pointer text-xs font-semibold hover:bg-white/30 transition-colors"><FileText size={13} /> Report</button>
-            <button className="flex items-center gap-1.5 px-4 py-2 bg-white border-none rounded-lg text-red-600 cursor-pointer text-xs font-bold hover:bg-gray-100 transition-colors"><Plus size={13} /> Add Grade</button>
-          </div>
-        </div>
-        <div className="max-w-[1400px] mx-auto px-8 pt-9 pb-[42px] relative">
-          <div className="mb-[30px]">
-            <div className="text-[10px] font-bold text-white/70 tracking-[0.14em] uppercase mb-2.5">Republic of Kenya · Ministry of Education · 2025</div>
-            <h1 className="text-[30px] font-black text-white leading-tight mb-1.5">CBC Fee Structure</h1>
-            <p className="text-sm text-white/80">Competency Based Curriculum — PP1 through Grade 12 · Academic Year 2025</p>
-          </div>
-          <div className="grid grid-cols-4 gap-3.5">
-            {[
-              { icon: School, label: "CBC Grades", value: fees.length, sub: "PP1 – Grade 12" },
-              { icon: Users, label: "Total Students", value: totalStudents.toLocaleString(), sub: "Enrolled 2025" },
-              { icon: Wallet, label: "Avg Term Fee", value: fmt(Math.round(avgFee)), sub: "Per student / term" },
-              { icon: TrendingUp, label: "Term Revenue", value: fmt(totalRevenue), sub: "Projected" },
-            ].map(s => (
-              <div key={s.label} className="bg-white/20 border border-white/30 rounded-xl px-5 py-[18px] flex gap-3.5 items-center backdrop-blur-sm">
-                <div className="w-11 h-11 rounded-[10px] bg-white/30 flex items-center justify-center flex-shrink-0"><s.icon size={19} color="white" /></div>
-                <div>
-                  <div className="text-[10px] font-bold text-white/70 tracking-widest uppercase mb-[3px]">{s.label}</div>
-                  <div className="text-[21px] font-extrabold text-white leading-none">{s.value}</div>
-                  {s.sub && <div className="text-[11px] text-white/70 mt-1">{s.sub}</div>}
-                </div>
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Fee Structure</DialogTitle>
+            <DialogDescription>
+              Update the fee structure details.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Fee Name *</Label>
+              <Input
+                id="edit-name"
+                placeholder="e.g., Grade 4 Tuition Fee"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-grade">Grade Level</Label>
+                <Select
+                  value={formData.grade_level}
+                  onValueChange={(value) => setFormData({ ...formData, grade_level: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VALID_GRADES.map((grade) => (
+                      <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-[100] shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-8 flex overflow-x-auto">
-          {levels.map(lvl => {
-            const isActive = activeLevel === lvl;
-            const color = lvl === "All" ? "#dc2626" : (LEVEL_STYLES[lvl]?.badge ?? "#dc2626");
-            return (
-              <button key={lvl} onClick={() => setActive(lvl)} className="px-[22px] py-[15px] border-none bg-transparent cursor-pointer text-[13px] whitespace-nowrap transition-all" style={{ fontWeight: isActive ? 700 : 500, color: isActive ? color : "#6b7280", borderBottom: `2.5px solid ${isActive ? color : "transparent"}` }}>
-                {lvl}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Cards */}
-      <div className="max-w-[1400px] mx-auto px-7 pt-9 pb-16">
-        {shown.map(level => {
-          const lvlFees = fees.filter(f => f.level === level);
-          const lvl = LEVEL_STYLES[level];
-          const lvlStudents = lvlFees.reduce((s, f) => s + f.totalStudents, 0);
-          if (!lvlFees.length || !lvl) return null;
-
-          return (
-            <div key={level} className="mb-[52px] animate-fade-in">
-              <div className="flex items-center gap-3.5 mb-[22px]">
-                <div className="px-[18px] py-1.5 rounded-lg flex-shrink-0" style={{ background: lvl.bg, border: `1px solid ${lvl.border}` }}>
-                  <span className="text-[13px] font-extrabold" style={{ color: lvl.badgeText }}>{level}</span>
-                </div>
-                <div className="h-px flex-1 bg-gray-200" />
-                <div className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
-                  {CBC_META[level].grades.join(" · ")} &nbsp;·&nbsp; {lvlStudents.toLocaleString()} students
-                </div>
-              </div>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[18px]">
-                {lvlFees.map(fee => <FeeCard key={fee.id} fee={fee} onEdit={setEdit} lvl={lvl} />)}
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-category">Category *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VALID_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          );
-        })}
-
-        {/* Notes */}
-        <div className="bg-white border border-gray-200 rounded-[14px] p-6 flex gap-4 items-start shadow-sm">
-          <div className="w-9 h-9 rounded-[9px] bg-red-100 flex items-center justify-center flex-shrink-0">
-            <AlertCircle size={17} className="text-red-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-extrabold text-gray-900 mb-4">Important Notes</div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5">
-              {[
-                ["Per-Term Fees", "Tuition, Books, Activity, Exams, ICT, Sports, Arts, Library, Medical & Transport are charged each term (3 terms/year)."],
-                ["One-Off Fees", "Admission and Uniform fees are charged once on enrollment, not per term."],
-                ["Junior Secondary", "Grade 7–9 is under Junior Secondary Schools (JSS) as per CBC transition from 8-4-4."],
-                ["Bursaries", "NG-CDF bursaries apply to day schools. Boarding subsidies available for needy Senior Secondary students."],
-              ].map(([title, body]) => (
-                <div key={title}>
-                  <div className="text-xs font-bold text-gray-900 mb-1">{title}</div>
-                  <div className="text-xs text-gray-600 leading-relaxed">{body}</div>
-                </div>
-              ))}
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-amount">Amount (KES) *</Label>
+                <Input
+                  id="edit-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-frequency">Frequency *</Label>
+                <Select
+                  value={formData.frequency}
+                  onValueChange={(value) => setFormData({ ...formData, frequency: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VALID_FREQUENCIES.map((freq) => (
+                      <SelectItem key={freq} value={freq}>
+                        {getFrequencyLabel(freq)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Input
+                id="edit-description"
+                placeholder="Optional description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
             </div>
           </div>
-        </div>
-      </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsEditDialogOpen(false); resetForm(); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Fee Structure</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{selectedFee?.name}"? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsDeleteDialogOpen(false); resetForm(); }}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
