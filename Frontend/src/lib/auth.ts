@@ -30,9 +30,9 @@ const unwrapResponse = <T>(response: ApiResponse<T>, fallbackMessage: string): T
 // In production, use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
-const TOKEN_KEY = 'cbc_auth_token';
-const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
-const USER_KEY = 'cbc_user_data';
+const TOKEN_KEY = 'cbe_auth_token';
+const REFRESH_TOKEN_KEY = 'cbe_refresh_token';
+const USER_KEY = 'cbe_user_data';
 
 // API Client with automatic token refresh
 class ApiClient {

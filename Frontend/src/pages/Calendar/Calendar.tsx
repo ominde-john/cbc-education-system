@@ -98,7 +98,7 @@ function detectConflicts(terms: Term[]): string[] {
 }
 
 const getAuthToken = (): string | null => {
-  return localStorage.getItem('cbc_access_token');
+  return localStorage.getItem('cbe_access_token');
 };
 
 const fetchAcademicYears = async (schoolId: string): Promise<AcademicYear[]> => {
@@ -267,8 +267,8 @@ const DatePickerField = ({ label, value, onChange }: { label: string; value?: st
   </div>
 );
 
-// Kenya CBC Calendar Configuration
-const kenyaCBCCalendar = {
+// Kenya CBE Calendar Configuration
+const kenyaCBECalendar = {
   term1: {
     name: 'Term 1',
     holidays: [
@@ -303,30 +303,30 @@ const calculateHolidays = (year: number, holidays: { name: string; month: number
   }));
 };
 
-const generateKenyaCBCTerms = (year: number) => {
+const generateKenyaCBETerms = (year: number) => {
   const terms = [];
   
-  const term1Holidays = calculateHolidays(year, kenyaCBCCalendar.term1.holidays);
+  const term1Holidays = calculateHolidays(year, kenyaCBECalendar.term1.holidays);
   terms.push({
-    name: kenyaCBCCalendar.term1.name,
+    name: kenyaCBECalendar.term1.name,
     year,
     startDate: `${year}-01-06`,
     endDate: `${year}-03-14`,
     holidays: term1Holidays,
   });
 
-  const term2Holidays = calculateHolidays(year, kenyaCBCCalendar.term2.holidays);
+  const term2Holidays = calculateHolidays(year, kenyaCBECalendar.term2.holidays);
   terms.push({
-    name: kenyaCBCCalendar.term2.name,
+    name: kenyaCBECalendar.term2.name,
     year,
     startDate: `${year}-04-29`,
     endDate: `${year}-07-25`,
     holidays: term2Holidays,
   });
 
-  const term3Holidays = calculateHolidays(year, kenyaCBCCalendar.term3.holidays);
+  const term3Holidays = calculateHolidays(year, kenyaCBECalendar.term3.holidays);
   terms.push({
-    name: kenyaCBCCalendar.term3.name,
+    name: kenyaCBECalendar.term3.name,
     year,
     startDate: `${year}-08-26`,
     endDate: `${year}-11-22`,
@@ -351,7 +351,7 @@ const Calendar = () => {
   const [newTerm, setNewTerm] = useState<Partial<Term>>({ holidays: [], notes: '' });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('cbc_user');
+    const storedUser = localStorage.getItem('cbe_user');
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
@@ -591,7 +591,7 @@ const Calendar = () => {
     try {
       // Only generate missing terms for this year
       const existingTermNames = termsForYear.map(t => t.name);
-      const kenyaTerms = generateKenyaCBCTerms(yearNum).filter(
+      const kenyaTerms = generateKenyaCBETerms(yearNum).filter(
         kt => !existingTermNames.includes(kt.name)
       );
       
@@ -622,7 +622,7 @@ const Calendar = () => {
           endDate: created.end_date,
           closingDate: created.end_date,
           holidays: kenyaTerms[i].holidays,
-          notes: `Kenya CBC Calendar ${yearNum}. Includes ${kenyaTerms[i].holidays.length} holidays/breaks.`,
+          notes: `Kenya CBE Calendar ${yearNum}. Includes ${kenyaTerms[i].holidays.length} holidays/breaks.`,
           status: created.is_current ? 'active' : 'upcoming',
           is_current: created.is_current,
           is_active: created.is_active,
@@ -639,7 +639,7 @@ const Calendar = () => {
         setAvailableYears(prev => [...prev, yearNum].sort((a, b) => b - a));
       }
       
-      toast.success(`Kenya CBC Calendar for ${yearNum} generated successfully!`);
+      toast.success(`Kenya CBE Calendar for ${yearNum} generated successfully!`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to auto-generate terms');
     } finally {

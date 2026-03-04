@@ -257,7 +257,7 @@ export default function SystemStatusPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.25 }}
             >
-              Real-time health of the Noneaa CBC Education Platform
+              Real-time health of the Noneaa CBE Education Platform
             </motion.p>
             <motion.div
               initial={{ opacity: 0 }}

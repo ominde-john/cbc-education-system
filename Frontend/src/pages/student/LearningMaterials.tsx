@@ -36,7 +36,7 @@ export default function LearningMaterials() {
           </div>
           <div className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">CBC Education</span>
+            <span className="font-semibold text-lg">CBE Education</span>
           </div>
           <Button
             variant="default"
@@ -120,7 +120,7 @@ export default function LearningMaterials() {
                   About Learning Materials
                 </CardTitle>
                 <CardDescription>
-                  Access comprehensive learning resources aligned with the CBC curriculum
+                  Access comprehensive learning resources aligned with the CBE curriculum
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -143,7 +143,7 @@ export default function LearningMaterials() {
                     <div>
                       <h4 className="font-semibold text-sm mb-1">Browse Topics</h4>
                       <p className="text-xs text-muted-foreground">
-                        Explore subjects and topics based on CBC curriculum
+                        Explore subjects and topics based on CBE curriculum
                       </p>
                     </div>
                   </div>

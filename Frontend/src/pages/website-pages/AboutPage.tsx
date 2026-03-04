@@ -280,7 +280,7 @@ export default function AboutPage() {
                 </h3>
                 <p className={`${fontSize.base} text-slate-600 leading-relaxed mb-6`}>
                   To empower educators with intelligent tools that facilitate personalized, mastery-based learning 
-                  at scale. We believe the CBC curriculum is the bridge to building a more skilled, innovative workforce for Africa.
+                  at scale. We believe the CBE curriculum is the bridge to building a more skilled, innovative workforce for Africa.
                 </p>
                 <ul className="space-y-3">
                   {[
@@ -361,7 +361,7 @@ export default function AboutPage() {
                 {
                   year: '2020',
                   title: 'The Beginning',
-                  description: 'Started with 5 pilot schools in Nairobi to test CBC assessment tools.',
+                  description: 'Started with 5 pilot schools in Nairobi to test CBE assessment tools.',
                   icon: Rocket
                 },
                 {
@@ -536,7 +536,7 @@ export default function AboutPage() {
               Ready to Transform Your School?
             </h2>
             <p className={`${fontSize.lg} text-blue-100 mb-8 max-w-2xl mx-auto`}>
-              Join 150+ schools across Kenya already using Noneaa to improve CBC implementation 
+              Join 150+ schools across Kenya already using Noneaa to improve CBE implementation 
               and student outcomes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

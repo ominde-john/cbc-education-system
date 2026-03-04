@@ -26,7 +26,7 @@ const STATS = [
   { icon: BookOpen,   value: '2,400+', label: 'Resources' },
   { icon: Users,      value: '12K+',   label: 'Students'  },
   { icon: TrendingUp, value: '98%',    label: 'Pass Rate' },
-  { icon: Award,      value: 'CBC',    label: 'Compliant' },
+  { icon: Award,      value: 'CBE',    label: 'Compliant' },
 ];
 
 export default function LoginPage() {
@@ -343,7 +343,7 @@ export default function LoginPage() {
               <div className="lp-logo">
                 <img src="/Noneea-logo.jpg" alt="Noneaa" className="h-[46px] w-auto object-contain rounded-[10px]" />
                 <div>
-                  <div className="lp-logo-name">CBC Noneaa</div>
+                  <div className="lp-logo-name">CBE Noneaa</div>
                   <div className="lp-logo-sub">Kenya Education</div>
                 </div>
               </div>
@@ -466,11 +466,11 @@ export default function LoginPage() {
                 {/* Footer */}
                 <div className="lp-divider">
                   <div className="lp-divider-ln" />
-                  <span className="lp-divider-txt">Secure · Encrypted · CBC Compliant</span>
+                  <span className="lp-divider-txt">Secure · Encrypted · CBE Compliant</span>
                   <div className="lp-divider-ln" />
                 </div>
                 <div className="lp-foot">
-                  <span className="lp-foot-copy">© 2026 CBC Noneaa</span>
+                  <span className="lp-foot-copy">© 2026 CBE Noneaa</span>
                   <div className="lp-foot-links">
                     <a href="/privacy">Privacy</a>
                     <a href="/terms">Terms</a>

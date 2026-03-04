@@ -112,7 +112,7 @@ const ClientsPage = () => {
           { label: 'Partner Schools', end: clientStats.totalSchools, format: 'raw', suffix: '+' , Icon: School},
           { label: 'Students Reached', end: Math.round(clientStats.totalStudents), format: 'compact', suffix: '+', Icon: Users },
           { label: 'Counties', end: 8, format: 'raw', suffix: '+', Icon: MapPin },
-          { label: 'CBC Compliant', end: 100, format: 'percent', suffix: '', Icon: CheckCircle }
+          { label: 'CBE Compliant', end: 100, format: 'percent', suffix: '', Icon: CheckCircle }
         ]}
       />
 
@@ -122,7 +122,7 @@ const ClientsPage = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div className="max-w-xl">
               <h2 className="text-3xl font-bold text-slate-900 mb-4">Explore our Network</h2>
-              <p className="text-slate-600">Filter by institution type to see how we tailor CBC solutions for different learning environments.</p>
+              <p className="text-slate-600">Filter by institution type to see how we tailor CBE solutions for different learning environments.</p>
             </div>
             
             <div className="flex flex-wrap gap-2">
@@ -160,7 +160,7 @@ const ClientsPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <TestimonialCard 
-              quote="Noneaa has transformed how we implement CBC. The curriculum management tools are exceptional."
+              quote="Noneaa has transformed how we implement CBE. The curriculum management tools are exceptional."
               author="Dr. Mary Kamau" role="Principal, Makini School" initials="MK"
             />
             <TestimonialCard 
@@ -168,7 +168,7 @@ const ClientsPage = () => {
               author="John Omondi" role="Head Teacher, Alliance High" initials="JO"
             />
             <TestimonialCard 
-              quote="The perfect solution for CBC implementation. Highly recommend to any school in Kenya."
+              quote="The perfect solution for CBE implementation. Highly recommend to any school in Kenya."
               author="Sarah Wanjiru" role="Director, ISK Nairobi" initials="SW"
             />
           </div>
@@ -182,7 +182,7 @@ const ClientsPage = () => {
             <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 relative z-10">Ready to modernize your school?</h2>
             <p className="text-indigo-100 text-lg mb-10 max-w-2xl mx-auto relative z-10">
-              Join 150+ Kenyan institutions. Get your CBC assessments and student tracking under one roof.
+              Join 150+ Kenyan institutions. Get your CBE assessments and student tracking under one roof.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
               <a href="/contact" className="bg-white text-indigo-700 font-bold py-4 px-8 rounded-xl hover:bg-indigo-50 transition-colors shadow-lg">

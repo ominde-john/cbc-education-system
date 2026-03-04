@@ -145,7 +145,7 @@ const emptyForm: AddUserForm = {
 
 // API fetch function with auth headers
 const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('cbc_access_token');
+  const token = localStorage.getItem('cbe_access_token');
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -11,10 +11,10 @@ const FEE_FIELDS = [
   { key:"tuitionFee",       label:"Tuition Fee",        icon:School,        color:"#dc2626", desc:"Core learning fees per term" },
   { key:"admissionFee",     label:"Admission Fee",       icon:GraduationCap, color:"#d97706", desc:"One-time registration" },
   { key:"uniformFee",       label:"Uniform Fee",         icon:Shirt,         color:"#7c3aed", desc:"School uniform & PE kit" },
-  { key:"booksNStationery", label:"Books & Stationery",  icon:BookOpen,      color:"#b45309", desc:"CBC textbooks & materials" },
+  { key:"booksNStationery", label:"Books & Stationery",  icon:BookOpen,      color:"#b45309", desc:"CBE textbooks & materials" },
   { key:"examFee",          label:"Exam / CATS Fee",     icon:FileText,      color:"#0d9488", desc:"Continuous assessment tests" },
   { key:"ictFee",           label:"ICT Fee",             icon:Calculator,    color:"#4f46e5", desc:"Computer lab & digital tools" },
-  { key:"activityFee",      label:"Activity Fee",        icon:Layers,        color:"#ea580c", desc:"Clubs, trips & CBC projects" },
+  { key:"activityFee",      label:"Activity Fee",        icon:Layers,        color:"#ea580c", desc:"Clubs, trips & CBE projects" },
   { key:"sportsFee",        label:"Sports Fee",          icon:Dumbbell,      color:"#059669", desc:"Physical education & sports" },
   { key:"artsFee",          label:"Arts & Music",        icon:Music,         color:"#be185d", desc:"Performing & creative arts" },
   { key:"libraryFee",       label:"Library Fee",         icon:Library,       color:"#92400e", desc:"Reading & resource access" },
@@ -28,7 +28,7 @@ interface FeeData {
   [key: string]: any;
 }
 
-const CBC_META: Record<string, { grades: string[] }> = {
+const CBE_META: Record<string, { grades: string[] }> = {
   "Lower Primary":    { grades: ["PP1","PP2","Grade 1","Grade 2","Grade 3"] },
   "Upper Primary":    { grades: ["Grade 4","Grade 5","Grade 6"] },
   "Junior Secondary": { grades: ["Grade 7","Grade 8","Grade 9"] },
@@ -213,8 +213,8 @@ export default function FeeStructure({ onBack }: FeeStructureProps) {
     notify("Fee structure updated successfully.");
   };
 
-  const levels = ["All", ...Object.keys(CBC_META)];
-  const shown  = activeLevel === "All" ? Object.keys(CBC_META) : [activeLevel];
+  const levels = ["All", ...Object.keys(CBE_META)];
+  const shown  = activeLevel === "All" ? Object.keys(CBE_META) : [activeLevel];
   const totalStudents = fees.reduce((s, f) => s + f.totalStudents, 0);
   const totalRevenue  = fees.reduce((s, f) => s + termTotal(f) * f.totalStudents, 0);
   const avgFee        = fees.reduce((s, f) => s + termTotal(f), 0) / fees.length;
@@ -239,7 +239,7 @@ export default function FeeStructure({ onBack }: FeeStructureProps) {
               </button>
             )}
             <div className="w-8 h-8 rounded-lg bg-white/30 flex items-center justify-center"><School size={15} color="white" /></div>
-            <span className="text-[13px] font-bold text-white">CBC School Management</span>
+            <span className="text-[13px] font-bold text-white">CBE School Management</span>
             <span className="text-white/50 mx-0.5">›</span>
             <span className="text-[13px] text-white/80">Fee Structure</span>
           </div>
@@ -251,12 +251,12 @@ export default function FeeStructure({ onBack }: FeeStructureProps) {
         <div className="max-w-[1400px] mx-auto px-8 pt-9 pb-[42px] relative">
           <div className="mb-[30px]">
             <div className="text-[10px] font-bold text-white/70 tracking-[0.14em] uppercase mb-2.5">Republic of Kenya · Ministry of Education · 2025</div>
-            <h1 className="text-[30px] font-black text-white leading-tight mb-1.5">CBC Fee Structure</h1>
+            <h1 className="text-[30px] font-black text-white leading-tight mb-1.5">CBE Fee Structure</h1>
             <p className="text-sm text-white/80">Competency Based Curriculum — PP1 through Grade 12 · Academic Year 2025</p>
           </div>
           <div className="grid grid-cols-4 gap-3.5">
             {[
-              { icon: School, label: "CBC Grades", value: fees.length, sub: "PP1 – Grade 12" },
+              { icon: School, label: "CBE Grades", value: fees.length, sub: "PP1 – Grade 12" },
               { icon: Users, label: "Total Students", value: totalStudents.toLocaleString(), sub: "Enrolled 2025" },
               { icon: Wallet, label: "Avg Term Fee", value: fmt(Math.round(avgFee)), sub: "Per student / term" },
               { icon: TrendingUp, label: "Term Revenue", value: fmt(totalRevenue), sub: "Projected" },
@@ -305,7 +305,7 @@ export default function FeeStructure({ onBack }: FeeStructureProps) {
                 </div>
                 <div className="h-px flex-1 bg-gray-200" />
                 <div className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
-                  {CBC_META[level].grades.join(" · ")} &nbsp;·&nbsp; {lvlStudents.toLocaleString()} students
+                  {CBE_META[level].grades.join(" · ")} &nbsp;·&nbsp; {lvlStudents.toLocaleString()} students
                 </div>
               </div>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[18px]">
@@ -326,7 +326,7 @@ export default function FeeStructure({ onBack }: FeeStructureProps) {
               {[
                 ["Per-Term Fees", "Tuition, Books, Activity, Exams, ICT, Sports, Arts, Library, Medical & Transport are charged each term (3 terms/year)."],
                 ["One-Off Fees", "Admission and Uniform fees are charged once on enrollment, not per term."],
-                ["Junior Secondary", "Grade 7–9 is under Junior Secondary Schools (JSS) as per CBC transition from 8-4-4."],
+                ["Junior Secondary", "Grade 7–9 is under Junior Secondary Schools (JSS) as per CBE transition from 8-4-4."],
                 ["Bursaries", "NG-CDF bursaries apply to day schools. Boarding subsidies available for needy Senior Secondary students."],
               ].map(([title, body]) => (
                 <div key={title}>

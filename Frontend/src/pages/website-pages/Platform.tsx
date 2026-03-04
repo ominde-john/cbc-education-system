@@ -31,14 +31,14 @@ import { useState } from 'react';
 
 // Constants & Data
 const FEATURES = [
-  { icon: BookMarked, text: 'CBC Curriculum Tools', color: 'text-blue-600', bg: 'bg-blue-50' },
+  { icon: BookMarked, text: 'CBE Curriculum Tools', color: 'text-blue-600', bg: 'bg-blue-50' },
   { icon: BrainCircuit, text: 'Mastery Tracking', color: 'text-emerald-600', bg: 'bg-emerald-50' },
   { icon: Users, text: 'Multi-Portal Access', color: 'text-purple-600', bg: 'bg-purple-50' },
   { icon: LineChart, text: 'Real-time Analytics', color: 'text-orange-600', bg: 'bg-orange-50' },
 ];
 
 const BENEFITS = [
-  { icon: Check, text: 'CBC competency tracking' },
+  { icon: Check, text: 'CBE competency tracking' },
   { icon: Check, text: 'Automated progress reports' },
   { icon: Check, text: 'Parent-teacher communication portal' },
   { icon: Check, text: 'Student mastery analytics' },
@@ -55,7 +55,7 @@ const CORE_CAPABILITIES = [
   {
     icon: FileText,
     title: 'Assessment Management',
-    description: 'Create, distribute, and grade assessments aligned with CBC competency framework.'
+    description: 'Create, distribute, and grade assessments aligned with CBE competency framework.'
   },
   {
     icon: BarChart3,
@@ -85,7 +85,7 @@ const PRICING_PLANS = {
     subtitle: 'Perfect for small to medium schools',
     features: [
       'Up to 500 students',
-      'CBC Assessment Analysis',
+      'CBE Assessment Analysis',
       'Smart Timetable Generation',
       'Bulk SMS (500 messages/month)',
       'Parent Portal Access',
@@ -99,7 +99,7 @@ const PRICING_PLANS = {
     popular: true,
     features: [
       'Up to 2000 students',
-      'Advanced CBC Analytics',
+      'Advanced CBE Analytics',
       'AI-Powered Timetabling',
       'Unlimited Bulk SMS',
       'Advanced Parent Portal',
@@ -114,7 +114,7 @@ const PRICING_PLANS = {
     subtitle: 'For large schools and education networks',
     features: [
       'Unlimited students',
-      'Advanced CBC Analytics',
+      'Advanced CBE Analytics',
       'AI-Powered Timetabling',
       'Unlimited Bulk SMS',
       'Advanced Parent Portal',
@@ -159,7 +159,7 @@ const STATS = {
 
 const TESTIMONIALS = [
   {
-    quote: "Noneaa has transformed how we track CBC competencies. The platform is intuitive and saves us countless hours.",
+    quote: "Noneaa has transformed how we track CBE competencies. The platform is intuitive and saves us countless hours.",
     author: "Mrs. Jane Kamau",
     role: "Headteacher, Green Valley Academy",
     rating: 5
@@ -180,7 +180,7 @@ const TESTIMONIALS = [
 
 // Reusable Components
 const PlatformHeroContent = () => {
-  const headingText = "Kenya's Leading CBC Management Platform";
+  const headingText = "Kenya's Leading CBE Management Platform";
   const typedHeading = useTypewriter({
     text: headingText,
     speed: 30,
@@ -188,7 +188,7 @@ const PlatformHeroContent = () => {
     repeat: false,
   });
 
-  const descriptionText = "Noneaa is an all-in-one Competency-Based Curriculum platform designed to streamline CBC implementation, enhance learning outcomes, and simplify competency tracking for Kenyan schools.";
+  const descriptionText = "Noneaa is an all-in-one Competency-Based Curriculum platform designed to streamline CBE implementation, enhance learning outcomes, and simplify competency tracking for Kenyan schools.";
   const typedDescription = useTypewriter({
     text: descriptionText,
     speed: 15,
@@ -580,7 +580,7 @@ export default function NoneaaPlatformPage() {
                 transition={{ delay: 0.3 }}
                 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight"
               >
-                Designed for Kenya's CBC Implementation
+                Designed for Kenya's CBE Implementation
               </motion.h2>
 
               <motion.p
@@ -590,7 +590,7 @@ export default function NoneaaPlatformPage() {
                 transition={{ delay: 0.4 }}
                 className="text-lg text-white/90 mb-8 leading-relaxed"
               >
-                Rated as the top CBC management system in Kenya, we've earned our reputation through successful implementation in schools nationwide and positive feedback from educators, parents, and education officials.
+                Rated as the top CBE management system in Kenya, we've earned our reputation through successful implementation in schools nationwide and positive feedback from educators, parents, and education officials.
               </motion.p>
 
               <motion.div
@@ -677,7 +677,7 @@ export default function NoneaaPlatformPage() {
                 transition={{ delay: 0.3 }}
                 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight"
               >
-                Complete CBC Management Solution
+                Complete CBE Management Solution
               </motion.h2>
 
               <motion.p
@@ -687,7 +687,7 @@ export default function NoneaaPlatformPage() {
                 transition={{ delay: 0.4 }}
                 className="text-lg text-white/90 mb-8 leading-relaxed"
               >
-                From competency tracking to portfolio management, handle every aspect of CBC implementation efficiently with our comprehensive suite of tools designed specifically for Kenyan schools.
+                From competency tracking to portfolio management, handle every aspect of CBE implementation efficiently with our comprehensive suite of tools designed specifically for Kenyan schools.
               </motion.p>
 
               <motion.div

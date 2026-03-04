@@ -103,7 +103,7 @@ export default function TermsPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Noneaa Africa provides a comprehensive Competency-Based Curriculum (CBC) platform that includes:
+                    Noneaa Africa provides a comprehensive Competency-Based Curriculum (CBE) platform that includes:
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                     <li>Student progress tracking and assessment management</li>

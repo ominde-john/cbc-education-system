@@ -122,7 +122,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center mt-6">© 2026 CBC Education System</p>
+              <p className="text-xs text-muted-foreground text-center mt-6">© 2026 CBE Education System</p>
             </div>
 
             {/* RIGHT – Form */}
