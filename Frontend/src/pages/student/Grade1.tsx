@@ -109,7 +109,7 @@ export default function Grade1() {
           </div>
           <div className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">CBC Education</span>
+            <span className="font-semibold text-lg">CBE Education</span>
           </div>
         </div>
       </header>
@@ -186,7 +186,7 @@ export default function Grade1() {
                   About Grade 1 Learning
                 </CardTitle>
                 <CardDescription>
-                  Comprehensive learning areas aligned with the CBC curriculum for Grade 1
+                  Comprehensive learning areas aligned with the CBE curriculum for Grade 1
                 </CardDescription>
               </CardHeader>
               <CardContent>

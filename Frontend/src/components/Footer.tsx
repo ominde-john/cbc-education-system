@@ -121,7 +121,7 @@ export default function Footer() {
           <motion.div variants={itemVariants} className="lg:col-span-4">
             <div className="p-6 rounded-[2rem] bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-700/50 backdrop-blur-sm">
               <h4 className="text-lg font-bold text-white mb-2">Join the Movement</h4>
-              <p className="text-xs text-slate-400 mb-6">Weekly insights on CBC digital transformation.</p>
+              <p className="text-xs text-slate-400 mb-6">Weekly insights on CBE digital transformation.</p>
               
               <div className="space-y-3">
                 <div className="relative">

@@ -139,7 +139,7 @@ app.set("trust proxy", 1);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    name: "CBC Education System API",
+    name: "CBE Education System API",
     version: "1.0.0",
     description: "Enterprise-grade authentication and AI assistant API",
     status: "running",
@@ -183,7 +183,7 @@ app.get("/health", (req, res) => {
 // API info endpoint
 app.get("/api", (req, res) => {
   res.json({
-    name: "CBC Education System API",
+    name: "CBE Education System API",
     version: "1.0.0",
     description: "Enterprise-grade authentication and AI assistant API",
     endpoints: {

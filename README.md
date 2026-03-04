@@ -1,10 +1,10 @@
 <!-- ========= ELITE HEADER ========= -->
 
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Poppins&size=30&pause=1000&color=22C55E&center=true&vCenter=true&width=750&lines=CBC%2FCBE+National+Education+Platform;Competency+Based+Learning+System;Built+for+Schools+Teachers+Parents;Data+Driven+Education+🚀" />
+  <img src="https://readme-typing-svg.herokuapp.com?font=Poppins&size=30&pause=1000&color=22C55E&center=true&vCenter=true&width=750&lines=CBE+National+Education+Platform;Competency+Based+Learning+System;Built+for+Schools+Teachers+Parents;Data+Driven+Education+🚀" />
 </p>
 
-<h1 align="center">🎓 CBC / CBE Education Platform</h1>
+<h1 align="center">🎓 CBE Education Platform</h1>
 
 <p align="center">
 <b>Digitizing Competency-Based Education for Modern Schools</b>
@@ -43,7 +43,7 @@ A **national-scale Competency-Based Education (CBE) platform** for:
 - 👨‍🎓 Learners  
 - 👪 Parents  
 - 📊 Competency assessments  
-- 📑 CBC reports  
+- 📑 CBE reports  
 
 Built for **scale, security, and multi-tenant isolation**.
 
@@ -113,7 +113,7 @@ CI/CD Pipelines
 - Report access  
 
 ### 📑 Reporting
-- CBC formative reports  
+- CBE formative reports  
 - Summative reports  
 - Template generation  
 

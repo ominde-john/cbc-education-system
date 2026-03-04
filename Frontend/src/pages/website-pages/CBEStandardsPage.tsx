@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 
-export default function CBCStandardsPage() {
+export default function CBEStandardsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -14,10 +14,10 @@ export default function CBCStandardsPage() {
           <div className="max-w-4xl mx-auto text-center">
             <BookOpen className="w-16 h-16 text-primary mx-auto mb-6" />
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              CBC Standards & Framework
+              CBE Standards & Framework
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Understanding Kenya's Competency-Based Curriculum (CBC) and our commitment to educational excellence.
+              Understanding Kenya's Competency-Based Curriculum (CBE) and our commitment to educational excellence.
             </p>
             <p className="text-sm text-muted-foreground">
               Last updated: January 2026
@@ -35,18 +35,18 @@ export default function CBCStandardsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <GraduationCap className="w-5 h-5" />
-                  What is the Competency-Based Curriculum (CBC)?
+                  What is the Competency-Based Curriculum (CBE)?
                 </CardTitle>
               </CardHeader>
               <CardContent className="prose prose-sm max-w-none">
                 <p>
-                  The Competency-Based Curriculum (CBC) is Kenya's educational framework designed to nurture every learner's 
-                  potential through a holistic approach to education. Introduced in 2017, CBC focuses on developing competencies, 
+                  The Competency-Based Curriculum (CBE) is Kenya's educational framework designed to nurture every learner's 
+                  potential through a holistic approach to education. Introduced in 2017, CBE focuses on developing competencies, 
                   skills, and values rather than just theoretical knowledge.
                 </p>
                 <p>
                   Our platform aligns with the Kenya Institute of Curriculum Development (KICD) standards, ensuring that educational 
-                  institutions can effectively implement and track CBC learning outcomes.
+                  institutions can effectively implement and track CBE learning outcomes.
                 </p>
               </CardContent>
             </Card>
@@ -61,7 +61,7 @@ export default function CBCStandardsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  CBC focuses on seven core competencies that learners should develop:
+                  CBE focuses on seven core competencies that learners should develop:
                 </p>
                 <div className="space-y-4">
                   {[
@@ -116,7 +116,7 @@ export default function CBCStandardsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  CBC organizes learning into the following areas:
+                  CBE organizes learning into the following areas:
                 </p>
                 <div className="grid md:grid-cols-2 gap-3">
                   {[
@@ -187,12 +187,12 @@ export default function CBCStandardsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Lightbulb className="w-5 h-5" />
-                  CBC Values and Principles
+                  CBE Values and Principles
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  The CBC is founded on these core values:
+                  The CBE is founded on these core values:
                 </p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside space-y-2">
                   <li><strong>Respect:</strong> For self, others, and the environment</li>
@@ -211,12 +211,12 @@ export default function CBCStandardsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  How Our Platform Supports CBC
+                  How Our Platform Supports CBE
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Noneaa is specifically designed to support CBC implementation:
+                  Noneaa is specifically designed to support CBE implementation:
                 </p>
                 <div className="space-y-3">
                   {[
@@ -230,7 +230,7 @@ export default function CBCStandardsPage() {
                     },
                     {
                       title: 'Formative Assessment Tools',
-                      description: 'Built-in tools for continuous assessment and feedback aligned with CBC principles.'
+                      description: 'Built-in tools for continuous assessment and feedback aligned with CBE principles.'
                     },
                     {
                       title: 'Progress Reports',
@@ -238,11 +238,11 @@ export default function CBCStandardsPage() {
                     },
                     {
                       title: 'Teacher Support',
-                      description: 'Resources and tools to help teachers effectively deliver CBC lessons and track outcomes.'
+                      description: 'Resources and tools to help teachers effectively deliver CBE lessons and track outcomes.'
                     },
                     {
                       title: 'Data-Driven Insights',
-                      description: 'Analytics dashboard to monitor school-wide CBC implementation and learner performance.'
+                      description: 'Analytics dashboard to monitor school-wide CBE implementation and learner performance.'
                     }
                   ].map((feature, index) => (
                     <div key={index} className="flex gap-3 p-3 rounded-lg bg-primary/5">
@@ -262,7 +262,7 @@ export default function CBCStandardsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
-                  CBC Education Levels
+                  CBE Education Levels
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -311,7 +311,7 @@ export default function CBCStandardsPage() {
               <CardHeader>
                 <CardTitle>Additional Resources</CardTitle>
                 <CardDescription>
-                  Learn more about Kenya's CBC framework
+                  Learn more about Kenya's CBE framework
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -321,8 +321,8 @@ export default function CBCStandardsPage() {
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                     <li>Kenya Institute of Curriculum Development (KICD) - <a href="https://kicd.ac.ke" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">kicd.ac.ke</a></li>
-                    <li>Ministry of Education - Official CBC Guidelines and Resources</li>
-                    <li>Teachers Service Commission (TSC) - CBC Implementation Support</li>
+                    <li>Ministry of Education - Official CBE Guidelines and Resources</li>
+                    <li>Teachers Service Commission (TSC) - CBE Implementation Support</li>
                   </ul>
                 </div>
               </CardContent>
@@ -331,16 +331,16 @@ export default function CBCStandardsPage() {
             {/* Contact */}
             <Card>
               <CardHeader>
-                <CardTitle>Questions About CBC Standards?</CardTitle>
+                <CardTitle>Questions About CBE Standards?</CardTitle>
                 <CardDescription>
-                  Our team is here to help you understand and implement CBC effectively
+                  Our team is here to help you understand and implement CBE effectively
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold mb-2">Email</h4>
-                    <p className="text-sm text-muted-foreground">cbc-support@noneaa.africa</p>
+                    <p className="text-sm text-muted-foreground">cbe-support@noneaa.africa</p>
                   </div>
                   <div>
                     <h4 className="font-semibold mb-2">Phone</h4>
@@ -354,7 +354,7 @@ export default function CBCStandardsPage() {
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">CBC Curriculum Team</h4>
+                    <h4 className="font-semibold mb-2">CBE Curriculum Team</h4>
                     <p className="text-sm text-muted-foreground">curriculum@noneaa.africa</p>
                   </div>
                 </div>

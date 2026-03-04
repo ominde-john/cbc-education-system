@@ -91,7 +91,7 @@ export default function ReportsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Reports & Analytics</h1>
           <p className="text-muted-foreground mt-1">
-            Generate CBC assessment reports and view performance analytics
+            Generate CBE assessment reports and view performance analytics
           </p>
         </div>
         <div className="flex gap-2">

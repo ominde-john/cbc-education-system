@@ -89,7 +89,7 @@ export default function LoginPage() {
               {/* Logo */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground text-2xl font-black mb-3 shadow-lg">
-                  CBC
+                  CBE
                 </div>
                 <h2 className="text-lg font-semibold text-foreground">Education System</h2>
               </div>
@@ -124,7 +124,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center mt-6">© 2026 CBC Education System</p>
+              <p className="text-xs text-muted-foreground text-center mt-6">© 2026 CBE Education System</p>
             </div>
 
             {/* RIGHT – Form */}

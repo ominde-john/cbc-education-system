@@ -24,16 +24,16 @@ import { toast } from 'sonner';
 const grades = ['PP1', 'PP2', 'Grade1', 'Grade2', 'Grade3', 'Grade4', 'Grade5', 'Grade6', 'Grade7', 'Grade8', 'Grade9'];
 
 const initialStudentAttendance = [
-  { id: '1', name: 'John Kamau', admNo: 'CBC/2024/001', present: true, late: false },
-  { id: '2', name: 'Jane Wanjiku', admNo: 'CBC/2024/002', present: true, late: false },
-  { id: '3', name: 'David Ochieng', admNo: 'CBC/2024/003', present: false, late: false },
-  { id: '4', name: 'Grace Njeri', admNo: 'CBC/2024/004', present: true, late: true },
-  { id: '5', name: 'Brian Mwangi', admNo: 'CBC/2024/005', present: true, late: false },
-  { id: '6', name: 'Faith Akinyi', admNo: 'CBC/2024/006', present: false, late: false },
-  { id: '7', name: 'Kevin Kipchoge', admNo: 'CBC/2024/007', present: true, late: false },
-  { id: '8', name: 'Lucy Wambui', admNo: 'CBC/2024/008', present: true, late: false },
-  { id: '9', name: 'Samuel Otieno', admNo: 'CBC/2024/009', present: true, late: true },
-  { id: '10', name: 'Mercy Chebet', admNo: 'CBC/2024/010', present: true, late: false },
+  { id: '1', name: 'John Kamau', admNo: 'CBE/2024/001', present: true, late: false },
+  { id: '2', name: 'Jane Wanjiku', admNo: 'CBE/2024/002', present: true, late: false },
+  { id: '3', name: 'David Ochieng', admNo: 'CBE/2024/003', present: false, late: false },
+  { id: '4', name: 'Grace Njeri', admNo: 'CBE/2024/004', present: true, late: true },
+  { id: '5', name: 'Brian Mwangi', admNo: 'CBE/2024/005', present: true, late: false },
+  { id: '6', name: 'Faith Akinyi', admNo: 'CBE/2024/006', present: false, late: false },
+  { id: '7', name: 'Kevin Kipchoge', admNo: 'CBE/2024/007', present: true, late: false },
+  { id: '8', name: 'Lucy Wambui', admNo: 'CBE/2024/008', present: true, late: false },
+  { id: '9', name: 'Samuel Otieno', admNo: 'CBE/2024/009', present: true, late: true },
+  { id: '10', name: 'Mercy Chebet', admNo: 'CBE/2024/010', present: true, late: false },
 ];
 
 const mockStaffAttendance = [

@@ -19,7 +19,7 @@ import HomePage from "@/pages/website-pages/HomePage";
 import AboutPage from "@/pages/website-pages/AboutPage";
 import SupportPage from "@/pages/website-pages/SupportPage";
 import PrivacyPage from "@/pages/website-pages/PrivacyPage";
-import CBCStandardsPage from "@/pages/website-pages/CBCStandardsPage";
+import CBEStandardsPage from "@/pages/website-pages/CBEStandardsPage";
 import TermsPage from "@/pages/website-pages/TermsPage";
 import SecurityPage from "@/pages/website-pages/SecurityPage";
 import LoginPage from "@/pages/auth/LoginPage";
@@ -169,7 +169,7 @@ function AppRoutes() {
       <Route path="/security" element={<SecurityPage />} />
       <Route path="/status" element={<SystemStatusPage />} />
       <Route path="/company/our-team" element={<TeamMembersPage />} />
-      <Route path="/cbc-standards" element={<CBCStandardsPage />} />
+      <Route path="/cbe-standards" element={<CBEStandardsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/signup" element={<GetStartedPage />} />

@@ -113,7 +113,7 @@ const TeacherPortal = () => {
     { name: "Algebra Worksheets", type: "PDF", lastUsed: "Yesterday", downloads: 45 },
     { name: "Geometry Visual Aids", type: "PowerPoint", lastUsed: "2 days ago", downloads: 32 },
     { name: "Fractions Practice Tests", type: "Word", lastUsed: "Last week", downloads: 67 },
-    { name: "CBC Mathematics Guide", type: "PDF", lastUsed: "Yesterday", downloads: 58 }
+    { name: "CBE Mathematics Guide", type: "PDF", lastUsed: "Yesterday", downloads: 58 }
   ];
 
   const toggleStudentDetails = (studentId: string) => {

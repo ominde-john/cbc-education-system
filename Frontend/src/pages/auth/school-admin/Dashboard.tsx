@@ -175,7 +175,7 @@ export default function SchoolDashboard() {
             <Building2 className="w-8 h-8 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            Welcome to CBC Education System, {user?.firstName}!
+            Welcome to CBE Education System, {user?.firstName}!
           </h1>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             To get started, you need to set up your school. This will only take a few minutes 

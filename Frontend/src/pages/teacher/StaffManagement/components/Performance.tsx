@@ -78,8 +78,8 @@ interface PerformanceMetric {
   startDate: string;
   endDate: string;
   
-  // CBC Specific Metrics
-  cbcMetrics: {
+  // CBE Specific Metrics
+  cbeMetrics: {
     lessonDelivery: number; // 0-100
     learnerEngagement: number;
     competencyAssessment: number;
@@ -246,7 +246,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                   Performance & Attendance Dashboard
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  CBC Grade 1-9 · Term {term} · {year} · School ID: {schoolId}
+                  CBE Grade 1-9 · Term {term} · {year} · School ID: {schoolId}
                 </p>
               </div>
             </div>
@@ -475,11 +475,11 @@ const OverviewSection: React.FC<{
 }> = ({ staff, nonStaff, attendance, performance, grades }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* CBC Performance Metrics */}
+      {/* CBE Performance Metrics */}
       <div className="lg:col-span-2 space-y-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            CBC Performance Overview
+            CBE Performance Overview
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {Object.entries({
@@ -864,7 +864,7 @@ const mockPerformance: PerformanceMetric[] = [
     period: "term",
     startDate: "2024-01-01",
     endDate: "2024-04-01",
-    cbcMetrics: {
+    cbeMetrics: {
       lessonDelivery: 95,
       learnerEngagement: 92,
       competencyAssessment: 90,

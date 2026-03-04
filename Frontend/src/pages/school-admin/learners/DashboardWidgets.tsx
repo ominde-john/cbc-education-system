@@ -291,7 +291,7 @@ const DashboardWidgets = () => {
           {/* Assessment Distribution */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">CBC Assessment Distribution</CardTitle>
+              <CardTitle className="text-lg">CBE Assessment Distribution</CardTitle>
             </CardHeader>
             <CardContent>
               {assessmentDistribution.length > 0 ? (

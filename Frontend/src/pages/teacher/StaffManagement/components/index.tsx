@@ -229,7 +229,7 @@ export function HeroBar({ title, sub, children }: { title: string; sub?: string;
           fontSize: 10, fontWeight: 700, color: "#9CA3AF",
           letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8,
         }}>
-          Republic of Kenya · CBC School · HR
+          Republic of Kenya · CBE School · HR
         </div>
         <h1 style={{
           fontSize: 22, fontWeight: 800, color: "#111827",

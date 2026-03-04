@@ -47,8 +47,8 @@ const contactInfo = [
 
 const faqs = [
   {
-    question: "How does Noneaa help with CBC assessment?",
-    answer: "Noneaa provides comprehensive CBC assessment analysis tools that track learner competencies, generate detailed reports, and help teachers identify areas where students need additional support. Our platform aligns with Kenya's CBC curriculum requirements."
+    question: "How does Noneaa help with CBE assessment?",
+    answer: "Noneaa provides comprehensive CBE assessment analysis tools that track learner competencies, generate detailed reports, and help teachers identify areas where students need additional support. Our platform aligns with Kenya's CBE curriculum requirements."
   },
   {
     question: "Is Noneaa available on mobile devices?",
@@ -78,7 +78,7 @@ const paymentMethods = [
 
 const subHeadingLines1 = [
   "We'd love to hear from you.",
-  "Whether you're a school looking to implement the CBC system,",
+  "Whether you're a school looking to implement the CBE system,",
   "a partner interested in collaboration, or a user needing support,",
   "the Noneaa team is ready to help."
 ];
@@ -86,7 +86,7 @@ const subHeadingLines1 = [
 const subHeadingLines2 = [
   "Reach out to us for inquiries, technical assistance,",
   "or partnership opportunities.",
-  "Our mission is to simplify CBC management and empower",
+  "Our mission is to simplify CBE management and empower",
   "schools across Kenya with reliable digital solutions."
 ];
 

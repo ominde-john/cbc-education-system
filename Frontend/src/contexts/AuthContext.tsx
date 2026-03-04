@@ -35,9 +35,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ACCESS_TOKEN_KEY = 'cbc_access_token';
-const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
-const USER_KEY = 'cbc_user';
+const ACCESS_TOKEN_KEY = 'cbe_access_token';
+const REFRESH_TOKEN_KEY = 'cbe_refresh_token';
+const USER_KEY = 'cbe_user';
 const LOGIN_SKELETON_DURATION_MS = 6000;
 const SKELETON_FADE_START_MS = LOGIN_SKELETON_DURATION_MS - 1000; // fade-out begins 1 second before hide
 
