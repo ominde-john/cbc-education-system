@@ -15,20 +15,11 @@ import {
   SchoolRegistrationStep3,
 } from '@/types/school';
 
-// Use environment variable for API URL, fallback to relative path for development
-// In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
-// Use empty string (relative path) in development to leverage Vite proxy
-// Production fallback: Use Render backend URL when deployed on Vercel
 const getApiUrl = () => {
-  // If VITE_API_URL is explicitly set, use it
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  // In production (build), use the Render backend
-  if (import.meta.env.PROD) {
-    return 'https://cbc-education-system-1.onrender.com';
-  }
-  // In development, use relative path to leverage Vite proxy
+  // Production: always use relative path → proxied by Vercel, no CORS
+  if (import.meta.env.PROD) return '';
+  // Development: use VITE_API_URL if set, otherwise fall back to Vite proxy
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   return '';
 };
 
@@ -42,7 +33,7 @@ const STEPS = [
     title: 'Basic Info',
     subtitle: 'School identity & details',
     cardTitle: 'Tell us about your school',
-    cardDesc:  'Enter your school information to get started with CBC EduStack',
+    cardDesc:  'Enter your school information to get started with CBE Noneaa',
     icon: GraduationCap,
     gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)',
     color: '#3b82f6',
@@ -78,7 +69,7 @@ const STEPS = [
 const TRUST_ITEMS = [
   { icon: Lock,     label: 'End-to-end encrypted' },
   { icon: Shield,   label: 'Kenya MoE Approved'   },
-  { icon: Globe,    label: 'CBC Compliant'         },
+  { icon: Globe,    label: 'CBE Compliant'         },
   { icon: Sparkles, label: 'KNEC Aligned'          },
 ];
 
@@ -612,7 +603,7 @@ export default function AdminRegistrationPage() {
                   <div className="ar-help-title">Need assistance?</div>
                   <div className="ar-help-sub">Our team is available Mon–Fri, 8am–6pm EAT</div>
                 </div>
-                <a href="mailto:support@cbcedustack.ac.ke" className="ar-help-btn">
+                <a href="mailto:support@cbenoneaa.ac.ke" className="ar-help-btn">
                   Contact support <ChevronRight size={13} />
                 </a>
               </div>

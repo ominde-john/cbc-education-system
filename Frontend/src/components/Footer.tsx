@@ -58,9 +58,9 @@ export default function Footer() {
           <motion.div variants={itemVariants} className="lg:col-span-4 space-y-6">
             <Link to="/" className="inline-block group">
               <img
-                src="/Gemini_Generated_Image_8kqr628kqr628kqr.png" 
-                alt="EduStack Logo"
-                className="h-14 md:h-16 w-auto object-contain transition-transform group-hover:scale-105"
+                src="/Noneea-logo.jpg" 
+                alt="Noneea Logo"
+                className="h-16 w-16 object-cover rounded-full transition-transform group-hover:scale-105"
               />
             </Link>
             
@@ -121,7 +121,7 @@ export default function Footer() {
           <motion.div variants={itemVariants} className="lg:col-span-4">
             <div className="p-6 rounded-[2rem] bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-700/50 backdrop-blur-sm">
               <h4 className="text-lg font-bold text-white mb-2">Join the Movement</h4>
-              <p className="text-xs text-slate-400 mb-6">Weekly insights on CBC digital transformation.</p>
+              <p className="text-xs text-slate-400 mb-6">Weekly insights on CBE digital transformation.</p>
               
               <div className="space-y-3">
                 <div className="relative">
@@ -155,7 +155,7 @@ export default function Footer() {
         <div className="container mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
             <p className="text-xs font-bold text-slate-400">
-              © {new Date().getFullYear()} EduStack Africa. <span className="text-slate-600 ml-2 hidden md:inline">|</span> 
+              © {new Date().getFullYear()} Noneaa Africa. <span className="text-slate-600 ml-2 hidden md:inline">|</span> 
               <span className="block md:inline mt-1 md:mt-0 md:ml-2 text-slate-500 font-normal italic">Innovation for the Kenyan Classroom.</span>
             </p>
           </div>

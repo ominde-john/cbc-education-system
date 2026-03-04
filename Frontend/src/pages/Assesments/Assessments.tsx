@@ -26,14 +26,14 @@ import {
 import { toast } from 'sonner';
 
 const mockAssessments = [
-  { id: '1', student: 'John Kamau', admNo: 'CBC/2024/001', grade: 'Grade4', subject: 'Mathematics', strand: 'Numbers', subStrand: 'Place Value', level: 'Exceeding', date: '2025-01-10', teacher: 'Mr. Ochieng', remarks: 'Excellent performance' },
-  { id: '2', student: 'Jane Wanjiku', admNo: 'CBC/2024/002', grade: 'Grade5', subject: 'English', strand: 'Reading', subStrand: 'Comprehension', level: 'Meeting', date: '2025-01-10', teacher: 'Mrs. Njeri', remarks: 'Good progress' },
-  { id: '3', student: 'David Ochieng', admNo: 'CBC/2024/003', grade: 'Grade3', subject: 'Kiswahili', strand: 'Kusoma', subStrand: 'Ufahamu', level: 'Approaching', date: '2025-01-09', teacher: 'Mr. Mwangi', remarks: 'Needs more practice' },
-  { id: '4', student: 'Grace Njeri', admNo: 'CBC/2024/004', grade: 'Grade6', subject: 'Science', strand: 'Living Things', subStrand: 'Plants', level: 'Meeting', date: '2025-01-09', teacher: 'Mrs. Wambui', remarks: 'Consistent' },
-  { id: '5', student: 'Brian Mwangi', admNo: 'CBC/2024/005', grade: 'Grade7', subject: 'Social Studies', strand: 'Citizenship', subStrand: 'National Unity', level: 'Below', date: '2025-01-08', teacher: 'Mr. Kipchoge', remarks: 'Extra support needed' },
-  { id: '6', student: 'Faith Akinyi', admNo: 'CBC/2024/006', grade: 'Grade4', subject: 'Mathematics', strand: 'Geometry', subStrand: 'Shapes', level: 'Exceeding', date: '2025-01-08', teacher: 'Mr. Ochieng', remarks: 'Outstanding' },
-  { id: '7', student: 'Kevin Kipchoge', admNo: 'CBC/2024/007', grade: 'Grade8', subject: 'Mathematics', strand: 'Algebra', subStrand: 'Equations', level: 'Meeting', date: '2025-01-07', teacher: 'Mrs. Akinyi', remarks: 'Steady improvement' },
-  { id: '8', student: 'Lucy Wambui', admNo: 'CBC/2024/008', grade: 'PP1', subject: 'Language Activities', strand: 'Listening', subStrand: 'Oral Skills', level: 'Meeting', date: '2025-01-07', teacher: 'Mrs. Kamau', remarks: 'Very participative' },
+  { id: '1', student: 'John Kamau', admNo: 'CBE/2024/001', grade: 'Grade4', subject: 'Mathematics', strand: 'Numbers', subStrand: 'Place Value', level: 'Exceeding', date: '2025-01-10', teacher: 'Mr. Ochieng', remarks: 'Excellent performance' },
+  { id: '2', student: 'Jane Wanjiku', admNo: 'CBE/2024/002', grade: 'Grade5', subject: 'English', strand: 'Reading', subStrand: 'Comprehension', level: 'Meeting', date: '2025-01-10', teacher: 'Mrs. Njeri', remarks: 'Good progress' },
+  { id: '3', student: 'David Ochieng', admNo: 'CBE/2024/003', grade: 'Grade3', subject: 'Kiswahili', strand: 'Kusoma', subStrand: 'Ufahamu', level: 'Approaching', date: '2025-01-09', teacher: 'Mr. Mwangi', remarks: 'Needs more practice' },
+  { id: '4', student: 'Grace Njeri', admNo: 'CBE/2024/004', grade: 'Grade6', subject: 'Science', strand: 'Living Things', subStrand: 'Plants', level: 'Meeting', date: '2025-01-09', teacher: 'Mrs. Wambui', remarks: 'Consistent' },
+  { id: '5', student: 'Brian Mwangi', admNo: 'CBE/2024/005', grade: 'Grade7', subject: 'Social Studies', strand: 'Citizenship', subStrand: 'National Unity', level: 'Below', date: '2025-01-08', teacher: 'Mr. Kipchoge', remarks: 'Extra support needed' },
+  { id: '6', student: 'Faith Akinyi', admNo: 'CBE/2024/006', grade: 'Grade4', subject: 'Mathematics', strand: 'Geometry', subStrand: 'Shapes', level: 'Exceeding', date: '2025-01-08', teacher: 'Mr. Ochieng', remarks: 'Outstanding' },
+  { id: '7', student: 'Kevin Kipchoge', admNo: 'CBE/2024/007', grade: 'Grade8', subject: 'Mathematics', strand: 'Algebra', subStrand: 'Equations', level: 'Meeting', date: '2025-01-07', teacher: 'Mrs. Akinyi', remarks: 'Steady improvement' },
+  { id: '8', student: 'Lucy Wambui', admNo: 'CBE/2024/008', grade: 'PP1', subject: 'Language Activities', strand: 'Listening', subStrand: 'Oral Skills', level: 'Meeting', date: '2025-01-07', teacher: 'Mrs. Kamau', remarks: 'Very participative' },
 ];
 
 const levelColors: Record<string, string> = {
@@ -127,9 +127,9 @@ const Assessments = () => {
               <Dialog open={assessDialogOpen} onOpenChange={setAssessDialogOpen}>
                 <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New Assessment</Button></DialogTrigger>
                 <DialogContent className="max-w-lg">
-                  <DialogHeader><DialogTitle>Record Assessment</DialogTitle><DialogDescription>Enter CBC competency assessment</DialogDescription></DialogHeader>
+                  <DialogHeader><DialogTitle>Record Assessment</DialogTitle><DialogDescription>Enter CBE competency assessment</DialogDescription></DialogHeader>
                   <div className="grid gap-4">
-                    <div><Label>Student Admission No.</Label><Input placeholder="CBC/2024/001" value={assessForm.studentAdmNo} onChange={e => setAssessForm({ ...assessForm, studentAdmNo: e.target.value })} /></div>
+                    <div><Label>Student Admission No.</Label><Input placeholder="CBE/2024/001" value={assessForm.studentAdmNo} onChange={e => setAssessForm({ ...assessForm, studentAdmNo: e.target.value })} /></div>
                     <div><Label>Learning Area</Label>
                       <Select value={assessForm.subject} onValueChange={v => setAssessForm({ ...assessForm, subject: v })}>
                         <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
@@ -257,7 +257,7 @@ const Assessments = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Generate Report Cards</CardTitle>
-                <CardDescription>Generate CBC-compliant learner progress reports</CardDescription>
+                <CardDescription>Generate CBE-compliant learner progress reports</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-3">

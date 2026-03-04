@@ -3,7 +3,6 @@ import { MessageCircle, X, Send, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import cbeLogo from '@/assets/cbe-logo.jpg';
 
 interface Message {
   id: string;
@@ -31,9 +30,9 @@ Key CBE information:
 
 // Configure your backend API endpoint via environment variable
 // Set VITE_AI_API_ENDPOINT in your .env file
-// Production fallback: Use Render backend URL when deployed on Vercel
+// Use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
 const AI_API_ENDPOINT = import.meta.env.VITE_AI_API_ENDPOINT || 
-  (import.meta.env.PROD ? 'https://cbc-education-system-1.onrender.com/api/ai/ai-chat' : 'http://localhost:3001/api/ai/ai-chat');
+  (import.meta.env.PROD ? '/api/ai/ai-chat' : 'http://localhost:3001/api/ai/ai-chat');
 
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -175,7 +174,7 @@ export default function AIAssistant() {
         {/* Header */}
         <div className="bg-primary text-primary-foreground p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
-            <img src={cbeLogo} alt="CBE" className="w-8 h-8 object-contain" />
+            <img src="/Noneea-logo.jpg" alt="CBE" className="w-8 h-8 object-cover rounded-full" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold">Your Companion Assistant</h3>

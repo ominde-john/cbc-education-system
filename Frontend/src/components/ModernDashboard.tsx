@@ -239,10 +239,7 @@ export default function ModernDashboard() {
             <Menu className="w-6 h-6 text-white" />
           </motion.button>
           
-          <div className="flex flex-col">
-            <span className="font-bold text-white text-xl tracking-tight">EduStack</span>
-            <span className="text-blue-300 text-xs">Modern Dashboard</span>
-          </div>
+          <img src="/Noneea-logo.jpg" alt="Noneea" className="h-12 w-12 object-cover rounded-full" />
           <button 
             className="ml-auto lg:hidden text-white/70 hover:text-white transition-colors p-2"
             onClick={() => setSidebarOpen(false)}

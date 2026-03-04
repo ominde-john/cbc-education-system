@@ -1,20 +1,20 @@
 import { useState, useRef, createContext, useContext, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 
-// Use environment variable for API URL, fallback to relative path for development
-// In production, set VITE_API_URL to your backend URL (e.g., https://cbc-education-system-1.onrender.com)
-// Use empty string (relative path) in development to leverage Vite proxy
-// Production fallback: Use Render backend URL when deployed on Vercel
+// In production builds (Vercel), always use relative path so requests are proxied
+// through Vercel's server-side rewrite rules (vercel.json) to the backend on Render.
+// This completely avoids browser CORS errors because the request stays on the same origin.
+// In development, VITE_API_URL can point to a local or remote backend, or fall back to
+// the Vite dev-server proxy (also configured in vite.config.ts).
 const getApiUrl = () => {
-  // If VITE_API_URL is explicitly set, use it
+  // Production: always use relative path → proxied by Vercel, no CORS
+  if (import.meta.env.PROD) {
+    return '';
+  }
+  // Development: use VITE_API_URL if set, otherwise fall back to Vite proxy
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // In production (build), use the Render backend
-  if (import.meta.env.PROD) {
-    return 'https://cbc-education-system-1.onrender.com';
-  }
-  // In development, use relative path to leverage Vite proxy
   return '';
 };
 
@@ -35,9 +35,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ACCESS_TOKEN_KEY = 'cbc_access_token';
-const REFRESH_TOKEN_KEY = 'cbc_refresh_token';
-const USER_KEY = 'cbc_user';
+const ACCESS_TOKEN_KEY = 'cbe_access_token';
+const REFRESH_TOKEN_KEY = 'cbe_refresh_token';
+const USER_KEY = 'cbe_user';
 const LOGIN_SKELETON_DURATION_MS = 6000;
 const SKELETON_FADE_START_MS = LOGIN_SKELETON_DURATION_MS - 1000; // fade-out begins 1 second before hide
 

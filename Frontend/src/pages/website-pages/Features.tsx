@@ -5,18 +5,18 @@ import Footer from '@/components/Footer';
 import { motion } from 'framer-motion';
 
 const subHeadingLines = [
-  "CBCTrack equips schools with modern digital tools",
+  "CBETrack equips schools with modern digital tools",
   "designed for Kenya's Competency-Based Curriculum -",
   "helping administrators, teachers, and students",
   "work smarter, faster, and more efficiently."
 ];
 
 const supportLines = [
-  "Built for Schools - Designed for CBC",
+  "Built for Schools - Designed for CBE",
   "- Powered by Modern Technology"
 ];
 
-export default function CBCTrackLanding() {
+export default function CBETrackLanding() {
   const [typedMainText, setTypedMainText] = useState('');
   const fullMainText = 'Powerful Features for Modern Education';
   
@@ -190,7 +190,7 @@ export default function CBCTrackLanding() {
 
       </section>
 
-      {/* Feature 1: Comprehensive CBC Performance & School Administration */}
+      {/* Feature 1: Comprehensive CBE Performance & School Administration */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -203,11 +203,11 @@ export default function CBCTrackLanding() {
               </p>
 
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                CBCTrack: Comprehensive CBC Performance & School Administration
+                CBETrack: Comprehensive CBE Performance & School Administration
               </h2>
 
               <p className="text-lg text-gray-600 mb-8">
-                Efficiently manage all school operations through CBCTrack's integrated dashboards. 
+                Efficiently manage all school operations through CBETrack's integrated dashboards. 
                 Monitor fees, attendance, academic progress, and administrative tasks in one centralized platform.
               </p>
 
@@ -242,7 +242,7 @@ export default function CBCTrackLanding() {
                 <div className="overflow-hidden rounded-2xl shadow-lg">
                   <img
                     src="/public/Gemini_Generated_Image_4n6fal4n6fal4n6f.png"
-                    alt="CBCTrack Dashboard Preview"
+                    alt="CBETrack Dashboard Preview"
                     className="w-full h-full object-cover rounded-2xl hover:scale-105 transition duration-500"
                   />
                 </div>
@@ -358,7 +358,7 @@ export default function CBCTrackLanding() {
                     <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                       <GraduationCap className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-lg font-bold text-gray-900">CBCTrack</span>
+                    <span className="text-lg font-bold text-gray-900">CBETrack</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-4 mb-6">
@@ -400,7 +400,7 @@ export default function CBCTrackLanding() {
             Ready to Transform Your School Management?
           </h2>
           <p className="text-xl mb-8 text-green-50">
-            Join hundreds of schools across Kenya using CBCTrack to streamline operations and improve student outcomes.
+            Join hundreds of schools across Kenya using CBETrack to streamline operations and improve student outcomes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="bg-white text-green-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition shadow-lg">

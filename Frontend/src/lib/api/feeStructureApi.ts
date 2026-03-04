@@ -3,17 +3,12 @@
  * Handles all HTTP requests to the fee-structures backend API
  */
 
-// API URL - uses environment variable or falls back to proxy path in development
+// API URL - uses relative path in production (proxied by Vercel) to avoid CORS
 const getApiUrl = (): string => {
-  // If VITE_API_URL is explicitly set, use it
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  // In production (build), use the Render backend
-  if (import.meta.env.PROD) {
-    return 'https://cbc-education-system-1.onrender.com';
-  }
-  // In development, use relative path to leverage Vite proxy (/api -> localhost:3001)
+  // Production: always use relative path → proxied by Vercel, no CORS
+  if (import.meta.env.PROD) return '';
+  // Development: use VITE_API_URL if set, otherwise fall back to Vite proxy
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   return '';
 };
 
@@ -22,7 +17,7 @@ console.log('[feeStructureApi] API_URL:', API_URL, 'PROD:', import.meta.env.PROD
 
 // Get auth token from localStorage
 const getAuthToken = (): string | null => {
-  return localStorage.getItem('cbc_access_token');
+  return localStorage.getItem('cbe_access_token');
 };
 
 // Common fetch options with auth header
@@ -262,7 +257,7 @@ const mapCategoryToKey = (category: string): string | null => {
 };
 
 /**
- * Determine CBC level from grade
+ * Determine CBE level from grade
  */
 const getLevelFromGrade = (grade: string): string => {
   const lowerPrimary = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3'];

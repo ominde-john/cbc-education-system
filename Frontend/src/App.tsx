@@ -19,7 +19,7 @@ import HomePage from "@/pages/website-pages/HomePage";
 import AboutPage from "@/pages/website-pages/AboutPage";
 import SupportPage from "@/pages/website-pages/SupportPage";
 import PrivacyPage from "@/pages/website-pages/PrivacyPage";
-import CBCStandardsPage from "@/pages/website-pages/CBCStandardsPage";
+import CBEStandardsPage from "@/pages/website-pages/CBEStandardsPage";
 import TermsPage from "@/pages/website-pages/TermsPage";
 import SecurityPage from "@/pages/website-pages/SecurityPage";
 import LoginPage from "@/pages/auth/LoginPage";
@@ -64,6 +64,7 @@ import StudentManagement from "./pages/school-admin/learners/Learners";
 import StudentClasses from "./pages/school-admin/learners/StudentClasses";
 
 import EducationalResourcesPage from "./pages/website-pages/Educationalresourcespage";
+import SystemStatusPage from "@/pages/website-pages/SystemStatusPage";
 import AdminLoginPage from '@/pages/auth/AdminLoginPage';
 import UserManagement from "./pages/Users/UserManagement";
 import ModernDashboard from "@/components/ModernDashboard";
@@ -81,7 +82,7 @@ import ReportsPage from "@/pages/auth/school-admin/Reports";
 import SettingsPage from "@/pages/auth/school-admin/Settings";
 
 import NotFound from "./pages/website-pages/NotFound";
-import EduStackPlatformPage from "@/pages/website-pages/Platform";
+import NoneaaPlatformPage from "@/pages/website-pages/Platform";
 import TeamMembersPage from "@/pages/website-pages/TeamPage";
 
 const queryClient = new QueryClient();
@@ -160,14 +161,15 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/resources" element={<EducationalResourcesPage />} />
-      <Route path="/analytics" element={<EduStackPlatformPage />} />
+      <Route path="/analytics" element={<NoneaaPlatformPage />} />
       <Route path="/company/client" element={<ClientsPage />} />
       <Route path="/support" element={<SupportPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/security" element={<SecurityPage />} />
+      <Route path="/status" element={<SystemStatusPage />} />
       <Route path="/company/our-team" element={<TeamMembersPage />} />
-      <Route path="/cbc-standards" element={<CBCStandardsPage />} />
+      <Route path="/cbe-standards" element={<CBEStandardsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/signup" element={<GetStartedPage />} />

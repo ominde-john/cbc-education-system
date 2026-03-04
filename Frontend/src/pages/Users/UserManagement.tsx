@@ -33,8 +33,8 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
-// API URL - use environment variable or relative path
-const API_URL = import.meta.env.VITE_API_URL || '';
+// API URL - always relative in production (proxied by Vercel) to avoid CORS
+const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || '');
 
 // Type definitions
 interface SystemUser {
@@ -145,7 +145,7 @@ const emptyForm: AddUserForm = {
 
 // API fetch function with auth headers
 const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('cbc_access_token');
+  const token = localStorage.getItem('cbe_access_token');
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

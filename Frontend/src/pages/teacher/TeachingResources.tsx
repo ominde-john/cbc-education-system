@@ -33,7 +33,7 @@ export default function TeachingResources() {
           </div>
           <div className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">CBC Education</span>
+            <span className="font-semibold text-lg">CBE Education</span>
           </div>
         </div>
       </header>
@@ -107,7 +107,7 @@ export default function TeachingResources() {
                   About Teaching Resources
                 </CardTitle>
                 <CardDescription>
-                  Access comprehensive teaching resources aligned with the CBC curriculum
+                  Access comprehensive teaching resources aligned with the CBE curriculum
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -141,7 +141,7 @@ export default function TeachingResources() {
                     <div>
                       <h4 className="font-semibold text-sm mb-1">Assessment Tools</h4>
                       <p className="text-xs text-muted-foreground">
-                        Rubrics, worksheets, and assessment materials for CBC
+                        Rubrics, worksheets, and assessment materials for CBE
                       </p>
                     </div>
                   </div>

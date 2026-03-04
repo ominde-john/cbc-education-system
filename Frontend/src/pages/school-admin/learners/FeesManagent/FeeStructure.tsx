@@ -192,31 +192,73 @@ export default function FeeStructuresTab({}: FeeStructuresTabProps) {
     setError(null);
 
     try {
-      // Build filters - only add filters with valid values
-      const filters: {
-        academic_year_id?: string;
-        grade_level?: string;
-        is_active?: boolean;
-      } = {};
-
-      // Only filter by year if it's a valid UUID (real academic year from backend)
-      if (selectedYear && isValidUUID(selectedYear)) {
-        filters.academic_year_id = selectedYear;
-      }
-
+      // When a specific grade is selected, we need to fetch more comprehensively
+      // to include "All Grades" (null grade_level) records that may have different academic years
+      let feeStructuresData: FeeStructure[] = [];
+      
       if (selectedGrade && selectedGrade !== 'all') {
-        filters.grade_level = selectedGrade;
+        // When filtering by specific grade, first get all active fees for the school
+        // This ensures we get both specific grade AND All Grades records
+        const allFilters = {
+          is_active: true,
+        };
+        
+        const response = await getFeeStructures(allFilters);
+        let allData = (response as any).data?.fee_structures || (response as any).fee_structures || [];
+        
+        console.log('[FeeStructure] All data fetched:', allData.length);
+        
+        // Now filter on frontend: get specific grade + null grade (All Grades)
+        const specificGradeFees = allData.filter((fee: FeeStructure) => 
+          fee.grade_level === selectedGrade
+        );
+        const allGradesFees = allData.filter((fee: FeeStructure) => 
+          fee.grade_level === null
+        );
+        
+        // Combine both - specific grade fees + All Grades fees
+        // Remove duplicates by ID
+        const combinedFees = [...specificGradeFees];
+        const existingIds = new Set(combinedFees.map((f: FeeStructure) => f.id));
+        
+        allGradesFees.forEach((fee: FeeStructure) => {
+          if (!existingIds.has(fee.id)) {
+            combinedFees.push(fee);
+          }
+        });
+        
+        feeStructuresData = combinedFees;
+        console.log('[FeeStructure] Combined fees (specific + All Grades):', feeStructuresData);
+        
+        // If academic year is also selected, filter to that year as well
+        // but keep both specific grade and All Grades records
+        if (selectedYear && isValidUUID(selectedYear)) {
+          feeStructuresData = feeStructuresData.filter((fee: FeeStructure) => 
+            fee.academic_year_id === selectedYear
+          );
+          console.log('[FeeStructure] After year filter:', feeStructuresData);
+        }
+      } else {
+        // Normal filtering for "All Grades" view
+        const filters: {
+          academic_year_id?: string;
+          grade_level?: string;
+          is_active?: boolean;
+        } = {};
+
+        // Only filter by year if it's a valid UUID (real academic year from backend)
+        if (selectedYear && isValidUUID(selectedYear)) {
+          filters.academic_year_id = selectedYear;
+        }
+
+        filters.is_active = true;
+
+        console.log('[FeeStructure] Fetching with filters:', filters);
+        
+        const response = await getFeeStructures(filters);
+        feeStructuresData = (response as any).data?.fee_structures || (response as any).fee_structures || [];
       }
-
-      filters.is_active = true;
-
-      console.log('[FeeStructure] Fetching with filters:', filters);
       
-      const response = await getFeeStructures(filters);
-      console.log('[FeeStructure] Full Response:', JSON.stringify(response, null, 2));
-      
-      // Handle both nested and flat response formats
-      const feeStructuresData = (response as any).data?.fee_structures || (response as any).fee_structures || [];
       console.log('[FeeStructure] fee_structures:', feeStructuresData);
       setFeeStructures(feeStructuresData);
     } catch (err: any) {

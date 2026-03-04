@@ -109,7 +109,7 @@ export default function Grade2() {
           </div>
           <div className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">CBC Education</span>
+            <span className="font-semibold text-lg">CBE Education</span>
           </div>
         </div>
       </header>
@@ -186,7 +186,7 @@ export default function Grade2() {
                   About Grade 2 Learning
                 </CardTitle>
                 <CardDescription>
-                  Comprehensive learning areas aligned with the CBC curriculum for Grade 2
+                  Comprehensive learning areas aligned with the CBE curriculum for Grade 2
                 </CardDescription>
               </CardHeader>
               <CardContent>

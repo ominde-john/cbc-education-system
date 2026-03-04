@@ -170,7 +170,7 @@ export default function FeesReport({ onBack }: FeesReportProps) {
         </div>
         <div className="max-w-[1400px] mx-auto px-8 pt-9 pb-[42px] relative">
           <div className="mb-7">
-            <div className="text-[10px] font-bold text-white/70 tracking-[0.14em] uppercase mb-2">Republic of Kenya · CBC School Management · Finance</div>
+            <div className="text-[10px] font-bold text-white/70 tracking-[0.14em] uppercase mb-2">Republic of Kenya · CBE School Management · Finance</div>
             <h1 className="text-[30px] font-black text-white mb-1.5">Fee Collection Report</h1>
             <p className="text-sm text-white/80">Comprehensive school-wide fee management analysis · {term} {year}</p>
           </div>
@@ -178,7 +178,7 @@ export default function FeesReport({ onBack }: FeesReportProps) {
             {[
               { icon: Wallet, label: "Total Collected", value: fmtM(totalCollected), sub: `${collectionRate}% collection rate`, delta: 8 },
               { icon: AlertCircle, label: "Outstanding", value: fmtM(totalOutstanding), sub: "To be collected", delta: -3, valueColor: "#fca5a5" },
-              { icon: Users, label: "Total Enrolled", value: totalEnrolled, sub: "All CBC grades" },
+              { icon: Users, label: "Total Enrolled", value: totalEnrolled, sub: "All CBE grades" },
               { icon: CheckCircle, label: "Fully Paid", value: totalFullyPaid, sub: `${pct(totalFullyPaid, totalEnrolled)}% of students`, delta: 5, valueColor: "#bbf7d0" },
               { icon: TrendingUp, label: "Expected Revenue", value: fmtM(totalExpected), sub: `${term} ${year}` },
             ].map(s => (
@@ -308,7 +308,7 @@ export default function FeesReport({ onBack }: FeesReportProps) {
         <div className="mb-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-[18px]">
             <div className="w-[38px] h-[38px] rounded-[10px] bg-red-100 flex items-center justify-center"><Layers size={18} className="text-red-600" /></div>
-            <div><div className="text-base font-extrabold text-gray-900">Collection by CBC Level</div><div className="text-xs text-gray-500">Breakdown across all 4 curriculum levels</div></div>
+            <div><div className="text-base font-extrabold text-gray-900">Collection by CBE Level</div><div className="text-xs text-gray-500">Breakdown across all 4 curriculum levels</div></div>
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
             {(Object.entries(levelSummary) as [string, LevelStats][]).map(([level, data]) => {
@@ -364,7 +364,7 @@ export default function FeesReport({ onBack }: FeesReportProps) {
             <table className="w-full border-collapse min-w-[900px]">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  {["Grade","CBC Level","Enrolled","Fully Paid","Partial","Unpaid","Collected","Expected","Outstanding","Rate"].map(h => (
+                  {["Grade","CBE Level","Enrolled","Fully Paid","Partial","Unpaid","Collected","Expected","Outstanding","Rate"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>

@@ -1,4 +1,4 @@
-// CBC/CBE Platform Enums
+// CBE Platform Enums
 
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',
