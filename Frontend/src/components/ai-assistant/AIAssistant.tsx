@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ interface Message {
 }
 
 const GREETING_TEXT = 'Hi there 👋! My name is Jarvis, your online Assistant. Ask me anything you need to know about our platform!';
+const PANEL_WIDTH = 380;
+const PANEL_HEIGHT_FALLBACK = 500;
 const GREETING_CHARS = Array.from(GREETING_TEXT);
 const TYPING_SPEED_MS = 30;
 
@@ -39,7 +41,7 @@ const AI_API_ENDPOINT = import.meta.env.VITE_AI_API_ENDPOINT ||
   (import.meta.env.PROD ? '/api/ai/ai-chat' : 'http://localhost:3001/api/ai/ai-chat');
 
 export default function AIAssistant() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -52,6 +54,10 @@ export default function AIAssistant() {
   const [showTypingIndicator, setShowTypingIndicator] = useState(false);
   const [greetingText, setGreetingText] = useState('');
   const [greetingComplete, setGreetingComplete] = useState(false);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const chatWindowRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,6 +122,42 @@ export default function AIAssistant() {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  const handleDragMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Only drag on primary mouse button
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const rect = chatWindowRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragOffsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+    setIsDragging(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+      const panelW = chatWindowRef.current?.offsetWidth ?? PANEL_WIDTH;
+      const panelH = chatWindowRef.current?.offsetHeight ?? PANEL_HEIGHT_FALLBACK;
+      const newX = Math.min(Math.max(0, e.clientX - dragOffsetRef.current.x), winW - panelW);
+      const newY = Math.min(Math.max(0, e.clientY - dragOffsetRef.current.y), winH - panelH);
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => setIsDragging(false);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -196,13 +238,21 @@ export default function AIAssistant() {
 
       {/* Chat Window */}
       <div
+        ref={chatWindowRef}
+        style={position ? { left: position.x, top: position.y, bottom: 'auto', right: 'auto' } : undefined}
         className={cn(
-          "fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] bg-card border border-border rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden",
-          isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
+          "fixed z-50 w-[380px] max-w-[calc(100vw-3rem)] bg-card border border-border shadow-2xl overflow-hidden",
+          "transition-[opacity,transform] duration-300",
+          !position && "bottom-24 right-6",
+          isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none",
+          isDragging && "select-none"
         )}
       >
-        {/* Header */}
-        <div className="bg-primary text-primary-foreground p-4 flex items-center gap-3">
+        {/* Header — drag handle */}
+        <div
+          onMouseDown={handleDragMouseDown}
+          className="bg-primary text-primary-foreground p-4 flex items-center gap-3 cursor-move"
+        >
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
             <img src="/Noneea-logo.jpg" alt="CBE" className="w-8 h-8 object-cover rounded-full" />
           </div>
