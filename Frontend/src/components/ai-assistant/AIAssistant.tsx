@@ -177,8 +177,8 @@ export default function AIAssistant() {
             <img src="/Noneea-logo.jpg" alt="CBE" className="w-8 h-8 object-cover rounded-full" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold">Your Companion Assistant</h3>
-            <p className="text-xs text-primary-foreground/70">Ask anything about our Educational Platform</p>
+            <h3 className="font-semibold">Jarvis</h3>
+            <p className="text-xs text-primary-foreground/70">Online Assistant</p>
           </div>
           <button
             onClick={() => setIsOpen(false)}
