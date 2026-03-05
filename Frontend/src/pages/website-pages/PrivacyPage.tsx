@@ -289,7 +289,7 @@ export default function PrivacyPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-semibold mb-2">Email</h4>
-                      <p className="text-sm text-muted-foreground">privacy@noneaa.africa</p>
+                      <p className="text-sm text-muted-foreground">privacy@noneaa.com</p>
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Phone</h4>
@@ -304,7 +304,7 @@ export default function PrivacyPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Data Protection Officer</h4>
-                      <p className="text-sm text-muted-foreground">dpo@noneaa.africa</p>
+                      <p className="text-sm text-muted-foreground">dpo@noneaa.com</p>
                     </div>
                   </div>
                 </CardContent>
