@@ -477,10 +477,10 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.2] mb-6">
-              National Optimized Network for Education Achievement{' '}
+              National Optimized Network for Education{' '}
               <span className="relative inline-block">
                 <span className="relative z-10 bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  & Administration
+                  Achievement & Administration
                 </span>
                 <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 blur-xl" />
               </span>
