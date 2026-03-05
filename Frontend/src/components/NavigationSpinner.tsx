@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /** How long (ms) the spinner stays visible before fading out. */
-const SPINNER_DISPLAY_DURATION = 2200;
+const SPINNER_DISPLAY_DURATION = 1500;
 
 /** Duration (ms) of the CSS fade-out transition. */
-const FADE_TRANSITION_DURATION = 500;
+const FADE_TRANSITION_DURATION = 300;
 
 /**
  * Paths where the navigation spinner should NOT be shown.
@@ -38,8 +38,8 @@ function useIsDark() {
 
 /**
  * Global navigation loading spinner that mimics the KUCCPS student portal
- * loader: a full-screen overlay with a thick circular broken-ring spinner
- * that rotates continuously clockwise.
+ * loader: a full-screen overlay with a small, thin circular broken-ring
+ * spinner that rotates continuously clockwise.
  *
  * Behaviour:
  * - Covers the entire screen (page content is hidden behind the overlay)
@@ -123,31 +123,31 @@ export default function NavigationSpinner() {
     >
       {/*
        * KUCCPS-style spinner:
-       *   – SVG circle with stroke-dasharray to create several short curved
-       *     segments separated by visible gaps (broken-ring effect).
+       *   – Small, thin SVG circle (36×36px, 3px stroke) matching the
+       *     compact spinner seen on the KUCCPS student portal.
+       *   – stroke-dasharray creates a broken-ring effect with visible gaps.
        *   – Tailwind's animate-spin drives the smooth clockwise rotation.
-       *   – Thick stroke and large size so it is clearly visible on its own.
        */}
       <div className="animate-spin" aria-hidden="true" style={{ color: spinnerColor }}>
         <svg
-          width="72"
-          height="72"
-          viewBox="0 0 72 72"
+          width="36"
+          height="36"
+          viewBox="0 0 36 36"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
         >
           {/*
-           * r=28 → circumference ≈ 176px.
-           * strokeDasharray="44 18": each arc is ~44px with an 18px gap,
+           * r=15 → circumference ≈ 94px.
+           * strokeDasharray="24 8": each arc is ~24px with an 8px gap,
            * producing roughly 3 curved segments around the ring.
            */}
           <circle
-            cx="36"
-            cy="36"
-            r="28"
+            cx="18"
+            cy="18"
+            r="15"
             stroke="currentColor"
-            strokeWidth="6"
-            strokeDasharray="44 18"
+            strokeWidth="3"
+            strokeDasharray="24 8"
             strokeLinecap="round"
           />
         </svg>
