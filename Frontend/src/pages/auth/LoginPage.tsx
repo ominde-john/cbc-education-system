@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check } from 'lucide-react';
 import loginBg from '@/assets/hero-bg.png';
+import PageLoader from '@/components/PageLoader';
 
 type LoginUserType = 'admin' | 'super_admin' | 'teacher' | 'parent';
 
@@ -64,6 +65,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <PageLoader />
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
