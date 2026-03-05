@@ -480,7 +480,7 @@ export default function HomePage() {
               National Optimized Network for Education Achievement{' '}
               <span className="relative inline-block">
                 <span className="relative z-10 bg-gradient-to-r from-blue-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  & Administration (NONEAA)
+                  & Administration
                 </span>
                 <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 blur-xl" />
               </span>
