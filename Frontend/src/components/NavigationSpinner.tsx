@@ -148,7 +148,6 @@ export default function NavigationSpinner() {
   if (!visible) return null;
 
   const bgColor = isDark ? '#000000' : '#ffffff';
-  const spinnerColor = isDark ? '#9ca3af' : '#4b5563';
 
   return (
     <div
@@ -169,12 +168,11 @@ export default function NavigationSpinner() {
     >
       {/*
        * style spinner:
-       *   – Small, thin SVG circle (36×36px, 3px stroke) matching the
-       *     compact spinner seen on the KUCCPS student portal.
+       *   – Small, thin SVG circle (36×36px, 1.5px stroke) with brand colour.
        *   – stroke-dasharray creates a broken-ring effect with visible gaps.
        *   – animate-spin-fast (0.4 s) drives the fast clockwise rotation.
        */}
-      <div className="animate-spin-fast" aria-hidden="true" style={{ color: spinnerColor }}>
+      <div className="animate-spin-fast" aria-hidden="true">
         <svg
           width="36"
           height="36"
@@ -191,8 +189,8 @@ export default function NavigationSpinner() {
             cx="18"
             cy="18"
             r="15"
-            stroke="currentColor"
-            strokeWidth="3"
+            stroke="#30CFBD"
+            strokeWidth="1.5"
             strokeDasharray="24 8"
             strokeLinecap="round"
           />
