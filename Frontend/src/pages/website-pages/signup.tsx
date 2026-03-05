@@ -10,6 +10,7 @@ import {
   Calendar, MessageSquare, BarChart3, Users2, 
   BookOpen, Award, Zap, Target, Eye, EyeOff
 } from 'lucide-react';
+import PageLoader from '@/components/PageLoader';
 
 export default function GetStartedPage() {
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ export default function GetStartedPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <PageLoader />
       {/* Subtle Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-gray-200/50 to-gray-300/50"></div>
