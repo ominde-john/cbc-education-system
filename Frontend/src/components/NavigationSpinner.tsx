@@ -59,7 +59,6 @@ function useIsDark() {
 }
 
 /**
- * Global navigation loading spinner that mimics the KUCCPS student portal
  * loader: a full-screen overlay with a small, thin circular broken-ring
  * spinner that rotates continuously clockwise.
  *
@@ -169,7 +168,7 @@ export default function NavigationSpinner() {
       }}
     >
       {/*
-       * KUCCPS-style spinner:
+       * style spinner:
        *   – Small, thin SVG circle (36×36px, 3px stroke) matching the
        *     compact spinner seen on the KUCCPS student portal.
        *   – stroke-dasharray creates a broken-ring effect with visible gaps.
