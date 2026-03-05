@@ -40,7 +40,7 @@ export default function AIAssistant() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m your Nonea Educational Platform Assistant. I can help you with questions about our platform and the Kenyan CBE system . Don\'t feel stuck navigating our platform, bring up your queries!'
+      content: 'Hi there 👋! My name is Jarvis, your online Assistant. Ask me anything you need to know about our platform!'
     }
   ]);
   const [input, setInput] = useState('');
