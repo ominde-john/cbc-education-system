@@ -6,21 +6,39 @@ const PAUSE_BEFORE_FADE = 200;       // ms pause at 100% before starting fade
 const FADE_DURATION = 500;           // ms for the opacity fade-out transition
 const BAR_COUNT = 12;                // number of radial spinner bars
 
-/** Detect dark mode from the OS/system preference only. */
+/** Detect dark mode from the browser-stored preference, falling back to OS. */
 function useIsDark() {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('theme-mode');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const update = () => setIsDark(mq.matches);
 
-    mq.addEventListener('change', update);
+    // React to theme changes from another tab/window
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'theme-mode') {
+        if (e.newValue === 'dark') setIsDark(true);
+        else if (e.newValue === 'light') setIsDark(false);
+        else setIsDark(mq.matches);
+      }
+    };
+
+    // React to OS preference changes only when no stored preference exists
+    const handleMq = () => {
+      if (!localStorage.getItem('theme-mode')) setIsDark(mq.matches);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    mq.addEventListener('change', handleMq);
 
     return () => {
-      mq.removeEventListener('change', update);
+      window.removeEventListener('storage', handleStorage);
+      mq.removeEventListener('change', handleMq);
     };
   }, []);
 
@@ -33,7 +51,8 @@ function useIsDark() {
  * - Displays immediately on mount.
  * - Stays visible for at least MIN_DURATION ms.
  * - Smoothly fades out once the minimum time has elapsed.
- * - Follows the user's OS/system colour-scheme preference (light or dark).
+ * - Follows the user's browser-stored colour-scheme preference (light or dark),
+ *   falling back to the OS system preference when no browser preference is set.
  * - Disappears from the DOM entirely after the fade so it never blocks
  *   the underlying form or content.
  */

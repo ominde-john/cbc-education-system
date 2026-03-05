@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface GlobalSkeletonLoaderProps {
@@ -5,6 +6,33 @@ interface GlobalSkeletonLoaderProps {
 }
 
 export default function GlobalSkeletonLoader({ fading = false }: GlobalSkeletonLoaderProps) {
+  // Apply the browser-stored theme preference to the HTML element so that
+  // Tailwind's class-based dark-mode CSS variables take effect while the
+  // skeleton is visible. The previous state is restored when the component unmounts.
+  useEffect(() => {
+    const stored = localStorage.getItem('theme-mode');
+    const prefersDark =
+      stored === 'dark' ||
+      (stored !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    const root = document.documentElement;
+    const hadDark = root.classList.contains('dark');
+
+    if (prefersDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+
+    return () => {
+      if (hadDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+  }, []);
+
   return (
     <div
       className="min-h-screen bg-background flex relative transition-opacity duration-1000"

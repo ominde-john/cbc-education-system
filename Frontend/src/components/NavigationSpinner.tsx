@@ -19,18 +19,40 @@ function isExcludedPath(pathname: string): boolean {
   );
 }
 
-/** Detect dark mode from the OS/system preference only. */
+/** Detect dark mode from the browser-stored preference, falling back to OS. */
 function useIsDark() {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('theme-mode');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const update = () => setIsDark(mq.matches);
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
+
+    // React to theme changes from another tab/window
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'theme-mode') {
+        if (e.newValue === 'dark') setIsDark(true);
+        else if (e.newValue === 'light') setIsDark(false);
+        else setIsDark(mq.matches);
+      }
+    };
+
+    // React to OS preference changes only when no stored preference exists
+    const handleMq = () => {
+      if (!localStorage.getItem('theme-mode')) setIsDark(mq.matches);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    mq.addEventListener('change', handleMq);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      mq.removeEventListener('change', handleMq);
+    };
   }, []);
 
   return isDark;
@@ -46,7 +68,8 @@ function useIsDark() {
  *   on every route change, so the spinner is always seen alone.
  * - Hidden on Login and Registration pages.
  * - Stays visible for SPINNER_DISPLAY_DURATION ms, then fades out.
- * - Respects the OS light/dark colour preference for the overlay background.
+ * - Respects the user's browser-stored colour preference (light/dark), falling
+ *   back to the OS colour scheme when no browser preference is stored.
  */
 export default function NavigationSpinner() {
   const location = useLocation();
