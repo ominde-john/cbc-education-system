@@ -23,7 +23,7 @@ export default function LoadingSpinner({
     <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
       <Loader2 className={`animate-spin text-primary ${sizeClasses[size]}`} />
       {text && (
-        <p className="text-sm text-gray-600 animate-pulse">{text}</p>
+        <p className="text-sm text-muted-foreground animate-pulse">{text}</p>
       )}
     </div>
   );
