@@ -128,7 +128,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Link to="/school-admin/dashboard" className="flex items-center gap-2">
               <img src="/Noneea-logo.jpg" alt="Noneea" className="w-10 h-10 object-cover rounded-full flex-shrink-0" />
               <span className={cn('font-bold text-lg', theme.sidebar.text)}>
-                Edu Stack
+                NONEAA
               </span>
             </Link>
           )}
