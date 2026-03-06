@@ -343,7 +343,7 @@ export default function AIAssistant() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            Powered by Teksoft Team • CBE Educational Platform queries
+            Powered by Teksoft Team
           </p>
         </form>
       </div>
