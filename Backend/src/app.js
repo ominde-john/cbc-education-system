@@ -17,6 +17,7 @@ const academicTermsRoutes = require("./routes/academicTermsRoutes");
 const feeStructureRoutes = require("./routes/feeStructure.routes");
 const aiAssistantRoutes = require("./routes/aiAssistant.routes");
 const academicYearRoutes = require("./routes/academicYear.routes");
+const curriculumRoutes = require("./routes/curriculum.routes");
 const { validateAiAssistantEnv } = require("./controllers/aiAssistant.controller");
 
 const app = express();
@@ -177,6 +178,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/v1/ai-assistant", aiAssistantRoutes);
 app.use("/api/v1/academic-terms", academicTermsRoutes);
 app.use("/api/v1/fee-structures", feeStructureRoutes);
+app.use("/api/v1/curriculum", curriculumRoutes);
 app.use("/api/v1", academicYearRoutes);
 
 // Health check endpoint

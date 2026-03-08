@@ -105,11 +105,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed position, 280px width */}
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 border-r',
-          collapsed ? 'w-16' : 'w-64',
+          collapsed ? 'w-16' : 'w-[280px]',
           theme.sidebar.bg,
           theme.sidebar.border,
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -373,16 +373,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <div 
+      {/* Main content - with left margin to account for fixed sidebar */}
+      <main 
         className={cn(
-          'flex-1 flex flex-col min-w-0 w-full',
-          collapsed ? 'lg:pl-16' : 'lg:pl-64'
+          'flex-1 flex flex-col min-w-0 overflow-hidden',
+          'bg-gray-50 dark:bg-gray-900',
+          collapsed ? 'lg:ml-16' : 'lg:ml-[280px]'
         )}
       >
+        {/* Header - full width, aligned with sidebar */}
         <header
           className={cn(
-            'flex-shrink-0 h-16 border-b flex items-center px-4 lg:px-8 sticky top-0 z-40',
+            'flex-shrink-0 h-16 border-b flex items-center px-6 sticky top-0 z-40 w-full',
             theme.header.bg,
             theme.header.border
           )}
@@ -479,12 +481,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 lg:p-8">
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto p-6">
           <div className="animate-fade-in">
             <div className={theme.main.text}>{children}</div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
+
