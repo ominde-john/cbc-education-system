@@ -16,8 +16,8 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 const roles = [
   { type: 'admin' as const, label: 'Administrator', icon: Building2 },
-  { type: 'super_admin' as const, label: 'Super Admin', icon: Shield },
   { type: 'teacher' as const, label: 'Teacher', icon: GraduationCap },
+  { type: 'student' as const, label: 'Student', icon: Shield },
   { type: 'parent' as const, label: 'Parent', icon: Users },
 ];
 
