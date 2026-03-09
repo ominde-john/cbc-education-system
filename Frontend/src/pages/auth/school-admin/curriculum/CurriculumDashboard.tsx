@@ -21,7 +21,7 @@ import {
 import {
   Plus, Download, Eye, Edit, Trash2,
   BookOpen, Layers, AlignLeft, CheckSquare, GraduationCap,
-  X, Archive, Settings2, Award, ChevronRight, FileSpreadsheet, Loader2,
+  X, Archive, Settings2, Award, ChevronRight, FileSpreadsheet, Loader2, RefreshCw,
 } from "lucide-react";
 
 import {
@@ -34,19 +34,33 @@ import LearningAreasTable from "./LearningAreasTable";
 
 import {
   LEVEL_CONFIG,
-  getAllLearningAreas,
-  getCurriculumStats,
-  filterLearningAreas,
-  getLevelCards,
   LearningArea as LocalLearningArea,
 } from "@/services/curriculumService";
 
 import { getLearningAreas as fetchLearningAreasApi, createLearningArea, updateLearningArea, hardDeleteLearningArea } from "@/lib/api/curriculumApi";
 
+// Types for computed stats
+interface CurriculumStatsType {
+  total: number;
+  byLevel: Record<string, number>;
+  strands: number;
+  subStrands: number;
+  competencies: number;
+}
+
+interface LevelCard {
+  id: string;
+  title: string;
+  value: number;
+  sub: string;
+  gradient: string;
+}
+
 // Type for table display - combines API and local format
 type TableRow = LocalLearningArea & { levelId: string; level: string; grades: string };
 
 // Map API response to table format  
+// Note: API returns strand_count but NOT full strands array
 const mapApiToTableRows = (data: any[]): TableRow[] => {
   return data.map((la: any) => {
     const grades = la.grade_levels || [];
@@ -68,10 +82,9 @@ const mapApiToTableRows = (data: any[]): TableRow[] => {
       gradeRange = "Grade 7 – 9";
     }
     
-    const strandArr = la.strands || [];
-    const subStrandsCount = strandArr.reduce((sum: number, s: any) => sum + (s.sub_strands?.length || 0), 0);
-    const competenciesCount = strandArr.reduce((sum: number, s: any) => 
-      sum + (s.sub_strands?.reduce((ssum: number, ss: any) => ssum + (ss.competencies?.length || 0), 0) || 0), 0);
+    // API returns strand_count (number), not strands array
+    // Use strand_count if available, otherwise default to 0
+    const strandCount = typeof la.strand_count === 'number' ? la.strand_count : 0;
     
     return {
       ...la,
@@ -80,18 +93,13 @@ const mapApiToTableRows = (data: any[]): TableRow[] => {
       grades: gradeRange,
       name: la.name,
       code: la.code,
-      strands: la.strand_count || strandArr.length,
-      subStrands: subStrandsCount,
-      competencies: competenciesCount,
+      strands: strandCount,
+      subStrands: 0, // Not available in list endpoint
+      competencies: 0, // Not available in list endpoint
       optional: false,
       desc: la.description || "",
-      strandList: strandArr.map((s: any) => ({
-        name: s.name,
-        subStrands: s.sub_strands?.map((ss: any) => ss.name) || []
-      })) || [],
-      competencyList: strandArr.flatMap((s: any) => 
-        s.sub_strands?.flatMap((ss: any) => ss.competencies?.map((c: any) => c.name) || []) || []
-      ) || []
+      strandList: [], // Not available in list endpoint
+      competencyList: [] // Not available in list endpoint
     };
   });
 };
@@ -196,41 +204,111 @@ export default function CurriculumDashboard() {
     setNewLaType('core');
   };
 
-  // Fetch data from API
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setApiError(null);
-      try {
-        const response = await fetchLearningAreasApi({ is_active: true });
-        if (response.success && response.data) {
-          const mappedData = mapApiToTableRows(response.data.learning_areas);
-          setApiData(mappedData);
-        }
-      } catch (err) {
-        console.error("Failed to fetch learning areas:", err);
-        setApiError("Failed to load data from server. Using local data.");
-      } finally {
-        setIsLoading(false);
+  // Fetch data from API with retry capability
+  const fetchData = async (isRetry = false) => {
+    setIsLoading(true);
+    setApiError(null);
+    try {
+      const response = await fetchLearningAreasApi({ is_active: true });
+      if (response.success && response.data) {
+        const mappedData = mapApiToTableRows(response.data.learning_areas);
+        setApiData(mappedData);
       }
-    };
-    
+    } catch (err) {
+      console.error("Failed to fetch learning areas:", err);
+      setApiError(isRetry 
+        ? "Failed to load data from server after multiple attempts. Please check your connection and try again."
+        : "Failed to load data from server. Please check your connection.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
-  // Use API data or fallback to local data
-  const allRows = useMemo(() => {
-    if (apiData.length > 0) return apiData;
-    return getAllLearningAreas() as TableRow[];
+  // Handle retry
+  const handleRetry = () => {
+    fetchData(true);
+  };
+
+  // Compute stats from API data only - NO FALLBACK
+  const stats = useMemo((): CurriculumStatsType => {
+    const byLevel: Record<string, number> = { pp: 0, lp: 0, up: 0, js: 0 };
+    let totalStrands = 0;
+    let totalSubStrands = 0;
+    let totalCompetencies = 0;
+
+    apiData.forEach((row) => {
+      // Count by level
+      if (row.levelId && byLevel[row.levelId] !== undefined) {
+        byLevel[row.levelId]++;
+      }
+      // Sum up strands, subStrands, competencies
+      totalStrands += row.strands || 0;
+      totalSubStrands += row.subStrands || 0;
+      totalCompetencies += row.competencies || 0;
+    });
+
+    return {
+      total: apiData.length,
+      byLevel,
+      strands: totalStrands,
+      subStrands: totalSubStrands,
+      competencies: totalCompetencies,
+    };
   }, [apiData]);
-  
-  const stats = useMemo(() => getCurriculumStats(), [allRows]);
-  const levelCards = useMemo(() => getLevelCards(stats), [stats]);
+
+  // Compute level cards from API data only
+  const levelCards = useMemo((): LevelCard[] => {
+    const cards: LevelCard[] = [
+      { id: "all", title: "All Levels", value: stats.total, sub: "Total areas", gradient: "from-slate-600 to-slate-500" },
+      { id: "pp", title: "Pre-Primary", value: stats.byLevel.pp || 0, sub: "PP1 – PP2", gradient: "from-blue-600 to-blue-400" },
+      { id: "lp", title: "Lower Primary", value: stats.byLevel.lp || 0, sub: "Grade 1 – 3", gradient: "from-emerald-600 to-emerald-400" },
+      { id: "up", title: "Upper Primary", value: stats.byLevel.up || 0, sub: "Grade 4 – 6", gradient: "from-violet-600 to-violet-400" },
+      { id: "js", title: "Junior Secondary", value: stats.byLevel.js || 0, sub: "Grade 7 – 9", gradient: "from-orange-500 to-orange-400" },
+    ];
+    return cards;
+  }, [stats]);
+
+  // Use ONLY API data - no fallback
+  const allRows = apiData;
 
   const filters = { search, level: levelFilter, type: typeFilter, minStrands, minComp };
-  
+
+  // Filter data locally - based on API data only
   const filtered = useMemo(() => {
-    let rows = filterLearningAreas(allRows, filters, kpiFilter);
+    let rows = allRows.filter(row => {
+      // Level filter
+      const lvl = kpiFilter || filters.level;
+      if (lvl !== "all" && lvl !== null && row.levelId !== lvl) return false;
+      
+      // Type filter (optional vs core)
+      if (filters.type !== "all") {
+        if (filters.type === "optional" ? !row.optional : row.optional) return false;
+      }
+      
+      // Min strands filter
+      if (filters.minStrands && row.strands < parseInt(filters.minStrands)) return false;
+      
+      // Min competencies filter
+      if (filters.minComp && row.competencies < parseInt(filters.minComp)) return false;
+      
+      // Search filter
+      if (filters.search.trim()) {
+        const q = filters.search.toLowerCase();
+        if (!row.name.toLowerCase().includes(q) && 
+            !row.code.toLowerCase().includes(q) && 
+            !row.level.toLowerCase().includes(q)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+
+    // Sort if needed
     if (sortKey) {
       rows = [...rows].sort((a: any, b: any) => {
         const va = a[sortKey] as string | number;
@@ -376,10 +454,24 @@ export default function CurriculumDashboard() {
           </div>
         )}
 
-        {/* Error Notice */}
-        {apiError && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-            {apiError}
+        {/* Error Notice with Retry */}
+        {apiError && !isLoading && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm text-red-800 font-medium">Error Loading Data</p>
+                <p className="text-sm text-red-600 mt-1">{apiError}</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRetry}
+                className="border-red-300 text-red-700 hover:bg-red-100 hover:text-red-800"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </div>
           </div>
         )}
 

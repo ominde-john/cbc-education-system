@@ -1,38 +1,23 @@
-# Curriculum UI Refactoring TODO
+# Task: Remove Mock Data Dependencies from Curriculum System
 
-## Task: Refactor UI spacing and layout for professional enterprise dashboard look
+## Status: COMPLETED
 
-### Changes Made:
+### Files Modified:
 
-- [x] 1. LearningAreaCard.tsx - Table Row Spacing
-  - Added py-4 to table rows for ~64px row height
-  - Added align-middle to all table cells
-  - Increased badge counter height for better proportions
+1. **Frontend/src/pages/auth/school-admin/curriculum/CurriculumDashboard.tsx** ✅
+   - [x] Remove fallback: `if (apiData.length > 0) return apiData; return getAllLearningAreas()`
+   - [x] Use only `apiData` directly
+   - [x] Calculate stats from actual API data using useMemo
+   - [x] Calculate level cards from actual API data
+   - [x] Add proper error handling with retry mechanism
+   - [x] Remove unused imports (getAllLearningAreas, getCurriculumStats, filterLearningAreas, getLevelCards)
+   - [x] Added Retry button for failed API calls
+   - [x] Stats now computed from real-time API data (total, strands, subStrands, competencies)
+   - [x] Level counts now reflect actual database counts
 
-- [x] 2. LearningAreaCard.tsx - Learning Area Section
-  - Title: text-base (slightly larger)
-  - Description: text-sm text-muted-foreground
-  - gap-2 between icon and text content
-
-- [x] 3. LearningAreaCard.tsx - Badge Counters
-  - Increased badge height and padding for better centering
-
-- [x] 4. LearningAreasTable.tsx - Removed inline expand/collapse
-  - Removed ExpandedRow component
-  - Removed expand toggle column from table
-  - Added "Details" column with View button
-
-- [x] 5. CurriculumDashboard.tsx - Enhanced View Details Modal
-  - Added tabbed interface (Overview, Strands, Sub-Strands, Competencies)
-  - Added header with learning area name and badges
-  - Added action buttons (Close, Edit)
-
-- [x] 6. CurriculumDashboard.tsx - Overall spacing
-  - Added mt-6 between sections
-
-### New Design Features:
-- Modal-based details view instead of inline expand/collapse
-- Clean compact table with only summary data
-- Tabbed interface for organizing curriculum hierarchy content
-- Users can focus on one learning area at a time
+### Implementation Notes:
+- Stats (total, strands, subStrands, competencies) computed from apiData using useMemo
+- Level counts derived from actual data
+- Error state shows error message with retry button (no fallback)
+- All filtering/sorting now done locally on API data only
 
