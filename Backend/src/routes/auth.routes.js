@@ -11,13 +11,33 @@ const router = express.Router();
 // Apply security headers to all auth routes
 router.use(securityHeaders);
 
-// Rate limiting for auth endpoints
+// Rate limiting for auth endpoints — keyed by email address so that
+// a locked-out account does not prevent OTHER accounts from logging in
+// from the same device, browser, or IP address.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 10, // limit each email address to 10 requests per windowMs
+  // Key by the submitted email so rate-limiting is per-account, not per-IP.
+  // Normalise the email (lowercase + trim) before using it as the key so that
+  // case/whitespace variations of the same address share one counter.
+  // A length cap (RFC 5321: 254 chars) guards against memory exhaustion via
+  // artificially long email strings.  Fall back to IP for requests that carry
+  // no valid email (the input validator will reject them anyway).
+  keyGenerator: (req) => {
+    const raw = req.body && req.body.email;
+    if (raw && typeof raw === 'string') {
+      const normalized = raw.toLowerCase().trim();
+      if (normalized.length > 0 && normalized.length <= 254) {
+        return normalized;
+      }
+    }
+    // For requests without a usable email key fall back to IP so they still
+    // get rate-limited individually rather than sharing a single counter.
+    return req.ip || req.socket?.remoteAddress || req.connection?.remoteAddress || 'fallback';
+  },
   message: {
     success: false,
-    message: 'Too many authentication attempts, please try again later.'
+    message: 'Too many authentication attempts for this account, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
