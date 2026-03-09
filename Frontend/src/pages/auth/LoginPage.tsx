@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2 } from 'lucide-react';
 import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
 import { cn } from '@/lib/utils';
@@ -24,13 +23,13 @@ const roles = [
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
-  const { toast } = useToast();
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [userType, setUserType] = useState<LoginUserType>('admin');
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,25 +51,26 @@ export default function LoginPage() {
     try {
       console.log('[LoginPage] Attempting login for:', formData.email, 'as', userType);
       await login(formData.email, formData.password, userType);
-      toast({ title: 'Welcome Back', description: 'Successfully signed in.' });
-      switch (userType) {
-        case 'super_admin':
-        case 'admin':
-          navigate('/school-admin/dashboard');
-          break;
-        case 'teacher':
-          navigate('/teacher/portal');
-          break;
-        case 'parent':
-          navigate('/parent/portal');
-          break;
-        default:
-          navigate('/school-admin/dashboard');
-      }
+      setLoginSuccess(true);
+      setTimeout(() => {
+        switch (userType) {
+          case 'super_admin':
+          case 'admin':
+            navigate('/school-admin/dashboard');
+            break;
+          case 'teacher':
+            navigate('/teacher/portal');
+            break;
+          case 'parent':
+            navigate('/parent/portal');
+            break;
+          default:
+            navigate('/school-admin/dashboard');
+        }
+      }, 2000);
     } catch (error: unknown) {
       const errorMsg = getErrorMessage(error, 'Invalid email or password. Please try again.');
       setSubmitError(errorMsg);
-      toast({ title: 'Sign In Failed', description: errorMsg, variant: 'destructive' });
     }
   };
 
@@ -99,7 +99,21 @@ export default function LoginPage() {
 
       {/* Main Card */}
       <div className="relative z-10 w-full max-w-4xl mx-4 animate-fade-in-up">
-        <div className="glass-card rounded-2xl shadow-2xl overflow-hidden">
+        <div className="relative glass-card rounded-2xl shadow-2xl overflow-hidden">
+
+          {/* Login Success Overlay */}
+          {loginSuccess && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-background/90 backdrop-blur-sm animate-fade-in-up">
+              <div className="flex flex-col items-center gap-4 text-center px-6">
+                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/40 animate-success-pop">
+                  <CheckCircle2 className="w-12 h-12 text-blue-500 animate-success-check" strokeWidth={2} />
+                </div>
+                <h2 className="text-3xl font-bold text-foreground">Welcome Back</h2>
+                <p className="text-muted-foreground text-sm tracking-widest animate-pulse">Redirecting...</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row">
 
             {/* LEFT – Roles */}
