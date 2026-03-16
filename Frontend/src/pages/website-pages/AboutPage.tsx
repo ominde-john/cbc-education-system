@@ -501,8 +501,8 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8 text-center text-white">
             {[
-              { number: '150+', label: 'Schools Transformed' },
-              { number: '50K+', label: 'Students Impacted' },
+              { number: '10+', label: 'Schools Transformed' },
+              { number: '10K+', label: 'Students Impacted' },
               { number: '98%', label: 'Teacher Satisfaction' },
               { number: '24/7', label: 'System Uptime' }
             ].map((stat, index) => (
@@ -536,7 +536,7 @@ export default function AboutPage() {
               Ready to Transform Your School?
             </h2>
             <p className={`${fontSize.lg} text-blue-100 mb-8 max-w-2xl mx-auto`}>
-              Join 150+ schools across Kenya already using Noneaa to improve CBE implementation 
+              Join 10+ schools across Kenya already using Noneaa to improve CBE implementation 
               and student outcomes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
