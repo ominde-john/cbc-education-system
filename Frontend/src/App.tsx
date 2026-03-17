@@ -66,6 +66,7 @@ import StudentClasses from "./pages/school-admin/learners/StudentClasses";
 
 import EducationalResourcesPage from "./pages/website-pages/Educationalresourcespage";
 import SystemStatusPage from "@/pages/website-pages/SystemStatusPage";
+import ReportIncidentPage from "@/pages/website-pages/ReportIncidentPage";
 import AdminLoginPage from '@/pages/auth/AdminLoginPage';
 import UserManagement from "./pages/Users/UserManagement";
 import ModernDashboard from "@/components/ModernDashboard";
@@ -169,6 +170,7 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/security" element={<SecurityPage />} />
       <Route path="/status" element={<SystemStatusPage />} />
+      <Route path="/status/report-incident" element={<ReportIncidentPage />} />
       <Route path="/company/our-team" element={<TeamMembersPage />} />
       <Route path="/cbe-standards" element={<CBEStandardsPage />} />
       <Route path="/login" element={<LoginPage />} />
