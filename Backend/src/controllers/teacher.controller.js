@@ -1,0 +1,663 @@
+// =============================================================================
+// teacher.controller.js
+// Phase 3 — Teachers & Assignments
+//
+// Tables:  teachers, teacher_assignments, users
+// Pattern: matches curriculum.controller.js & feeStructure.controller.js
+// Auth:    Bearer JWT → req.user.id / req.user.school_id / req.user.role
+// =============================================================================
+
+const { createClient } = require('@supabase/supabase-js');
+const asyncHandler = require('express-async-handler');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer'); // or your email utility
+
+// ---------------------------------------------------------------------------
+// Supabase client (service-role so we bypass RLS where needed)
+// ---------------------------------------------------------------------------
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// ---------------------------------------------------------------------------
+// Helper: get supabase client scoped to the request JWT (respects RLS)
+// ---------------------------------------------------------------------------
+const getClient = (req) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Helper: paginate
+// ---------------------------------------------------------------------------
+const paginate = (query, page = 1, limit = 20) => {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  return query.range(from, to);
+};
+
+
+// =============================================================================
+// 1. POST /api/v1/teachers/invite
+//    Send invite email → create pending user + teacher record
+// =============================================================================
+const inviteTeacher = asyncHandler(async (req, res) => {
+  const { school_id, role } = req.user;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  const {
+    first_name,
+    last_name,
+    email,
+    phone_number,
+    tsc_number,
+    qualifications,
+    date_joined,
+  } = req.body;
+
+  if (!first_name || !last_name || !email) {
+    return res.status(400).json({ success: false, message: 'first_name, last_name and email are required' });
+  }
+
+  // Check no duplicate email in this school
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', email.toLowerCase().trim())
+    .eq('school_id', school_id)
+    .maybeSingle();
+
+  if (existing) {
+    return res.status(409).json({ success: false, message: 'A user with this email already exists in your school' });
+  }
+
+  // Generate a temporary password + invite token
+  const tempPassword = crypto.randomBytes(8).toString('hex');
+  const passwordHash = await bcrypt.hash(tempPassword, 10);
+  const inviteToken = crypto.randomBytes(32).toString('hex');
+  const inviteExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  // Create user with status 'pending'
+  const { data: newUser, error: userError } = await supabase
+    .from('users')
+    .insert({
+      email: email.toLowerCase().trim(),
+      password_hash: passwordHash,
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      phone_number: phone_number || null,
+      role: 'teacher',
+      status: 'pending',
+      email_verified: false,
+      school_id,
+      is_active: true,
+    })
+    .select('id, email, first_name, last_name')
+    .single();
+
+  if (userError) {
+    return res.status(500).json({ success: false, message: 'Failed to create user', error: userError.message });
+  }
+
+  // Create teacher record
+  const { data: newTeacher, error: teacherError } = await supabase
+    .from('teachers')
+    .insert({
+      user_id: newUser.id,
+      school_id,
+      tsc_number: tsc_number || null,
+      qualifications: qualifications || null,
+      date_joined: date_joined || new Date().toISOString().split('T')[0],
+      is_active: true,
+    })
+    .select('id')
+    .single();
+
+  if (teacherError) {
+    // Rollback user creation
+    await supabase.from('users').delete().eq('id', newUser.id);
+    return res.status(500).json({ success: false, message: 'Failed to create teacher record', error: teacherError.message });
+  }
+
+  // Store invite token in email_verification_tokens
+  await supabase.from('email_verification_tokens').insert({
+    user_id: newUser.id,
+    token: inviteToken,
+    expires_at: inviteExpiry.toISOString(),
+  });
+
+  // TODO: send actual invite email via your email service
+  // The invite link would be something like:
+  // `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`
+  // For now we return the token in dev mode so you can test
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  res.status(201).json({
+    success: true,
+    message: `Invite sent to ${email}`,
+    data: {
+      teacher_id: newTeacher.id,
+      user_id: newUser.id,
+      email: newUser.email,
+      ...(isDev && { invite_token: inviteToken, temp_password: tempPassword }),
+    },
+  });
+});
+
+
+// =============================================================================
+// 2. GET /api/v1/teachers
+//    List all teachers for the school (paginated, with user info)
+// =============================================================================
+const listTeachers = asyncHandler(async (req, res) => {
+  console.log('AUTH USER:', req.user);
+  const school_id = req.user?.schoolId;
+
+  if (!school_id) {
+    console.error("Missing school_id in request", req.user);
+    return res.status(401).json({
+      success: false,
+      message: "School ID required (authentication issue)"
+    });
+  }
+  const {
+    page = 1,
+    limit = 20,
+    is_active,
+    search,
+    sort_by = 'created_at',
+    sort_order = 'desc',
+  } = req.query;
+
+  let query = supabase
+    .from('teachers')
+    .select(`
+      id,
+      tsc_number,
+      qualifications,
+      date_joined,
+      is_active,
+      created_at,
+      updated_at,
+      user:user_id (
+        id,
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        status,
+        last_login
+      ),
+      assignments:teacher_assignments (
+        id,
+        is_active,
+        class:class_id ( id, grade_level, stream_name ),
+        learning_area:learning_area_id ( id, name, code )
+      )
+    `, { count: 'exact' })
+    .eq('school_id', school_id);
+
+  // Filters
+  if (is_active !== undefined) {
+    query = query.eq('is_active', is_active === 'true');
+  }
+
+  // Search by name or TSC number (requires join — do post-filter for simplicity)
+  // For production, add a DB view or use a stored procedure
+
+  // Sort
+  const validSortFields = ['created_at', 'date_joined', 'tsc_number'];
+  const sortField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
+  query = query.order(sortField, { ascending: sort_order === 'asc' });
+
+  // Paginate
+  query = paginate(query, parseInt(page), parseInt(limit));
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch teachers', error: error.message });
+  }
+
+  // Client-side search filter if provided
+  let filtered = data;
+  if (search) {
+    const q = search.toLowerCase();
+    filtered = data.filter((t) =>
+      t.user?.first_name?.toLowerCase().includes(q) ||
+      t.user?.last_name?.toLowerCase().includes(q) ||
+      t.tsc_number?.toLowerCase().includes(q) ||
+      t.user?.email?.toLowerCase().includes(q)
+    );
+  }
+
+  res.json({
+    success: true,
+    data: filtered,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: count,
+      pages: Math.ceil(count / parseInt(limit)),
+    },
+  });
+});
+
+
+// =============================================================================
+// 3. GET /api/v1/teachers/:id
+//    Teacher profile + all assignments
+// =============================================================================
+const getTeacher = asyncHandler(async (req, res) => {
+  const { school_id } = req.user;
+  const { id } = req.params;
+
+  const { data: teacher, error } = await supabase
+    .from('teachers')
+    .select(`
+      id,
+      tsc_number,
+      qualifications,
+      date_joined,
+      is_active,
+      created_at,
+      updated_at,
+      user:user_id (
+        id,
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        status,
+        last_login,
+        email_verified,
+        created_at
+      ),
+      assignments:teacher_assignments (
+        id,
+        is_active,
+        academic_year:academic_year_id ( id, name, year, is_current ),
+        term:term_id ( id, name, term_number, is_current ),
+        class:class_id ( id, grade_level, stream_name ),
+        learning_area:learning_area_id ( id, name, code )
+      )
+    `)
+    .eq('id', id)
+    .eq('school_id', school_id)
+    .single();
+
+  if (error || !teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  res.json({ success: true, data: teacher });
+});
+
+
+// =============================================================================
+// 4. PUT /api/v1/teachers/:id
+//    Update teacher profile (qualifications, TSC, date_joined, phone)
+// =============================================================================
+const updateTeacher = asyncHandler(async (req, res) => {
+  const { school_id, role } = req.user;
+  const { id } = req.params;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  // Verify teacher belongs to school
+  const { data: existing, error: fetchErr } = await supabase
+    .from('teachers')
+    .select('id, user_id')
+    .eq('id', id)
+    .eq('school_id', school_id)
+    .single();
+
+  if (fetchErr || !existing) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  const { tsc_number, qualifications, date_joined, phone_number, first_name, last_name } = req.body;
+
+  // Update teachers table
+  const teacherUpdates = {};
+  if (tsc_number !== undefined) teacherUpdates.tsc_number = tsc_number;
+  if (qualifications !== undefined) teacherUpdates.qualifications = qualifications;
+  if (date_joined !== undefined) teacherUpdates.date_joined = date_joined;
+
+  if (Object.keys(teacherUpdates).length > 0) {
+    teacherUpdates.updated_at = new Date().toISOString();
+    const { error: updateErr } = await supabase
+      .from('teachers')
+      .update(teacherUpdates)
+      .eq('id', id);
+    if (updateErr) {
+      return res.status(500).json({ success: false, message: 'Failed to update teacher', error: updateErr.message });
+    }
+  }
+
+  // Update users table (name, phone)
+  const userUpdates = {};
+  if (first_name !== undefined) userUpdates.first_name = first_name;
+  if (last_name !== undefined) userUpdates.last_name = last_name;
+  if (phone_number !== undefined) userUpdates.phone_number = phone_number;
+
+  if (Object.keys(userUpdates).length > 0) {
+    userUpdates.updated_at = new Date().toISOString();
+    await supabase.from('users').update(userUpdates).eq('id', existing.user_id);
+  }
+
+  // Return updated profile
+  const { data: updated } = await supabase
+    .from('teachers')
+    .select(`
+      id, tsc_number, qualifications, date_joined, is_active, updated_at,
+      user:user_id ( id, first_name, last_name, email, phone_number, status )
+    `)
+    .eq('id', id)
+    .single();
+
+  res.json({ success: true, message: 'Teacher updated', data: updated });
+});
+
+
+// =============================================================================
+// 5. PATCH /api/v1/teachers/:id/activate
+//    Toggle is_active (activate / deactivate)
+// =============================================================================
+const toggleTeacherActive = asyncHandler(async (req, res) => {
+  const { school_id, role } = req.user;
+  const { id } = req.params;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  const { data: teacher, error } = await supabase
+    .from('teachers')
+    .select('id, is_active, user_id')
+    .eq('id', id)
+    .eq('school_id', school_id)
+    .single();
+
+  if (error || !teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  const newStatus = !teacher.is_active;
+
+  const { error: updateErr } = await supabase
+    .from('teachers')
+    .update({ is_active: newStatus, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (updateErr) {
+    return res.status(500).json({ success: false, message: 'Failed to update status', error: updateErr.message });
+  }
+
+  // Also update user status
+  await supabase
+    .from('users')
+    .update({ is_active: newStatus, status: newStatus ? 'active' : 'suspended' })
+    .eq('id', teacher.user_id);
+
+  res.json({
+    success: true,
+    message: `Teacher ${newStatus ? 'activated' : 'deactivated'}`,
+    data: { id, is_active: newStatus },
+  });
+});
+
+
+// =============================================================================
+// 6. DELETE /api/v1/teachers/:id
+//    Soft-delete (sets deleted_at, deactivates user)
+// =============================================================================
+const deleteTeacher = asyncHandler(async (req, res) => {
+  const { school_id, role, id: requesterId } = req.user;
+  const { id } = req.params;
+
+  if (!['school_admin', 'super_admin'].includes(role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+
+  const { data: teacher, error } = await supabase
+    .from('teachers')
+    .select('id, user_id')
+    .eq('id', id)
+    .eq('school_id', school_id)
+    .is('deleted_at', null)
+    .single();
+
+  if (error || !teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found or already deleted' });
+  }
+
+  const now = new Date().toISOString();
+
+  // Soft-delete teacher
+  const { error: delErr } = await supabase
+    .from('teachers')
+    .update({
+      is_active: false,
+      deleted_at: now,
+      updated_at: now,
+    })
+    .eq('id', id);
+
+  if (delErr) {
+    return res.status(500).json({ success: false, message: 'Failed to delete teacher', error: delErr.message });
+  }
+
+  // Deactivate all assignments
+  await supabase
+    .from('teacher_assignments')
+    .update({ is_active: false, updated_at: now })
+    .eq('teacher_id', id)
+    .eq('is_active', true);
+
+  // Suspend user account
+  await supabase
+    .from('users')
+    .update({ is_active: false, status: 'suspended', updated_at: now })
+    .eq('id', teacher.user_id);
+
+  res.json({ success: true, message: 'Teacher deleted successfully' });
+});
+
+
+// =============================================================================
+// 7. GET /api/v1/teachers/:id/timetable
+//    Weekly timetable for this teacher (current academic year)
+// =============================================================================
+const getTeacherTimetable = asyncHandler(async (req, res) => {
+  const { school_id } = req.user;
+  const { id } = req.params;
+  const { academic_year_id, term_id } = req.query;
+
+  // Verify teacher belongs to school
+  const { data: teacher, error: tErr } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('id', id)
+    .eq('school_id', school_id)
+    .single();
+
+  if (tErr || !teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  // Get current academic year if not specified
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const { data: currentYear } = await supabase
+      .from('academic_years')
+      .select('id')
+      .eq('school_id', school_id)
+      .eq('is_current', true)
+      .single();
+    yearId = currentYear?.id;
+  }
+
+  if (!yearId) {
+    return res.status(404).json({ success: false, message: 'No current academic year found' });
+  }
+
+  let query = supabase
+    .from('timetable_slots')
+    .select(`
+      id,
+      day,
+      period_number,
+      start_time,
+      end_time,
+      room,
+      is_active,
+      class:class_id ( id, grade_level, stream_name ),
+      learning_area:learning_area_id ( id, name, code ),
+      term:term_id ( id, name, term_number )
+    `)
+    .eq('teacher_id', id)
+    .eq('school_id', school_id)
+    .eq('academic_year_id', yearId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .order('day')
+    .order('period_number');
+
+  if (term_id) query = query.eq('term_id', term_id);
+
+  const { data: slots, error } = await query;
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch timetable', error: error.message });
+  }
+
+  // Group by day for easier frontend consumption
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+  const timetable = {};
+  days.forEach((day) => {
+    timetable[day] = slots.filter((s) => s.day === day);
+  });
+
+  res.json({ success: true, data: { teacher_id: id, academic_year_id: yearId, timetable } });
+});
+
+
+// =============================================================================
+// 8. GET /api/v1/teachers/:id/classes
+//    Classes assigned to this teacher in the current academic year
+// =============================================================================
+const getTeacherClasses = asyncHandler(async (req, res) => {
+  const { school_id } = req.user;
+  const { id } = req.params;
+  const { academic_year_id } = req.query;
+
+  // Verify teacher belongs to school
+  const { data: teacher, error: tErr } = await supabase
+    .from('teachers')
+    .select('id')
+    .eq('id', id)
+    .eq('school_id', school_id)
+    .single();
+
+  if (tErr || !teacher) {
+    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  }
+
+  // Resolve academic year
+  let yearId = academic_year_id;
+  if (!yearId) {
+    const { data: currentYear } = await supabase
+      .from('academic_years')
+      .select('id')
+      .eq('school_id', school_id)
+      .eq('is_current', true)
+      .single();
+    yearId = currentYear?.id;
+  }
+
+  if (!yearId) {
+    return res.status(404).json({ success: false, message: 'No current academic year found' });
+  }
+
+  const { data: assignments, error } = await supabase
+    .from('teacher_assignments')
+    .select(`
+      id,
+      is_active,
+      class:class_id (
+        id,
+        grade_level,
+        stream_name,
+        capacity,
+        is_active,
+        class_teacher_id
+      ),
+      learning_area:learning_area_id ( id, name, code ),
+      term:term_id ( id, name, term_number )
+    `)
+    .eq('teacher_id', id)
+    .eq('academic_year_id', yearId)
+    .eq('is_active', true)
+    .is('deleted_at', null);
+
+  if (error) {
+    return res.status(500).json({ success: false, message: 'Failed to fetch assignments', error: error.message });
+  }
+
+  // Enrich with learner count per class
+  const classIds = [...new Set(assignments.map((a) => a.class?.id).filter(Boolean))];
+  const learnerCounts = {};
+
+  if (classIds.length > 0) {
+    const { data: enrollments } = await supabase
+      .from('learner_enrollments')
+      .select('class_id')
+      .in('class_id', classIds)
+      .eq('academic_year_id', yearId)
+      .eq('status', 'enrolled');
+
+    (enrollments || []).forEach((e) => {
+      learnerCounts[e.class_id] = (learnerCounts[e.class_id] || 0) + 1;
+    });
+  }
+
+  const enriched = assignments.map((a) => ({
+    ...a,
+    class: a.class ? { ...a.class, learner_count: learnerCounts[a.class.id] || 0 } : null,
+    is_class_teacher: a.class?.class_teacher_id === id,
+  }));
+
+  res.json({
+    success: true,
+    data: {
+      teacher_id: id,
+      academic_year_id: yearId,
+      assignments: enriched,
+    },
+  });
+});
+
+
+// =============================================================================
+// Export
+// =============================================================================
+module.exports = {
+  inviteTeacher,
+  listTeachers,
+  getTeacher,
+  updateTeacher,
+  toggleTeacherActive,
+  deleteTeacher,
+  getTeacherTimetable,
+  getTeacherClasses,
+};
