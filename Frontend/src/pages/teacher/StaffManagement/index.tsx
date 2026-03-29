@@ -1,13 +1,24 @@
-import React, { useState } from "react";
-
-import { StaffMember, StaffManagementProps } from "./types";
-import { SEED_STAFF } from "./constants";
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import type { StaffMember, StaffManagementProps } from "./types";
+import { 
+  getTeachers, 
+  inviteTeacher, 
+  updateTeacher, 
+  deleteTeacher, 
+  mapBackendToStaffMember 
+} from "@/lib/api/teacherApi";
 import { DashboardView, ListView, FormView, DetailsView, PerformanceView } from "./components";
+
 
 /* ─── MAIN ───────────────────────────────────────────────────────────── */
 const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
+  const { isAuthenticated, schoolId } = useAuth();
   const [view, setView]         = useState<"dashboard"|"list"|"form"|"details"|"performance">("dashboard");
-  const [staff, setStaff]       = useState<StaffMember[]>(SEED_STAFF);
+  const [staff, setStaff]       = useState<StaffMember[]>([]);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [selected, setSelected] = useState<StaffMember | null>(null);
   const [query, setQuery]       = useState("");
   const [fStatus, setFStatus]   = useState("all");
@@ -16,6 +27,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   const [tab, setTab]           = useState<"general"|"teaching"|"contact">("general");
   const [toast, setToast]       = useState<string | null>(null);
   const [slots, setSlots]       = useState<string[]>(["","","",""]);
+
 
   const empty: StaffMember = { 
     id:"", 
@@ -64,13 +76,81 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     setSelected(null); setForm(empty);
     setSlots(["","","",""]); setTab("general"); setView("form");
   };
-  const handleSave = () => {
-    const rec: StaffMember = { ...form, teachingSubjects: slots.filter(Boolean), id: selected?.id ?? Date.now().toString() };
-    if (selected) { setStaff(s => s.map(x => x.id === selected.id ? rec : x)); notify("Staff record updated."); }
-    else          { setStaff(s => [...s, rec]); notify("New staff member registered."); }
-    setView("list");
+  const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getTeachers({ page: 1, limit: 100 });
+      setStaff(res.data.teachers.map(mapBackendToStaffMember));
+    } catch (err: any) {
+      setError(err.message);
+      setToast(`Failed to load staff: ${err.message}`);
+      console.error('Fetch teachers error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, refreshKey]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh, refreshKey]);
+
+  const handleSave = async () => {
+    // DEBUG: Validate selected before update
+    if (!selected || !selected.id) {
+      const msg = selected 
+        ? 'Invalid teacher ID. Please refresh the list.'
+        : 'No teacher selected for update. Create new instead.';
+      setToast(msg);
+      console.error('[DEBUG] handleSave validation failed:', { selected });
+      return;
+    }
+
+    try {
+      console.log('[DEBUG] handleSave starting:', { 
+        teacherId: selected.id, 
+        formData: form,
+        userSchoolId: localStorage.getItem('cbe_school_id') // assuming stored somewhere
+      });
+
+      const payload = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        mobilePhone: form.mobilePhone,
+        tscNumber: form.tscNumber,
+        qualifications: form.qualifications,
+      };
+      
+      if (selected) {
+        console.log('[DEBUG] Calling updateTeacher with ID:', selected.id, 'SchoolId:', schoolId);
+        await updateTeacher(selected.id, payload, schoolId);
+        setToast("Staff record updated.");
+      } else {
+        await inviteTeacher(payload);
+        setToast("New staff invited successfully. Check email.");
+      }
+      setView("list");
+      setRefreshKey(k => k + 1);
+    } catch (err: any) {
+      console.error('[DEBUG] handleSave full error:', err);
+      setToast(`Save failed: ${err.message}`);
+    }
   };
-  const del = (id: string) => { setStaff(s => s.filter(x => x.id !== id)); notify("Staff record deleted."); };
+
+
+  const del = async (id: string) => {
+    try {
+      await deleteTeacher(id);
+      setToast("Staff record deleted.");
+      setRefreshKey(k => k + 1);
+    } catch (err: any) {
+      setToast(`Delete failed: ${err.message}`);
+      console.error('Delete error:', err);
+    }
+  };
+
 
   const setF = <K extends keyof StaffMember>(k: K, v: StaffMember[K]) => setForm(f => ({...f, [k]: v}));
 
@@ -109,11 +189,14 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
         onStatusChange={setFStatus}
         onBranchChange={setFBranch}
         onStaffTypeChange={setFStaffType}
-        onRefresh={() => {}}
+        onRefresh={() => setRefreshKey(k => k + 1)}
         toast={toast}
+        loading={loading}
+        error={error}
       />
     );
   }
+
 
   // Form View
   if (view === "form") {

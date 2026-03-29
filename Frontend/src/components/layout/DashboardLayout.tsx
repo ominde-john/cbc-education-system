@@ -166,8 +166,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {!collapsed && (
                 <div
                   className={cn(
-                    'px-4 text-xs font-semibold uppercase tracking-wider mb-2',
-                    theme.sidebar.textSecondary
+                    'px-4 text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground'
                   )}
                 >
                   {section.title}
@@ -333,10 +332,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm font-medium truncate', theme.sidebar.text)}>
+                  <p className="text-sm font-semibold truncate text-foreground">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className={cn('text-xs truncate', theme.sidebar.textSecondary)}>{user?.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                 </div>
               </div>
               <button

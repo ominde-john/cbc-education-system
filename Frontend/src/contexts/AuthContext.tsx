@@ -26,6 +26,7 @@ console.log('[AuthContext] Environment:', import.meta.env.MODE);
 
 interface AuthContextType {
   user: User | null;
+  schoolId: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   showLoginSkeleton: boolean;
@@ -247,6 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user,
+      schoolId: user?.schoolId || null,
       isLoading,
       isAuthenticated: !!user,
       showLoginSkeleton,

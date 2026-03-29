@@ -1,12 +1,10 @@
 import React, { useState } from "react";
-import { Edit, IdCard, Phone, Briefcase, BookOpen, Mail, MapPin, Calendar, Badge as BadgeIcon, Code2, Copy, Check, ArrowRight, GraduationCap, Briefcase as BriefcaseIcon } from "lucide-react";
+import { Edit, IdCard, Phone, Briefcase, BookOpen, Mail, MapPin, Calendar, Badge as BadgeIcon, Copy, Check, ArrowRight, GraduationCap, Briefcase as BriefcaseIcon } from "lucide-react";
 import { StaffMember } from "../types";
-import { T } from "../constants";
 import { fmt, getStaffTypeLabel, getStaffTypeColor } from "../helpers";
-import { GLOBAL_CSS } from "../styles";
-import { TopNav, NavBtn, Avatar, StatusBadge, DetailRow, Toast } from "./index";
+import { TopNav, NavBtn, Avatar, StatusBadge, Toast } from "./index";
+import { cn } from "@/lib/utils";
 
-/* ─── DETAILS VIEW - MODERN UI/UX ─────────────────────────────────────── */
 interface DetailsViewProps {
   selected: StaffMember;
   onBack: () => void;
@@ -14,12 +12,7 @@ interface DetailsViewProps {
   toast: string | null;
 }
 
-export const DetailsView: React.FC<DetailsViewProps> = ({
-  selected,
-  onBack,
-  onEdit,
-  toast,
-}) => {
+export const DetailsView: React.FC<DetailsViewProps> = ({ selected, onBack, onEdit, toast }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -29,13 +22,11 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const typeColor = getStaffTypeColor(selected.staffType);
+
   const sections = [
     {
-      id: "personal",
-      icon: IdCard,
-      title: "Personal Information",
-      color: "#1A56DB",
-      bg: "#EBF0FF",
+      id: "personal", icon: IdCard, title: "Personal Information", color: "#1A56DB", bg: "bg-blue-50",
       fields: [
         { label: "Full Name", value: `${selected.firstName} ${selected.lastName}`, copyable: true },
         { label: "National ID", value: selected.idNumber, copyable: true },
@@ -45,11 +36,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
       ]
     },
     {
-      id: "contact",
-      icon: Phone,
-      title: "Contact Information",
-      color: "#15803D",
-      bg: "#F0FDF4",
+      id: "contact", icon: Phone, title: "Contact Information", color: "#15803D", bg: "bg-green-50",
       fields: [
         { label: "Email", value: selected.email, copyable: true, icon: Mail },
         { label: "Mobile", value: selected.mobilePhone, copyable: true },
@@ -58,11 +45,7 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
       ]
     },
     {
-      id: "employment",
-      icon: Briefcase,
-      title: "Employment Information",
-      color: "#B45309",
-      bg: "#FFFBEB",
+      id: "employment", icon: Briefcase, title: "Employment Information", color: "#B45309", bg: "bg-amber-50",
       fields: [
         { label: "Designation", value: selected.designation },
         { label: "Branch", value: selected.branch },
@@ -73,461 +56,115 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
       ]
     },
     {
-      id: "teaching",
-      icon: BookOpen,
-      title: "Teaching Details",
-      color: "#1D4ED8",
-      bg: "#EFF6FF",
-      fields: [],
-      showTags: true
+      id: "teaching", icon: BookOpen, title: "Teaching Details", color: "#1D4ED8", bg: "bg-blue-50",
+      fields: [], showTags: true
     }
   ];
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      background: T.bg, 
-      fontFamily: "'DM Sans',system-ui,sans-serif" 
-    }}>
-      <style>{GLOBAL_CSS}</style>
-      <TopNav
-        crumb="Profile"
-        onBack={onBack}
-        actions={<NavBtn icon={Edit} label="Edit Profile" onClick={onEdit} primary />}
-      />
+    <div className="min-h-screen bg-muted/40 font-sans">
+      <TopNav crumb="Profile" onBack={onBack} actions={<NavBtn icon={Edit} label="Edit Profile" onClick={onEdit} primary />} />
 
-      {/* MODERN HEADER SECTION */}
-      <div style={{
-        background: `linear-gradient(135deg, ${T.accent}08 0%, ${T.accent}12 100%)`,
-        borderBottom: `1px solid ${T.border}`,
-        padding: "32px 24px"
-      }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: 24 }}>
-            {/* Avatar */}
-            <div style={{ position: "relative" }}>
+      {/* Header */}
+      <div className="border-b border-border py-8 px-6" style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.04) 0%, hsl(var(--primary) / 0.08) 100%)" }}>
+        <div className="max-w-[1100px] mx-auto">
+          <div className="flex items-start gap-6 mb-6">
+            <div className="relative">
               <Avatar staff={selected} size={80} />
-              <div style={{
-                position: "absolute",
-                bottom: -4,
-                right: -4,
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                background: T.accent,
-                border: `3px solid ${T.bg}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                <BadgeIcon size={14} color="white" strokeWidth={2.5} />
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary border-[3px] border-background flex items-center justify-center">
+                <BadgeIcon size={14} className="text-primary-foreground" strokeWidth={2.5} />
               </div>
             </div>
-
-            {/* Main Info */}
-            <div style={{ flex: 1 }}>
-              <div style={{ marginBottom: 16 }}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: T.accent,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  marginBottom: 6
-                }}>
-                  {selected.branch}
-                </div>
-                <h1 style={{
-                  fontSize: 32,
-                  fontWeight: 800,
-                  color: T.text.primary,
-                  margin: 0,
-                  marginBottom: 8,
-                  lineHeight: 1.2
-                }}>
-                  {selected.firstName} {selected.lastName}
-                </h1>
-                <p style={{
-                  fontSize: 15,
-                  color: T.text.muted,
-                  margin: 0,
-                  marginBottom: 12
-                }}>
-                  {selected.designation}
-                </p>
-
-                {/* Quick Info Badges */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  {/* Staff Type Badge */}
-                  <span style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "4px 10px",
-                    borderRadius: 14,
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.03em",
-                    background: getStaffTypeColor(selected.staffType).bg,
-                    color: getStaffTypeColor(selected.staffType).text,
-                  }}>
-                    {selected.staffType === "teaching" ? (
-                      <GraduationCap size={12} />
-                    ) : (
-                      <BriefcaseIcon size={12} />
-                    )}
-                    {getStaffTypeLabel(selected.staffType)}
-                  </span>
-                  <StatusBadge status={selected.jobStatus} />
-                  {selected.tscNumber && selected.tscNumber !== "N/A" && selected.staffType === "teaching" && (
-                    <span style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      padding: "6px 12px",
-                      borderRadius: 6,
-                      background: `${T.accent}08`,
-                      color: T.accent,
-                      border: `1px solid ${T.accent}20`
-                    }}>
-                      TSC: {selected.tscNumber}
-                    </span>
-                  )}
-                </div>
+            <div className="flex-1">
+              <p className="text-[11px] font-bold text-primary uppercase tracking-[0.1em] mb-1.5">{selected.branch}</p>
+              <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">{selected.firstName} {selected.lastName}</h1>
+              <p className="text-[15px] text-muted-foreground mb-3">{selected.designation}</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10.5px] font-bold uppercase tracking-wide" style={{ background: typeColor.bg, color: typeColor.text }}>
+                  {selected.staffType === "teaching" ? <GraduationCap size={12} /> : <BriefcaseIcon size={12} />}
+                  {getStaffTypeLabel(selected.staffType)}
+                </span>
+                <StatusBadge status={selected.jobStatus} />
+                {selected.tscNumber && selected.tscNumber !== "N/A" && selected.staffType === "teaching" && (
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-md bg-primary/5 text-primary border border-primary/15">TSC: {selected.tscNumber}</span>
+                )}
               </div>
             </div>
-
-            {/* Salary Card */}
             {selected.salary > 0 && (
-              <div style={{
-                background: T.surface,
-                border: `1px solid ${T.border}`,
-                borderRadius: 12,
-                padding: "16px 20px",
-                textAlign: "center",
-                minWidth: "160px",
-                transition: "all 0.3s ease"
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = T.accent;
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${T.accent}12`;
-                (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = T.border;
-                (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-              }}>
-                <div style={{
-                  fontSize: 10,
-                  color: T.text.muted,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.07em",
-                  fontWeight: 600,
-                  marginBottom: 8
-                }}>
-                  Monthly Salary
-                </div>
-                <div style={{
-                  fontSize: 24,
-                  fontWeight: 800,
-                  color: T.accent,
-                  marginBottom: 4
-                }}>
-                  {fmt(selected.salary)}
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: T.text.muted,
-                  fontWeight: 500
-                }}>
-                  Current compensation
-                </div>
+              <div className="bg-card border border-border rounded-2xl px-5 py-4 text-center min-w-[160px] shadow-sm">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-2">Monthly Salary</p>
+                <p className="text-2xl font-extrabold text-primary mb-1">{fmt(selected.salary)}</p>
+                <p className="text-[11px] text-muted-foreground font-medium">Current compensation</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))", gap: 16 }}>
+      {/* Content */}
+      <div className="max-w-[1100px] mx-auto px-6 py-7">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sections.map((section) => {
             const SectionIcon = section.icon;
             const isTeaching = section.id === "teaching";
-
             return (
-              <div
-                key={section.id}
-                style={{
-                  background: T.surface,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: 14,
-                  overflow: "hidden",
-                  transition: "all 0.3s ease",
-                  cursor: expandedSection === section.id ? "default" : "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  if (expandedSection !== section.id) {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = section.color;
-                    el.style.boxShadow = `0 12px 32px ${section.color}12`;
-                    el.style.transform = "translateY(-4px)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (expandedSection !== section.id) {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = T.border;
-                    el.style.boxShadow = "none";
-                    el.style.transform = "translateY(0)";
-                  }
-                }}
-              >
-                {/* Section Header */}
-                <div style={{
-                  padding: "16px 18px",
-                  borderBottom: `1px solid ${T.border}`,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  background: `${section.bg}`,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease"
-                }}
-                onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}>
-                  <div style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    background: section.bg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: `1px solid ${section.color}20`
-                  }}>
+              <div key={section.id} className="bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/20">
+                <div
+                  className={cn("px-5 py-4 border-b border-border flex items-center gap-3 cursor-pointer", section.bg)}
+                  onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
+                >
+                  <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", section.bg)} style={{ border: `1px solid ${section.color}20` }}>
                     <SectionIcon size={16} color={section.color} strokeWidth={2.2} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: 13,
-                      fontWeight: 800,
-                      color: T.text.primary
-                    }}>
-                      {section.title}
-                    </div>
-                  </div>
+                  <p className="flex-1 text-[13px] font-extrabold text-foreground">{section.title}</p>
                   {!isTeaching && (
-                    <ArrowRight
-                      size={16}
-                      color={T.text.muted}
-                      style={{
-                        transition: "transform 0.3s ease",
-                        transform: expandedSection === section.id ? "rotate(90deg)" : "rotate(0deg)"
-                      }}
-                    />
+                    <ArrowRight size={16} className={cn("text-muted-foreground transition-transform duration-300", expandedSection === section.id && "rotate-90")} />
                   )}
                 </div>
 
-                {/* Section Content */}
-                <div style={{ padding: "14px 18px" }}>
+                <div className="px-5 py-4">
                   {isTeaching ? (
                     <>
                       {selected.teachingSubjects.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
-                          <div style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: T.text.muted,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.07em",
-                            marginBottom: 10
-                          }}>
-                            📚 Subjects Taught
-                          </div>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <div className="mb-4">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">📚 Subjects Taught</p>
+                          <div className="flex flex-wrap gap-2">
                             {selected.teachingSubjects.map(s => (
-                              <span
-                                key={s}
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  padding: "6px 12px",
-                                  borderRadius: 20,
-                                  background: `${T.accent}08`,
-                                  color: T.accent,
-                                  border: `1px solid ${T.accent}20`,
-                                  transition: "all 0.2s ease"
-                                }}
-                                onMouseEnter={(e) => {
-                                  const el = e.currentTarget as HTMLElement;
-                                  el.style.background = `${T.accent}12`;
-                                  el.style.transform = "translateY(-2px)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  const el = e.currentTarget as HTMLElement;
-                                  el.style.background = `${T.accent}08`;
-                                  el.style.transform = "translateY(0)";
-                                }}>
-                                {s}
-                              </span>
+                              <span key={s} className="text-xs font-semibold px-3 py-1.5 rounded-full bg-primary/5 text-primary border border-primary/15">{s}</span>
                             ))}
                           </div>
                         </div>
                       )}
-
                       {selected.qualifications.length > 0 && (
                         <div>
-                          <div style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: T.text.muted,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.07em",
-                            marginBottom: 10
-                          }}>
-                            🎓 Qualifications
-                          </div>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">🎓 Qualifications</p>
+                          <div className="flex flex-wrap gap-2">
                             {selected.qualifications.map(q => (
-                              <span
-                                key={q}
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  padding: "6px 12px",
-                                  borderRadius: 20,
-                                  background: "#F0FDF4",
-                                  color: "#15803D",
-                                  border: "1px solid #86EFAC",
-                                  transition: "all 0.2s ease"
-                                }}
-                                onMouseEnter={(e) => {
-                                  const el = e.currentTarget as HTMLElement;
-                                  el.style.background = "#DCFCE7";
-                                  el.style.transform = "translateY(-2px)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  const el = e.currentTarget as HTMLElement;
-                                  el.style.background = "#F0FDF4";
-                                  el.style.transform = "translateY(0)";
-                                }}>
-                                {q}
-                              </span>
+                              <span key={q} className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200">{q}</span>
                             ))}
                           </div>
                         </div>
                       )}
-
                       {!selected.teachingSubjects.length && !selected.qualifications.length && (
-                        <div style={{
-                          fontSize: 13,
-                          color: T.text.muted,
-                          padding: "12px",
-                          textAlign: "center",
-                          background: T.bg,
-                          borderRadius: 8
-                        }}>
-                          No teaching details recorded.
-                        </div>
+                        <div className="text-[13px] text-muted-foreground p-3 text-center bg-muted/50 rounded-lg">No teaching details recorded.</div>
                       )}
                     </>
                   ) : (
                     <div>
                       {section.fields.map((field, idx) => {
-                        const FieldIcon = field.icon;
-
+                        const FieldIcon = (field as any).icon;
                         return (
-                          <div
-                            key={idx}
-                            style={{
-                              paddingBottom: idx < section.fields.length - 1 ? 12 : 0,
-                              marginBottom: idx < section.fields.length - 1 ? 12 : 0,
-                              borderBottom: idx < section.fields.length - 1 ? `1px solid ${T.border}` : "none",
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              gap: 12,
-                              transition: "all 0.2s ease",
-                              padding: "8px 0"
-                            }}
-                            onMouseEnter={(e) => {
-                              const el = e.currentTarget as HTMLElement;
-                              el.style.background = `${T.bg}`;
-                              el.style.borderRadius = "6px";
-                              el.style.padding = "8px 8px";
-                              el.style.marginLeft = "-8px";
-                              el.style.marginRight = "-8px";
-                            }}
-                            onMouseLeave={(e) => {
-                              const el = e.currentTarget as HTMLElement;
-                              el.style.background = "transparent";
-                              el.style.borderRadius = "0px";
-                              el.style.padding = "8px 0";
-                              el.style.marginLeft = "0";
-                              el.style.marginRight = "0";
-                            }}>
+                          <div key={idx} className={cn("flex justify-between items-start gap-3 py-2.5", idx < section.fields.length - 1 && "border-b border-border")}>
                             <div>
-                              <div style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                color: T.text.muted,
-                                textTransform: "uppercase",
-                                letterSpacing: "0.05em",
-                                marginBottom: 4
-                              }}>
-                                {field.label}
-                              </div>
-                              <div style={{
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: T.text.primary,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6
-                              }}>
-                                {FieldIcon && <FieldIcon size={14} color={T.text.muted} />}
-                                {field.badge ? (
-                                  <StatusBadge status={field.value} />
-                                ) : (
-                                  field.value || "—"
-                                )}
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">{field.label}</p>
+                              <div className="text-[13px] font-semibold text-foreground flex items-center gap-1.5">
+                                {FieldIcon && <FieldIcon size={14} className="text-muted-foreground" />}
+                                {(field as any).badge ? <StatusBadge status={field.value} /> : (field.value || "—")}
                               </div>
                             </div>
                             {field.copyable && (
-                              <button
-                                onClick={() => handleCopy(field.value, field.label)}
-                                style={{
-                                  opacity: 0,
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  padding: "4px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  borderRadius: 4,
-                                  transition: "all 0.2s ease",
-                                  color: T.text.muted,
-                                  minWidth: 32,
-                                  minHeight: 32
-                                }}
-                                onMouseEnter={(e) => {
-                                  const el = e.currentTarget as HTMLElement;
-                                  el.style.opacity = "1";
-                                  el.style.background = T.bg;
-                                  el.style.color = T.accent;
-                                }}
-                                onMouseLeave={(e) => {
-                                  const el = e.currentTarget as HTMLElement;
-                                  el.style.opacity = "0";
-                                }}
-                              >
-                                {copiedField === field.label ? (
-                                  <Check size={16} />
-                                ) : (
-                                  <Copy size={16} />
-                                )}
+                              <button onClick={() => handleCopy(field.value, field.label)} className="p-1 text-muted-foreground hover:text-primary transition-colors">
+                                {copiedField === field.label ? <Check size={16} /> : <Copy size={16} />}
                               </button>
                             )}
                           </div>
@@ -541,7 +178,6 @@ export const DetailsView: React.FC<DetailsViewProps> = ({
           })}
         </div>
       </div>
-
       {toast && <Toast msg={toast} />}
     </div>
   );

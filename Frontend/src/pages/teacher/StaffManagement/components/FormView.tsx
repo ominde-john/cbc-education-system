@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { Users, X, Save, ChevronDown, CheckCircle, GraduationCap, Briefcase, Camera, Upload } from "lucide-react";
+import { Users, X, Save, ChevronDown, CheckCircle, Camera } from "lucide-react";
 import { StaffMember } from "../types";
-import { T, STATUS_CFG, DESIGNATIONS, BRANCHES, COUNTIES, ALL_SUBJECTS, TEACHING_DESIGNATIONS } from "../constants";
-import { inp, sel, GLOBAL_CSS } from "../styles";
-import { initials, avatarBg, getStaffTypeLabel } from "../helpers";
+import { STATUS_CFG, DESIGNATIONS, BRANCHES, COUNTIES, ALL_SUBJECTS } from "../constants";
+import { initials, avatarBg } from "../helpers";
 import { TopNav, NavBtn, StatusBadge, FormField, Toast } from "./index";
+import { cn } from "@/lib/utils";
 
-/* ─── FORM VIEW ───────────────────────────────────────────────────────── */
 interface FormViewProps {
   form: StaffMember;
   selected: StaffMember | null;
@@ -20,18 +19,10 @@ interface FormViewProps {
   toast: string | null;
 }
 
-export const FormView: React.FC<FormViewProps> = ({
-  form,
-  selected,
-  tab,
-  slots,
-  onBack,
-  onSave,
-  onTabChange,
-  onFieldChange,
-  onSlotsChange,
-  toast,
-}) => {
+const inputClasses = "w-full px-3 py-2.5 border border-border rounded-lg text-[13px] text-foreground bg-card outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground font-sans";
+const selectClasses = cn(inputClasses, "appearance-none pr-8 cursor-pointer");
+
+export const FormView: React.FC<FormViewProps> = ({ form, selected, tab, slots, onBack, onSave, onTabChange, onFieldChange, onSlotsChange, toast }) => {
   const [photoPreview, setPhotoPreview] = useState<string>(form.photo || "");
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,64 +31,52 @@ export const FormView: React.FC<FormViewProps> = ({
     onFieldChange("photo", url);
   };
 
-  const sectionHeader = (title: string) => (
-    <div style={{ fontSize: 12, fontWeight: 800, color: T.text.primary, marginBottom: 14, paddingBottom: 9, borderBottom: `1px solid ${T.border}`, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
-      {title}
-    </div>
-  );
-
   const DD = ({ k, opts, placeholder }: { k: keyof StaffMember; opts: string[]; placeholder?: string }) => (
-    <div style={{ position: "relative" }}>
-      <select
-        style={sel}
-        value={String(form[k])}
-        onChange={e => onFieldChange(k, e.target.value as StaffMember[typeof k])}
-      >
+    <div className="relative">
+      <select className={selectClasses} value={String(form[k])} onChange={e => onFieldChange(k, e.target.value as StaffMember[typeof k])}>
         {placeholder && <option value="">{placeholder}</option>}
         {opts.map(o => <option key={o}>{o}</option>)}
       </select>
-      <ChevronDown size={12} color={T.text.muted} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+      <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
     </div>
   );
 
+  const SectionHeader = ({ title }: { title: string }) => (
+    <p className="text-xs font-extrabold text-foreground mb-3.5 pb-2.5 border-b border-border uppercase tracking-wide">{title}</p>
+  );
+
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: "'DM Sans',system-ui,sans-serif" }}>
-      <style>{GLOBAL_CSS}</style>
-      <TopNav
-        crumb={selected ? "Edit Staff" : "Register Staff"}
-        onBack={onBack}
-        actions={
-          <>
-            <NavBtn icon={X} label="Cancel" onClick={onBack} />
-            <NavBtn icon={Save} label={selected ? "Save Changes" : "Register"} onClick={onSave} primary />
-          </>
-        }
-      />
-      <div style={{ background: "#0F1624", padding: "18px 32px 26px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: "white", marginBottom: 3 }}>
+    <div className="min-h-screen bg-muted/40 font-sans">
+      <TopNav crumb={selected ? "Edit Staff" : "Register Staff"} onBack={onBack} actions={
+        <div className="flex gap-2">
+          <NavBtn icon={X} label="Cancel" onClick={onBack} />
+          <NavBtn icon={Save} label={selected ? "Save Changes" : "Register"} onClick={onSave} primary />
+        </div>
+      } />
+
+      {/* Dark Header */}
+      <div className="bg-foreground px-8 py-5">
+        <div className="max-w-[1100px] mx-auto">
+          <h1 className="text-xl font-extrabold text-background mb-1">
             {selected ? `Edit — ${selected.firstName} ${selected.lastName}` : "Register New Staff Member"}
           </h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Fields marked * are required</p>
+          <p className="text-[13px] text-background/40">Fields marked · are required</p>
         </div>
       </div>
 
-      <div style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, padding: "0 32px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex" }}>
+      {/* Tab Bar */}
+      <div className="bg-card border-b border-border px-8">
+        <div className="max-w-[1100px] mx-auto flex">
           {(["general", "teaching", "contact"] as const).map(t => (
             <button
               key={t}
               onClick={() => onTabChange(t)}
-              style={{
-                padding: "12px 18px",
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: tab === t ? 700 : 500,
-                color: tab === t ? T.accent : T.text.muted,
-                borderBottom: `2.5px solid ${tab === t ? T.accent : "transparent"}`,
-              }}
+              className={cn(
+                "px-5 py-3 text-[13px] font-medium transition-colors border-b-[2.5px]",
+                tab === t
+                  ? "font-bold text-primary border-primary"
+                  : "text-muted-foreground border-transparent hover:text-foreground"
+              )}
             >
               {t === "general" ? "Personal & Employment" : t === "teaching" ? "Teaching Details" : "Contact & Address"}
             </button>
@@ -105,276 +84,141 @@ export const FormView: React.FC<FormViewProps> = ({
         </div>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 205px", gap: 16 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-            {/* General Tab */}
+      {/* Form Content */}
+      <div className="max-w-[1100px] mx-auto px-6 py-5">
+        <div className="grid grid-cols-[1fr_205px] gap-4">
+          <div className="flex flex-col gap-4">
             {tab === "general" && (
               <>
-                {/* Photo Upload Section */}
-                <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
-                  {sectionHeader("Staff Photo")}
-                  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                    {/* Photo Preview */}
-                    <div style={{ flexShrink: 0 }}>
+                {/* Photo Section */}
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <SectionHeader title="Staff Photo" />
+                  <div className="flex items-center gap-5">
+                    <div className="shrink-0">
                       {photoPreview ? (
-                        <img 
-                          src={photoPreview} 
-                          alt="Staff preview"
-                          style={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: 12,
-                            objectFit: "cover",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                          }}
-                          onError={() => setPhotoPreview("")}
-                        />
+                        <img src={photoPreview} alt="Staff preview" className="w-20 h-20 rounded-xl object-cover shadow-md" onError={() => setPhotoPreview("")} />
                       ) : (
-                        <div style={{
-                          width: 80,
-                          height: 80,
-                          borderRadius: 12,
-                          background: `linear-gradient(135deg, ${avatarBg(selected?.id ?? "0")}, ${avatarBg(selected?.id ?? "0")}dd)`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 24,
-                          fontWeight: 800,
-                          color: "white",
-                        }}>
-                          {form.firstName && form.lastName ? initials(form.firstName, form.lastName) : <Camera size={24} color="white" />}
+                        <div
+                          className="w-20 h-20 rounded-xl flex items-center justify-center text-2xl font-extrabold text-white"
+                          style={{ background: `linear-gradient(135deg, ${avatarBg(selected?.id ?? "0")}, ${avatarBg(selected?.id ?? "0")}dd)` }}
+                        >
+                          {form.firstName && form.lastName ? initials(form.firstName, form.lastName) : <Camera size={24} className="text-white" />}
                         </div>
                       )}
                     </div>
-                    
-                    {/* Photo URL Input */}
-                    <div style={{ flex: 1 }}>
+                    <div className="flex-1">
                       <FormField label="Photo URL">
-                        <input 
-                          style={inp} 
-                          value={form.photo || ""} 
-                          onChange={handlePhotoChange}
-                          placeholder="Enter photo URL or leave empty for auto-generated avatar"
-                        />
+                        <input className={inputClasses} value={form.photo || ""} onChange={handlePhotoChange} placeholder="Enter photo URL or leave empty" />
                       </FormField>
-                      <p style={{ fontSize: 11, color: T.text.muted, marginTop: 6 }}>
-                        Paste a URL to a photo (e.g., from Google Drive, Dropbox, or any image hosting service)
-                      </p>
-                      {photoPreview && (
-                        <button
-                          onClick={() => {
-                            setPhotoPreview("");
-                            onFieldChange("photo", "");
-                          }}
-                          style={{
-                            marginTop: 8,
-                            padding: "4px 10px",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: "#DC2626",
-                            background: "#FEF2F2",
-                            border: "1px solid #FCA5A5",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Remove Photo
-                        </button>
-                      )}
+                      <p className="text-[11px] text-muted-foreground mt-1.5">Paste a URL to a photo</p>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
-                  {sectionHeader("Personal Information")}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <FormField label="First Name" required>
-                      <input style={inp} value={form.firstName} onChange={e => onFieldChange("firstName", e.target.value)} placeholder="e.g. Jeremy" />
-                    </FormField>
-                    <FormField label="Last Name" required>
-                      <input style={inp} value={form.lastName} onChange={e => onFieldChange("lastName", e.target.value)} placeholder="e.g. Bravoge" />
-                    </FormField>
-                    <FormField label="National ID" required>
-                      <input style={inp} value={form.idNumber} onChange={e => onFieldChange("idNumber", e.target.value)} placeholder="e.g. ID001234567" />
-                    </FormField>
-                    <FormField label="Gender" required>
-                      <DD k="sex" opts={["Male", "Female"]} />
-                    </FormField>
-                    <FormField label="Date of Birth">
-                      <input style={inp} type="date" value={form.dateOfBirth} onChange={e => onFieldChange("dateOfBirth", e.target.value)} />
-                    </FormField>
-                    <FormField label="Salary (KSh/month)">
-                      <input style={inp} type="number" value={form.salary || ""} onChange={e => onFieldChange("salary", Number(e.target.value))} placeholder="e.g. 45000" />
-                    </FormField>
+                {/* Personal Info */}
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <SectionHeader title="Personal Information" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="First Name" required><input className={inputClasses} value={form.firstName} onChange={e => onFieldChange("firstName", e.target.value)} placeholder="e.g. Jeremy" /></FormField>
+                    <FormField label="Last Name" required><input className={inputClasses} value={form.lastName} onChange={e => onFieldChange("lastName", e.target.value)} placeholder="e.g. Bravoge" /></FormField>
+                    <FormField label="National ID" required><input className={inputClasses} value={form.idNumber} onChange={e => onFieldChange("idNumber", e.target.value)} placeholder="e.g. ID001234567" /></FormField>
+                    <FormField label="Gender" required><DD k="sex" opts={["Male", "Female"]} /></FormField>
+                    <FormField label="Date of Birth"><input className={inputClasses} type="date" value={form.dateOfBirth} onChange={e => onFieldChange("dateOfBirth", e.target.value)} /></FormField>
+                    <FormField label="Salary (KSh/month)"><input className={inputClasses} type="number" value={form.salary || ""} onChange={e => onFieldChange("salary", Number(e.target.value))} placeholder="e.g. 45000" /></FormField>
                   </div>
                 </div>
-                <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
-                  {sectionHeader("Employment Details")}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    {/* Staff Type Selection */}
+
+                {/* Employment */}
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <SectionHeader title="Employment Details" />
+                  <div className="grid grid-cols-2 gap-3">
                     <FormField label="Staff Type" required>
-                      <div style={{ position: "relative" }}>
-                        <select
-                          style={sel}
-                          value={String(form.staffType || "teaching")}
-                          onChange={e => onFieldChange("staffType", e.target.value as "teaching" | "non-teaching")}
-                        >
-                          <option value="teaching">Teaching Staff</option>
-                          <option value="non-teaching">Non-Teaching Staff</option>
+                      <div className="relative">
+                        <select className={selectClasses} value={String(form.staffType || "teaching")} onChange={e => onFieldChange("staffType", e.target.value as "teaching" | "non-teaching")}>
+                          <option value="teaching">Teaching Staff</option><option value="non-teaching">Non-Teaching Staff</option>
                         </select>
-                        <ChevronDown size={12} color={T.text.muted} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
                       </div>
                     </FormField>
-                    <FormField label="Designation" required>
-                      <DD k="designation" opts={DESIGNATIONS} placeholder="Select…" />
-                    </FormField>
-                    <FormField label="Job Status">
-                      <DD k="jobStatus" opts={Object.keys(STATUS_CFG)} />
-                    </FormField>
-                    <FormField label="Branch" required>
-                      <DD k="branch" opts={BRANCHES} placeholder="Select…" />
-                    </FormField>
-                    <FormField label="Hire Date">
-                      <input style={inp} type="date" value={form.hireDate} onChange={e => onFieldChange("hireDate", e.target.value)} />
-                    </FormField>
-                    <FormField label="Contract Start">
-                      <input style={inp} type="date" value={form.contractStart} onChange={e => onFieldChange("contractStart", e.target.value)} />
-                    </FormField>
-                    <FormField label="Contract End">
-                      <input style={inp} type="date" value={form.contractEnd} onChange={e => onFieldChange("contractEnd", e.target.value)} />
-                    </FormField>
+                    <FormField label="Designation" required><DD k="designation" opts={DESIGNATIONS} placeholder="Select…" /></FormField>
+                    <FormField label="Job Status"><DD k="jobStatus" opts={Object.keys(STATUS_CFG)} /></FormField>
+                    <FormField label="Branch" required><DD k="branch" opts={BRANCHES} placeholder="Select…" /></FormField>
+                    <FormField label="Hire Date"><input className={inputClasses} type="date" value={form.hireDate} onChange={e => onFieldChange("hireDate", e.target.value)} /></FormField>
+                    <FormField label="Contract Start"><input className={inputClasses} type="date" value={form.contractStart} onChange={e => onFieldChange("contractStart", e.target.value)} /></FormField>
+                    <FormField label="Contract End"><input className={inputClasses} type="date" value={form.contractEnd} onChange={e => onFieldChange("contractEnd", e.target.value)} /></FormField>
                   </div>
                 </div>
               </>
             )}
 
-            {/* Teaching Tab */}
             {tab === "teaching" && (
-              <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
-                {sectionHeader("Teaching Details")}
-                <div style={{ display: "grid", gap: 14 }}>
-                  <FormField label="TSC Number">
-                    <input style={inp} value={form.tscNumber} onChange={e => onFieldChange("tscNumber", e.target.value)} placeholder="e.g. TSC123456" />
-                  </FormField>
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <SectionHeader title="Teaching Details" />
+                <div className="flex flex-col gap-4">
+                  <FormField label="TSC Number"><input className={inputClasses} value={form.tscNumber} onChange={e => onFieldChange("tscNumber", e.target.value)} placeholder="e.g. TSC123456" /></FormField>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: T.text.secondary, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-                      Subjects Assigned (up to 4)
-                    </label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2.5">Subjects Assigned (up to 4)</label>
+                    <div className="grid grid-cols-2 gap-2.5">
                       {slots.map((s, i) => (
                         <div key={i}>
-                          <label style={{ fontSize: 11, color: T.text.muted, display: "block", marginBottom: 4 }}>Subject {i + 1}</label>
-                          <div style={{ position: "relative" }}>
-                            <select
-                              style={sel}
-                              value={s}
-                              onChange={e => {
-                                const ns = [...slots];
-                                ns[i] = e.target.value;
-                                onSlotsChange(ns);
-                              }}
-                            >
+                          <label className="text-[11px] text-muted-foreground block mb-1">Subject {i + 1}</label>
+                          <div className="relative">
+                            <select className={selectClasses} value={s} onChange={e => { const ns = [...slots]; ns[i] = e.target.value; onSlotsChange(ns); }}>
                               <option value="">— None —</option>
                               {ALL_SUBJECTS.map(sub => <option key={sub}>{sub}</option>)}
                             </select>
-                            <ChevronDown size={12} color={T.text.muted} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                            <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
                   <FormField label="Qualifications (comma separated)">
-                    <input
-                      style={inp}
-                      value={form.qualifications.join(", ")}
-                      onChange={e => onFieldChange("qualifications", e.target.value.split(",").map(q => q.trim()).filter(Boolean))}
-                      placeholder="e.g. B.Ed Mathematics, Diploma in Education"
-                    />
+                    <input className={inputClasses} value={form.qualifications.join(", ")} onChange={e => onFieldChange("qualifications", e.target.value.split(",").map(q => q.trim()).filter(Boolean))} placeholder="e.g. B.Ed Mathematics, Diploma in Education" />
                   </FormField>
                 </div>
               </div>
             )}
 
-            {/* Contact Tab */}
             {tab === "contact" && (
-              <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 20px" }}>
-                {sectionHeader("Contact & Address")}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <FormField label="Email" required>
-                    <input style={inp} type="email" value={form.email} onChange={e => onFieldChange("email", e.target.value)} placeholder="name@school.ac.ke" />
-                  </FormField>
-                  <FormField label="Mobile" required>
-                    <input style={inp} value={form.mobilePhone} onChange={e => onFieldChange("mobilePhone", e.target.value)} placeholder="+254712345678" />
-                  </FormField>
-                  <FormField label="County">
-                    <DD k="county" opts={COUNTIES} placeholder="Select county…" />
-                  </FormField>
-                  <FormField label="Location">
-                    <input style={inp} value={form.location} onChange={e => onFieldChange("location", e.target.value)} placeholder="e.g. Mathare North" />
-                  </FormField>
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <SectionHeader title="Contact & Address" />
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField label="Email" required><input className={inputClasses} type="email" value={form.email} onChange={e => onFieldChange("email", e.target.value)} placeholder="name@school.ac.ke" /></FormField>
+                  <FormField label="Mobile" required><input className={inputClasses} value={form.mobilePhone} onChange={e => onFieldChange("mobilePhone", e.target.value)} placeholder="+254712345678" /></FormField>
+                  <FormField label="County"><DD k="county" opts={COUNTIES} placeholder="Select county…" /></FormField>
+                  <FormField label="Location"><input className={inputClasses} value={form.location} onChange={e => onFieldChange("location", e.target.value)} placeholder="e.g. Mathare North" /></FormField>
                 </div>
               </div>
             )}
           </div>
 
           {/* Sidebar */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "16px", textAlign: "center" }}>
-              {/* Photo Preview in Sidebar */}
+          <div className="flex flex-col gap-3">
+            <div className="bg-card border border-border rounded-2xl p-4 text-center">
               {form.photo ? (
-                <img 
-                  src={form.photo} 
-                  alt="Staff"
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    margin: "0 auto 10px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                  }}
-                  onError={() => {
-                    // Fall back to initials if image fails to load
-                  }}
-                />
+                <img src={form.photo} alt="Staff" className="w-16 h-16 rounded-full object-cover mx-auto mb-2.5 shadow-md" />
               ) : (
                 <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2.5 text-lg font-extrabold"
                   style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
-                    background: form.firstName ? avatarBg(selected?.id ?? "0") : T.bg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 10px",
-                    fontSize: 18,
-                    fontWeight: 800,
-                    color: form.firstName ? "white" : T.text.muted,
+                    background: form.firstName ? avatarBg(selected?.id ?? "0") : undefined,
+                    color: form.firstName ? "white" : undefined,
                   }}
                 >
-                  {form.firstName && form.lastName ? initials(form.firstName, form.lastName) : <Users size={18} color={T.text.muted} />}
+                  {form.firstName && form.lastName ? initials(form.firstName, form.lastName) : <Users size={18} className="text-muted-foreground" />}
                 </div>
               )}
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text.primary }}>{form.firstName || "First"} {form.lastName || "Last"}</div>
-              <div style={{ fontSize: 11, color: T.text.muted, marginTop: 2 }}>{form.designation || "No designation"}</div>
-              {form.jobStatus && <div style={{ marginTop: 8 }}><StatusBadge status={form.jobStatus} /></div>}
+              <p className="text-[13px] font-bold text-foreground">{form.firstName || "First"} {form.lastName || "Last"}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{form.designation || "No designation"}</p>
+              {form.jobStatus && <div className="mt-2"><StatusBadge status={form.jobStatus} /></div>}
             </div>
-            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: T.text.primary, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>Completion</div>
-              {([
-                ["Name", !!(form.firstName && form.lastName)],
-                ["ID Number", !!form.idNumber],
-                ["Designation", !!form.designation],
-                ["Branch", !!form.branch],
-                ["Email", !!form.email],
-                ["Phone", !!form.mobilePhone],
-              ] as [string, boolean][]).map(([lbl, done]) => (
-                <div key={lbl} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${T.border}` }}>
-                  <span style={{ fontSize: 12, color: T.text.secondary }}>{lbl}</span>
-                  {done ? <CheckCircle size={14} color="#15803D" /> : <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${T.border}` }} />}
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <p className="text-[11px] font-extrabold text-foreground mb-2.5 uppercase tracking-wide">Completion</p>
+              {([["Name", !!(form.firstName && form.lastName)], ["ID Number", !!form.idNumber], ["Designation", !!form.designation], ["Branch", !!form.branch], ["Email", !!form.email], ["Phone", !!form.mobilePhone]] as [string, boolean][]).map(([lbl, done]) => (
+                <div key={lbl} className="flex justify-between items-center py-1.5 border-b border-border last:border-0">
+                  <span className="text-xs text-muted-foreground">{lbl}</span>
+                  {done ? <CheckCircle size={14} className="text-primary" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-border" />}
                 </div>
               ))}
             </div>

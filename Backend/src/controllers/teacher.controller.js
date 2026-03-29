@@ -46,11 +46,17 @@ const paginate = (query, page = 1, limit = 20) => {
 //    Send invite email → create pending user + teacher record
 // =============================================================================
 const inviteTeacher = asyncHandler(async (req, res) => {
-  const { school_id, role } = req.user;
+const { schoolId: userSchoolId, role } = req.user;
+  const school_id = req.body.school_id || userSchoolId;
 
   if (!['school_admin', 'super_admin'].includes(role)) {
     return res.status(403).json({ success: false, message: 'Insufficient permissions' });
   }
+
+  if (!school_id) {
+    return res.status(400).json({ success: false, message: 'school_id required (body or token)' });
+  }
+
 
   const {
     first_name,
@@ -107,13 +113,19 @@ const inviteTeacher = asyncHandler(async (req, res) => {
   }
 
   // Create teacher record
+  if (!school_id) {
+    // Rollback user creation
+    await supabase.from('users').delete().eq('id', newUser.id);
+    return res.status(500).json({ success: false, message: 'School ID required for teacher creation', error: 'authentication issue' });
+  }
+
   const { data: newTeacher, error: teacherError } = await supabase
     .from('teachers')
     .insert({
       user_id: newUser.id,
       school_id,
-      tsc_number: tsc_number || null,
-      qualifications: qualifications || null,
+      tsc_number: tsc_number || 'TEMP-' + Date.now(),
+      qualifications: qualifications || 'Pending',
       date_joined: date_joined || new Date().toISOString().split('T')[0],
       is_active: true,
     })
@@ -240,14 +252,17 @@ const listTeachers = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    data: filtered,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total: count,
-      pages: Math.ceil(count / parseInt(limit)),
-    },
+    data: {
+      teachers: filtered,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count,
+        pages: Math.ceil(count / parseInt(limit)),
+      }
+    }
   });
+
 });
 
 
@@ -306,42 +321,76 @@ const getTeacher = asyncHandler(async (req, res) => {
 //    Update teacher profile (qualifications, TSC, date_joined, phone)
 // =============================================================================
 const updateTeacher = asyncHandler(async (req, res) => {
-  const { school_id, role } = req.user;
+  const { school_id: user_school_id, role } = req.user;
   const { id } = req.params;
+  const query_school_id = req.query.school_id;
+
+  console.log('[DEBUG] updateTeacher req.user:', req.user);
+  console.log('[DEBUG] updateTeacher check:', { teacherId: id, userSchoolId: user_school_id, querySchoolId: query_school_id, userRole: role });
 
   if (!['school_admin', 'super_admin'].includes(role)) {
     return res.status(403).json({ success: false, message: 'Insufficient permissions' });
   }
 
-  // Verify teacher belongs to school
-  const { data: existing, error: fetchErr } = await supabase
+  // Determine effective school_id: query param > user school_id
+  const effective_school_id = query_school_id || user_school_id;
+
+  let query = supabase
     .from('teachers')
     .select('id, user_id')
-    .eq('id', id)
-    .eq('school_id', school_id)
-    .single();
+    .eq('id', id);
 
-  if (fetchErr || !existing) {
-    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  // Skip school filter for super_admin or if no school context
+  if (role === 'super_admin' || !effective_school_id) {
+    console.log('[DEBUG] Super admin bypass or no school_id - querying by ID only');
+  } else {
+    query = query.eq('school_id', effective_school_id);
   }
 
+  const { data: existing, error: fetchErr } = await query.single();
+
+  console.log('[DEBUG] teacher query result:', { existing, error: fetchErr?.message });
+
+  if (fetchErr || !existing) {
+    const schoolInfo = effective_school_id ? `School: ${effective_school_id}` : 'No school filter';
+    return res.status(404).json({ 
+      success: false, 
+      message: `Teacher not found (ID: ${id}, ${schoolInfo})` 
+    });
+  }
+
+  console.log('[DEBUG] updateTeacher req.body FULL:', req.body);
+  
   const { tsc_number, qualifications, date_joined, phone_number, first_name, last_name } = req.body;
 
   // Update teachers table
   const teacherUpdates = {};
   if (tsc_number !== undefined) teacherUpdates.tsc_number = tsc_number;
   if (qualifications !== undefined) teacherUpdates.qualifications = qualifications;
+  console.log('[DEBUG] teacherUpdates prepared:', teacherUpdates);
   if (date_joined !== undefined) teacherUpdates.date_joined = date_joined;
 
   if (Object.keys(teacherUpdates).length > 0) {
-    teacherUpdates.updated_at = new Date().toISOString();
-    const { error: updateErr } = await supabase
+    const cleanTeacherUpdates = { ...teacherUpdates, updated_at: new Date().toISOString() };
+    delete cleanTeacherUpdates.updated_by;
+    
+    console.log('[DEBUG] Updating teachers table (clean):', cleanTeacherUpdates, 'teacher_id:', id);
+    const { error: updateErr, count } = await supabase
       .from('teachers')
-      .update(teacherUpdates)
-      .eq('id', id);
+      .update(cleanTeacherUpdates)
+      .eq('id', id)
+      .select();
+      
     if (updateErr) {
-      return res.status(500).json({ success: false, message: 'Failed to update teacher', error: updateErr.message });
+      console.error('[ERROR] Teachers table update failed:', updateErr);
+      return res.status(500).json({ success: false, message: 'Failed to update teacher record', error: updateErr.message, details: updateErr });
     }
+    
+    if (count === 0) {
+      return res.status(404).json({ success: false, message: 'Teacher record not found for update' });
+    }
+    
+    console.log('[DEBUG] Teachers table updated successfully, rows affected:', count);
   }
 
   // Update users table (name, phone)
@@ -350,20 +399,43 @@ const updateTeacher = asyncHandler(async (req, res) => {
   if (last_name !== undefined) userUpdates.last_name = last_name;
   if (phone_number !== undefined) userUpdates.phone_number = phone_number;
 
-  if (Object.keys(userUpdates).length > 0) {
-    userUpdates.updated_at = new Date().toISOString();
-    await supabase.from('users').update(userUpdates).eq('id', existing.user_id);
+    if (Object.keys(userUpdates).length > 0) {
+    const cleanUserUpdates = { ...userUpdates, updated_at: new Date().toISOString() };
+    delete cleanUserUpdates.updated_by;
+    
+    console.log('[DEBUG] Updating users table (clean):', cleanUserUpdates, 'user_id:', existing.user_id);
+    const { error: userUpdateErr, count } = await supabase
+      .from('users')
+      .update(cleanUserUpdates)
+      .eq('id', existing.user_id)
+      .select();
+      
+    if (userUpdateErr) {
+      console.error('[ERROR] Users table update failed:', userUpdateErr);
+      return res.status(500).json({ success: false, message: 'Failed to update user profile', error: userUpdateErr.message, details: userUpdateErr });
+    }
+    
+    if (count === 0) {
+      console.warn('[WARN] No users rows affected for user_id:', existing.user_id);
+    }
+    
+    console.log('[DEBUG] Users table updated successfully, rows affected:', count);
   }
 
-  // Return updated profile
-  const { data: updated } = await supabase
+  // Return updated profile (use same logic for consistency)
+  let updatedQuery = supabase
     .from('teachers')
     .select(`
       id, tsc_number, qualifications, date_joined, is_active, updated_at,
       user:user_id ( id, first_name, last_name, email, phone_number, status )
     `)
-    .eq('id', id)
-    .single();
+    .eq('id', id);
+
+  if (role !== 'super_admin' && effective_school_id) {
+    updatedQuery = updatedQuery.eq('school_id', effective_school_id);
+  }
+
+  const { data: updated } = await updatedQuery.single();
 
   res.json({ success: true, message: 'Teacher updated', data: updated });
 });

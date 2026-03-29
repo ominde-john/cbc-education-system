@@ -90,9 +90,9 @@ const ClientsPage = () => {
 
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <div className="max-w-3xl">
-      <h1 className="text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-6">
+      <h1 className="text-2xl font-bold text-foreground tracking-tight mb-6">
         Our{" "}
-        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
+        <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
           Trusted Partners
         </span>
       </h1>

@@ -4,14 +4,13 @@ import { T } from "./constants";
 export const inp: React.CSSProperties = {
   width: "100%", padding: "8px 12px",
   border: `1px solid ${T.border}`, borderRadius: 8,
-  fontSize: 13, color: T.text.primary, background: "white",
-  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+  fontSize: 14, color: T.text.primary, background: "white",
+  outline: "none", boxSizing: "border-box",
 };
 
 export const sel: React.CSSProperties = { ...inp, appearance: "none", cursor: "pointer" };
 
 export const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   button, select, input { font-family: inherit; }
   .card-h { transition: all 0.18s; }

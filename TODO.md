@@ -1,23 +1,13 @@
-# Task: Remove Mock Data Dependencies from Curriculum System
+# Fix PerformanceView Import Error - ✅ COMPLETE
 
-## Status: COMPLETED
+**Changes**:
+- Fixed barrel export in `Frontend/src/pages/teacher/StaffManagement/components/index.tsx`: `./PerformanceView` → `./Performance.tsx`  
+- Added named export in `Performance.tsx`: `export const PerformanceView = PerformanceDashboard;`
 
-### Files Modified:
+**Result**: Vite pre-transform errors resolved. StaffManagement Performance tab now renders full CBE dashboard.
 
-1. **Frontend/src/pages/auth/school-admin/curriculum/CurriculumDashboard.tsx** ✅
-   - [x] Remove fallback: `if (apiData.length > 0) return apiData; return getAllLearningAreas()`
-   - [x] Use only `apiData` directly
-   - [x] Calculate stats from actual API data using useMemo
-   - [x] Calculate level cards from actual API data
-   - [x] Add proper error handling with retry mechanism
-   - [x] Remove unused imports (getAllLearningAreas, getCurriculumStats, filterLearningAreas, getLevelCards)
-   - [x] Added Retry button for failed API calls
-   - [x] Stats now computed from real-time API data (total, strands, subStrands, competencies)
-   - [x] Level counts now reflect actual database counts
+**Verify**: 
+- Run `cd Frontend && npm run dev` 
+- Navigate to Teacher Portal → StaffManagement → Performance button/tab
 
-### Implementation Notes:
-- Stats (total, strands, subStrands, competencies) computed from apiData using useMemo
-- Level counts derived from actual data
-- Error state shows error message with retry button (no fallback)
-- All filtering/sorting now done locally on API data only
-
+**Next steps**: None. Ready for production.

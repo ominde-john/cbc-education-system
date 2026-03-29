@@ -70,14 +70,12 @@ export default function LoginPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
 
         .lp-page {
           position: relative; min-height: 100vh;
           display: flex; align-items: center; justify-content: center;
           overflow: hidden; padding: 24px 16px;
-          font-family: 'Outfit', 'Segoe UI', sans-serif;
         }
         .lp-bg {
           position: absolute; inset: 0;
@@ -150,7 +148,7 @@ export default function LoginPage() {
         /* Back btn */
         .lp-back {
           display:inline-flex;align-items:center;gap:7px;
-          color:rgba(255,255,255,0.38);font-size:13px;font-weight:500;
+          color:rgba(255,255,255,0.38);font-size:14px;font-weight:500;
           background:none;border:none;cursor:pointer;font-family:inherit;
           padding:0;margin-bottom:28px;transition:all 0.18s;
         }
@@ -279,7 +277,7 @@ export default function LoginPage() {
           width:100%;height:50px;
           background:linear-gradient(135deg,#3b82f6 0%,#6366f1 100%);
           color:#fff;border:none;border-radius:13px;
-          font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;
+          font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
           display:flex;align-items:center;justify-content:center;gap:9px;
           box-shadow:0 8px 28px rgba(59,130,246,0.35);
           transition:all 0.22s;position:relative;overflow:hidden;

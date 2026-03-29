@@ -304,7 +304,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
               change={stats.performanceTrend === 'up' ? '+5.2%' : '-2.1%'}
               icon={Target}
               color="orange"
-              trend={stats.performanceTrend}
+              trend={stats.performanceTrend as 'up' | 'down' | 'stable'}
             />
           </div>
         </div>

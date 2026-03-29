@@ -18,17 +18,7 @@ import { useTypewriter } from '@/hooks/use-typewriter';
  */
 
 // Standardized Font Sizes
-const fontSize = {
-  xs: 'text-xs',      // 12px - captions, badges
-  sm: 'text-sm',      // 14px - labels, small text
-  base: 'text-base',  // 16px - body text
-  lg: 'text-lg',      // 18px - lead text
-  xl: 'text-xl',      // 20px - small headings
-  '2xl': 'text-2xl',  // 24px - section subheading
-  '3xl': 'text-3xl',  // 30px - section heading
-  '4xl': 'text-4xl',  // 36px - page heading
-  '5xl': 'text-5xl',  // 48px - hero heading
-};
+// Removed custom fontSize object - using Tailwind typography scale directly
 
 // Reusable Card Component
 const Card = ({ children, className = '' }) => (
@@ -48,14 +38,14 @@ const SectionHeader = ({ badge, title, subtitle, icon: Icon }) => (
   >
     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
       <Icon className="w-4 h-4 text-blue-600" />
-      <span className={`${fontSize.xs} font-semibold text-blue-600 uppercase tracking-widest`}>
+      <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider text-muted-foreground">
         {badge}
       </span>
     </div>
-    <h2 className={`${fontSize['4xl']} font-bold text-slate-900 mb-4`}>
+    <h2 className="text-2xl font-bold text-foreground mb-4">
       {title}
     </h2>
-    <p className={`${fontSize.lg} text-slate-600 max-w-2xl mx-auto leading-relaxed`}>
+    <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
       {subtitle}
     </p>
   </motion.div>
@@ -161,7 +151,7 @@ const HeroSection = () => {
               transition={{ duration: 0.8, delay: 0.3 }}
             />
             <motion.span
-              className={`${fontSize.sm} font-semibold text-blue-400 uppercase tracking-widest`}
+              className="text-xs font-semibold text-blue-400 uppercase tracking-wider text-muted-foreground"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
@@ -172,7 +162,7 @@ const HeroSection = () => {
 
           {/* Animated Heading with Typewriter Effect */}
           <motion.div variants={itemVariants} className="mb-6">
-            <h1 className={`${fontSize['5xl']} font-bold leading-tight`}>
+            <h1 className="text-xl font-bold leading-tight">
               <motion.span
                 className="inline-block"
                 initial={{ opacity: 0, y: 10 }}

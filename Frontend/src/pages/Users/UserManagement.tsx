@@ -192,7 +192,7 @@ const UserManagement = () => {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       if (searchTerm.trim()) params.append('search', searchTerm.trim());
       
-      const result = await fetchWithAuth(`${API_URL}/api/users?${params}`);
+      const result = await fetchWithAuth(`${API_URL}/api/v1/users?${params}`);
       return result;
     },
   });
@@ -201,7 +201,7 @@ const UserManagement = () => {
   const { data: statsData } = useQuery<UserStats>({
     queryKey: ['system-users-stats'],
     queryFn: async () => {
-      const result = await fetchWithAuth(`${API_URL}/api/users/stats/summary`);
+      const result = await fetchWithAuth(`${API_URL}/api/v1/users/stats/summary`);
       return result.data || { total_users: 0, super_admins: 0, school_admins: 0, active_users: 0, locked_users: 0 };
     },
   });
@@ -210,7 +210,7 @@ const UserManagement = () => {
   const { data: schoolsData } = useQuery<{ success: boolean; data: SchoolOption[] }>({
     queryKey: ['schools-list'],
     queryFn: async () => {
-      const result = await fetchWithAuth(`${API_URL}/api/schools`);
+      const result = await fetchWithAuth(`${API_URL}/api/v1/schools`);
       return result;
     },
     enabled: currentUserRole === 'super_admin',

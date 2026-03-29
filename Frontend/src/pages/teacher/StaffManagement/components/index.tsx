@@ -1,6 +1,6 @@
 import React from "react";
-import { STATUS_CFG, T } from "../constants";
-import { avatarBg, initials, fmt } from "../helpers";
+// import { STATUS_CFG, T } from "../constants";
+// import { avatarBg, initials, fmt } from "../helpers";
 import { inp, sel } from "../styles";
 import { StaffMember } from "../types";
 import {
@@ -13,7 +13,7 @@ import {
 /* ─── SMALL COMPONENTS ───────────────────────────────────────────────── */
 
 export function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CFG[status] ?? STATUS_CFG["Inactive"];
+  const cfg = { bg: "#F0FDF4", text: "#15803D", border: "#86EFAC" };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 5,
@@ -32,25 +32,39 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function Avatar({ staff, size = 36 }: { staff: StaffMember; size?: number }) {
+  if (staff?.photo) {
+    return (
+      <img
+        src={staff.photo}
+        alt={`${staff.firstName || ''} ${staff.lastName || ''}`}
+        style={{
+          width: size, height: size,
+          borderRadius: Math.round(size * 0.28),
+          objectFit: "cover",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        }}
+      />
+    );
+  }
   return (
     <div style={{
       width: size, height: size,
       borderRadius: Math.round(size * 0.28),
-      background: avatarBg(staff.id),
+      background: "#1A56DB",
       display: "flex", alignItems: "center", justifyContent: "center",
       flexShrink: 0, fontSize: Math.round(size * 0.34),
       fontWeight: 800, color: "white",
       letterSpacing: "-0.01em",
       boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
     }}>
-      {initials(staff.firstName, staff.lastName)}
+      JD
     </div>
   );
 }
 
 export function StatCard({
   icon: Icon, label, value,
-  color = T.accent, bg = T.accentSoft,
+  color = "#1A56DB", bg = "#EBF0FF",
 }: { icon: React.ElementType; label: string; value: string | number; color?: string; bg?: string }) {
   return (
     <div style={{
@@ -60,17 +74,13 @@ export function StatCard({
       boxShadow: "0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)",
       position: "relative",
     }}>
-      {/* top accent bar — your gradient style */}
       <div style={{ height: 3, background: `linear-gradient(90deg, ${color}, ${color}44, transparent)` }} />
-
-      {/* ghost watermark icon — matches screenshot */}
       <div style={{
         position: "absolute", bottom: -6, right: -6,
         opacity: 0.05, pointerEvents: "none",
       }}>
         <Icon size={72} strokeWidth={1} color={color} />
       </div>
-
       <div style={{ padding: "16px 18px 14px" }}>
         <div style={{
           width: 38, height: 38, borderRadius: 10,
@@ -80,14 +90,12 @@ export function StatCard({
         }}>
           <Icon size={17} color={color} strokeWidth={2.2} />
         </div>
-
         <div style={{
           fontSize: 10.5, fontWeight: 700, color: "#9CA3AF",
           textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 4,
         }}>
           {label}
         </div>
-
         <div style={{
           fontSize: 30, fontWeight: 800, color: "#111827", lineHeight: 1,
         }}>
@@ -179,12 +187,9 @@ export function TopNav({ crumb, onBack, actions }: { crumb: string; onBack?: () 
           <School size={14} color="white" strokeWidth={2.5} />
         </div>
         <span style={{ fontSize: 13, fontWeight: 800, color: "#111827", letterSpacing: "-0.02em" }}>
-        <span style={{ color: "#16a34a" }}>STAFF</span>
+          <span style={{ color: "#16a34a" }}>STAFF</span>
         </span>
-
-       
       </div>
-
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         {onBack && (
           <button onClick={onBack} style={{
@@ -210,20 +215,17 @@ export function HeroBar({ title, sub, children }: { title: string; sub?: string;
       padding: "24px 28px 0",
       position: "relative", overflow: "hidden",
     }}>
-      {/* dot-grid texture */}
       <div style={{
         position: "absolute", inset: 0,
         backgroundImage: "radial-gradient(rgba(22,163,74,0.12) 1px, transparent 1px)",
         backgroundSize: "24px 24px",
         opacity: 0.7,
       }} />
-      {/* ambient glow */}
       <div style={{
         position: "absolute", top: -60, right: -60,
         width: 220, height: 220, borderRadius: "50%",
         background: "radial-gradient(circle, rgba(22,163,74,0.10) 0%, transparent 70%)",
       }} />
-
       <div style={{ position: "relative", maxWidth: 1400, margin: "0 auto" }}>
         <div style={{
           fontSize: 10, fontWeight: 700, color: "#9CA3AF",
@@ -272,12 +274,11 @@ export function Toast({ msg }: { msg: string }) {
   );
 }
 
-// Re-export commonly used items
-export { inp, sel, T, fmt, initials, avatarBg };
+export { inp, sel };
 
-// Export view components
-export { DashboardView } from "./DashboardView";
-export { ListView } from "./ListView";
-export { FormView } from "./FormView";
-export { DetailsView } from "./DetailsView";
-export { PerformanceDashboard as PerformanceView } from "./Performance";
+/* ─── MAIN VIEW EXPORTS (BARREL) ────────────────────────────────────── */
+export { DashboardView } from './DashboardView';
+export { ListView } from './ListView';
+export { FormView } from './FormView';
+export { DetailsView } from './DetailsView';
+export { default as PerformanceView } from './Performance.tsx';

@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET ||
     ? 'cbc-education-system-production-secret-key-2024' 
     : crypto.randomBytes(64).toString('hex'));
     
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
 // Security Configuration
