@@ -79,6 +79,10 @@ function ActionMenu({ onView, onEdit, onDelete }: { onView: () => void; onEdit: 
 function StaffCard({ staff, onView, onEdit, onDelete, index }: { staff: StaffMember; onView: () => void; onEdit: () => void; onDelete: () => void; index: number }) {
   const branchParts = staff.branch.split(" - ");
   const branch = branchParts[1] || branchParts[0] || staff.branch;
+  const [imageError, setImageError] = useState(false);
+
+  const staffInitials = initials(staff.firstName, staff.lastName);
+
   return (
     <div
       className={cn(
@@ -87,12 +91,24 @@ function StaffCard({ staff, onView, onEdit, onDelete, index }: { staff: StaffMem
       )}
     >
       <div className="flex items-center gap-3">
-        <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-md"
-          style={{ background: `linear-gradient(135deg, ${avatarBg(staff.id)}, ${avatarBg(staff.id)}cc)` }}
-        >
-          {initials(staff.firstName, staff.lastName)}
-        </div>
+        {staff.photo && !imageError ? (
+          <img
+            src={staff.photo}
+            alt={`${staff.firstName} ${staff.lastName}`}
+            className="w-11 h-11 rounded-xl object-cover shadow-md"
+            onError={() => {
+              console.warn(`[StaffCard] Failed to load photo:`, staff.photo);
+              setImageError(true);
+            }}
+          />
+        ) : (
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-md"
+            style={{ background: `linear-gradient(135deg, ${avatarBg(staff.id)}, ${avatarBg(staff.id)}cc)` }}
+          >
+            {staffInitials}
+          </div>
+        )}
         <div>
           <p className="text-sm font-bold text-foreground mb-0.5">{staff.firstName} {staff.lastName}</p>
           <p className="text-xs text-muted-foreground mb-1">{staff.designation}</p>
@@ -101,7 +117,7 @@ function StaffCard({ staff, onView, onEdit, onDelete, index }: { staff: StaffMem
       </div>
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2"><Mail size={13} className="text-muted-foreground/60" /><span className="text-xs text-foreground truncate">{staff.email}</span></div>
-        <div className="flex items-center gap-2"><Phone size={13} className="text-muted-foreground/60" /><span className="text-xs text-foreground">{staff.mobilePhone}</span></div>
+        <div className="flex items-center gap-2"><Phone size={13} className="text-muted-foreground/60" /><span className="text-xs text-foreground">{staff.phoneNumber}</span></div>
       </div>
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2"><MapPin size={13} className="text-muted-foreground/60" /><span className="text-xs text-foreground">{branch}</span></div>
@@ -110,7 +126,7 @@ function StaffCard({ staff, onView, onEdit, onDelete, index }: { staff: StaffMem
       <div className="text-right pr-3">
         {staff.salary > 0 ? (
           <div>
-            <p className="text-base font-extrabold text-foreground">KSh {fmt(staff.salary)}</p>
+            <p className="text-base font-extrabold text-foreground">{fmt(staff.salary)}</p>
             <p className="text-[11px] text-muted-foreground">per month</p>
           </div>
         ) : (
@@ -125,7 +141,8 @@ function StaffCard({ staff, onView, onEdit, onDelete, index }: { staff: StaffMem
   );
 }
 
-const STATUS_ICONS = { All: Users, Active: UserCheck, "On Leave": Clock, Inactive: XCircle, Terminated: AlertCircle } as const;
+
+
 const STATUS_COLORS: Record<string, { color: string; bg: string; label: string }> = {
   All: { color: "#3B82F6", bg: "#DBEAFE", label: "All Staff" },
   Active: { color: "#16A34A", bg: "#DCFCE7", label: "Active" },
@@ -133,8 +150,10 @@ const STATUS_COLORS: Record<string, { color: string; bg: string; label: string }
   Inactive: { color: "#6B7280", bg: "#F3F4F6", label: "Inactive" },
 };
 
+
 function StatusCard({ label, count, config }: { label: string; count: number; config: { color: string; bg: string; label: string } }) {
-  const Icon = STATUS_ICONS[label as keyof typeof STATUS_ICONS] || Users;
+  const Icon = Users;
+
   return (
     <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
       <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3" style={{ background: config.bg }}>
@@ -152,7 +171,7 @@ export const ListView: React.FC<ListViewProps> = ({ staff, filtered, query, fSta
 
   const handleExport = () => {
     const headers = ['First Name', 'Last Name', 'ID Number', 'Designation', 'Email', 'Phone', 'Branch', 'Status', 'Salary', 'TSC Number'];
-    const csvContent = [headers.join(','), ...staff.map(s => [s.firstName, s.lastName, s.idNumber, s.designation, s.email, s.mobilePhone, s.branch, s.jobStatus, s.salary, s.tscNumber].join(','))].join('\n');
+s.email, s.phoneNumber, s.branch
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -217,7 +236,7 @@ export const ListView: React.FC<ListViewProps> = ({ staff, filtered, query, fSta
             />
           </div>
           {[
-            { value: fStaffType, onChange: onStaffTypeChange, options: [{ value: "all", label: "All Staff" }, ...STAFF_TYPE_OPTIONS], minW: "min-w-[150px]" },
+{ value: fStaffType, onChange: onStaffTypeChange, options: STAFF_TYPE_OPTIONS, minW: "min-w-[150px]" },
             { value: fStatus, onChange: onStatusChange, options: [{ value: "all", label: "All Status" }, ...Object.keys(STATUS_CFG).map(k => ({ value: k, label: k }))], minW: "min-w-[140px]" },
             { value: fBranch, onChange: onBranchChange, options: [{ value: "all", label: "All Branches" }, ...BRANCHES.map(b => ({ value: b, label: b }))], minW: "min-w-[160px]" },
           ].map((filter, idx) => (

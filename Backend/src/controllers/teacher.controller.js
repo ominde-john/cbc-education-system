@@ -46,7 +46,7 @@ const paginate = (query, page = 1, limit = 20) => {
 //    Send invite email → create pending user + teacher record
 // =============================================================================
 const inviteTeacher = asyncHandler(async (req, res) => {
-const { schoolId: userSchoolId, role } = req.user;
+  const { schoolId: userSchoolId, role } = req.user;
   const school_id = req.body.school_id || userSchoolId;
 
   if (!['school_admin', 'super_admin'].includes(role)) {
@@ -54,10 +54,10 @@ const { schoolId: userSchoolId, role } = req.user;
   }
 
   if (!school_id) {
-    return res.status(400).json({ success: false, message: 'school_id required (body or token)' });
+    return res.status(400).json({ success: false, message: 'school_id required' });
   }
 
-
+  // Destructure ALL fields from request body
   const {
     first_name,
     last_name,
@@ -66,13 +66,28 @@ const { schoolId: userSchoolId, role } = req.user;
     tsc_number,
     qualifications,
     date_joined,
+    // NEW FIELDS to support
+    id_number,
+    designation,
+    branch,
+    job_status,
+    staff_type,
+    salary,
+    contract_start,
+    contract_end,
+    date_of_birth,
+    gender,
+    county,
+    location,
+    subjects_taught,
+    photo // Add photo field
   } = req.body;
 
   if (!first_name || !last_name || !email) {
     return res.status(400).json({ success: false, message: 'first_name, last_name and email are required' });
   }
 
-  // Check no duplicate email in this school
+  // Check for duplicate email
   const { data: existing } = await supabase
     .from('users')
     .select('id')
@@ -81,16 +96,16 @@ const { schoolId: userSchoolId, role } = req.user;
     .maybeSingle();
 
   if (existing) {
-    return res.status(409).json({ success: false, message: 'A user with this email already exists in your school' });
+    return res.status(409).json({ success: false, message: 'A user with this email already exists' });
   }
 
-  // Generate a temporary password + invite token
+  // Generate temporary password
   const tempPassword = crypto.randomBytes(8).toString('hex');
   const passwordHash = await bcrypt.hash(tempPassword, 10);
   const inviteToken = crypto.randomBytes(32).toString('hex');
-  const inviteExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const inviteExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  // Create user with status 'pending'
+  // Create user
   const { data: newUser, error: userError } = await supabase
     .from('users')
     .insert({
@@ -112,43 +127,47 @@ const { schoolId: userSchoolId, role } = req.user;
     return res.status(500).json({ success: false, message: 'Failed to create user', error: userError.message });
   }
 
-  // Create teacher record
-  if (!school_id) {
-    // Rollback user creation
-    await supabase.from('users').delete().eq('id', newUser.id);
-    return res.status(500).json({ success: false, message: 'School ID required for teacher creation', error: 'authentication issue' });
-  }
-
+  // Create teacher record with ALL fields
   const { data: newTeacher, error: teacherError } = await supabase
     .from('teachers')
     .insert({
       user_id: newUser.id,
       school_id,
-tsc_number: tsc_number || null, // Changed: now accepts NULL for optional TSC
-      qualifications: qualifications || 'Pending',
+      tsc_number: tsc_number || null,
+      qualifications: qualifications ? JSON.stringify(qualifications) : '[]',
       date_joined: date_joined || new Date().toISOString().split('T')[0],
       is_active: true,
+      // NEW FIELDS
+      id_number: id_number || null,
+      designation: designation || null,
+      branch: branch || null,
+      job_status: job_status || 'active',
+      staff_type: staff_type || 'teaching',
+      salary: salary ? parseFloat(salary) : 0,
+      contract_start: contract_start || null,
+      contract_end: contract_end || null,
+      date_of_birth: date_of_birth || null,
+      gender: gender || null,
+      county: county || null,
+      location: location || null,
+      subjects_taught: subjects_taught || null,
+      photo: photo || null // Add photo field
     })
     .select('id')
     .single();
 
   if (teacherError) {
-    // Rollback user creation
     await supabase.from('users').delete().eq('id', newUser.id);
     return res.status(500).json({ success: false, message: 'Failed to create teacher record', error: teacherError.message });
   }
 
-  // Store invite token in email_verification_tokens
+  // Store invite token
   await supabase.from('email_verification_tokens').insert({
     user_id: newUser.id,
     token: inviteToken,
     expires_at: inviteExpiry.toISOString(),
   });
 
-  // TODO: send actual invite email via your email service
-  // The invite link would be something like:
-  // `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`
-  // For now we return the token in dev mode so you can test
   const isDev = process.env.NODE_ENV !== 'production';
 
   res.status(201).json({
@@ -196,6 +215,19 @@ const listTeachers = asyncHandler(async (req, res) => {
       qualifications,
       date_joined,
       is_active,
+      designation,
+      branch,
+      job_status,
+      contract_start,
+      contract_end,
+      salary,
+      county,
+      location,
+      id_number,
+      date_of_birth,
+      gender,
+      subjects_taught,
+      photo,
       created_at,
       updated_at,
       user:user_id (
@@ -268,13 +300,16 @@ const listTeachers = asyncHandler(async (req, res) => {
 
 // =============================================================================
 // 3. GET /api/v1/teachers/:id
-//    Teacher profile + all assignments
+//    Get single teacher by ID with all details
 // =============================================================================
 const getTeacher = asyncHandler(async (req, res) => {
-  const { school_id } = req.user;
+  const { school_id, role } = req.user;
   const { id } = req.params;
 
-  const { data: teacher, error } = await supabase
+  console.log('[DEBUG] getTeacher called for ID:', id);
+  console.log('[DEBUG] User role:', role, 'School ID:', school_id);
+
+  let query = supabase
     .from('teachers')
     .select(`
       id,
@@ -284,6 +319,19 @@ const getTeacher = asyncHandler(async (req, res) => {
       is_active,
       created_at,
       updated_at,
+      designation,
+      branch,
+      job_status,
+      contract_start,
+      contract_end,
+      salary,
+      county,
+      location,
+      id_number,
+      date_of_birth,
+      gender,
+      subjects_taught,
+      photo,
       user:user_id (
         id,
         first_name,
@@ -304,15 +352,35 @@ const getTeacher = asyncHandler(async (req, res) => {
         learning_area:learning_area_id ( id, name, code )
       )
     `)
-    .eq('id', id)
-    .eq('school_id', school_id)
-    .single();
+    .eq('id', id);
 
-  if (error || !teacher) {
-    return res.status(404).json({ success: false, message: 'Teacher not found' });
+  // Only filter by school_id if not super_admin
+  if (role !== 'super_admin' && school_id) {
+    query = query.eq('school_id', school_id);
   }
 
-  res.json({ success: true, data: teacher });
+  const { data: teacher, error } = await query.single();
+
+  if (error) {
+    console.error('[ERROR] getTeacher error:', error);
+    return res.status(404).json({
+      success: false,
+      message: 'Teacher not found',
+      error: error.message
+    });
+  }
+
+  if (!teacher) {
+    return res.status(404).json({
+      success: false,
+      message: 'Teacher not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    data: teacher
+  });
 });
 
 
@@ -369,7 +437,7 @@ const updateTeacher = asyncHandler(async (req, res) => {
   const {
     tsc_number, qualifications, date_joined, phone_number, first_name, last_name,
     id_number, designation, branch, email, job_status, contract_start, contract_end,
-    salary, county, location, teaching_subjects
+    salary, county, location, teaching_subjects, photo // Add photo field
   } = req.body;
 
   // ========== TEACHERS TABLE UPDATES ==========
@@ -396,6 +464,9 @@ const updateTeacher = asyncHandler(async (req, res) => {
   // Use subjects_taught instead of teaching_subjects (based on your schema)
   if (teaching_subjects !== undefined) {
     teacherUpdates.subjects_taught = Array.isArray(teaching_subjects) ? teaching_subjects : JSON.parse(teaching_subjects);
+  }
+  if (photo !== undefined) {
+    teacherUpdates.photo = photo;
   }
 
   // Apply teachers updates
@@ -474,6 +545,7 @@ const updateTeacher = asyncHandler(async (req, res) => {
       location,
       subjects_taught,
       id_number,
+      photo,
       created_at,
       updated_at,
       user:user_id (

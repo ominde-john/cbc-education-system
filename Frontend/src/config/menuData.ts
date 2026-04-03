@@ -311,27 +311,7 @@ export const menuSections: MenuSection[] = [
         id: "settings",
         label: "Settings",
         icon: Settings,
-        href: "/school-admin/settings",
-        submenu: [
-          {
-            id: "profile-settings",
-            label: "Profile Settings",
-            href: "/school-admin/settings/profile",
-            icon: UserCircle,
-          },
-          {
-            id: "general-settings",
-            label: "General",
-            href: "/school-admin/settings/general",
-            icon: Settings,
-          },
-          {
-            id: "security",
-            label: "Security",
-            href: "/school-admin/settings/security",
-            icon: Shield,
-          },
-        ],
+         href: "/school-admin/settings/profile",
       },
     ],
   },

@@ -59,6 +59,7 @@ import LearnerProfile from "./pages/school-admin/learners/LearnerProfile";
 import Assessments from "./pages/school-admin/Assessment";
 import AdminAttendance from "./pages/teacher/StaffAttendance";
 import Calendar from "./pages/Calendar/Calendar";
+import Classes from "./pages/ClassesManagement/ClassManagement";
 
 // ✅ Student Management Page
 import StudentManagement from "./pages/school-admin/learners/Learners";
@@ -272,6 +273,7 @@ function AppRoutes() {
                 <Route path="teacher-profile" element={<Teacher />} />
                 <Route path="teacher-list" element={<AdminStaff />} />
                 <Route path="staff-manage" element={<StaffManagement />} />
+                <Route path="classes" element={<Classes />} />
 
                 {/* Learners */}
                 <Route path="learners/all" element={<StudentManagement />} />

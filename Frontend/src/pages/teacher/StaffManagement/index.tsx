@@ -5,14 +5,32 @@ import {
   getTeachers, 
   inviteTeacher, 
   updateTeacher, 
-  deleteTeacher, 
-  mapBackendToStaffMember 
+  deleteTeacher
 } from "@/lib/api/teacherApi";
+import { uploadStaffPhoto } from "./photoUtils";
 
 const camelToSnake = (obj: Record<string, any>): Record<string, any> => {
+  const mapping: Record<string, string> = {
+    firstName: 'first_name',
+    lastName: 'last_name',
+    phoneNumber: 'phone_number',
+    mobilePhone: 'phone_number',
+    idNumber: 'id_number',
+    tscNumber: 'tsc_number',
+    dateOfBirth: 'date_of_birth',
+    hireDate: 'date_joined',
+    dateJoined: 'date_joined',
+    contractStart: 'contract_start',
+    contractEnd: 'contract_end',
+    jobStatus: 'job_status',
+    staffType: 'staff_type',
+    teachingSubjects: 'subjects_taught',
+    subjectsTaught: 'subjects_taught',
+  };
+
   return Object.fromEntries(
     Object.entries(obj).map(([key, value]) => {
-      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      const snakeKey = mapping[key] || key.replace(/([A-Z])/g, '_$1').toLowerCase();
       return [snakeKey, value];
     })
   );
@@ -53,14 +71,15 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     county:"", 
     location:"", 
     email:"", 
-    mobilePhone:"", 
+    phoneNumber: "",
     tscNumber:"", 
     teachingSubjects:[], 
     qualifications:[], 
     salary:0, 
     hireDate:"",
     staffType: "teaching",
-    photo: "" // Photo URL
+    photo: "",
+    status: "active"
   };
   const [form, setForm] = useState<StaffMember>(empty);
 
@@ -77,7 +96,11 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   });
 
   const openEdit = (m: StaffMember) => {
-    setSelected(m); setForm({...m});
+    console.log('[DEBUG] openEdit: Loading teacher:', m.id);
+    console.log('[DEBUG] openEdit: Loaded teacher photo:', m.photo);
+    setSelected(m); 
+    setForm({...m});
+    console.log('[DEBUG] openEdit: Form updated, form.photo should now be:', m.photo);
     setSlots([...m.teachingSubjects, "","",""].slice(0,4));
     setTab("general"); setView("form");
   };
@@ -90,11 +113,11 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getTeachers({ page: 1, limit: 100 });
-      setStaff(res.data.teachers.map(mapBackendToStaffMember));
+      const result = await getTeachers({ page: 1, limit: 100 });
+      setStaff(result.teachers.filter((teacher): teacher is StaffMember => Boolean(teacher && teacher.id)));
     } catch (err: any) {
       setError(err.message);
-      setToast(`Failed to load staff: ${err.message}`);
+      notify(`Failed to load staff: ${err.message}`);
       console.error('Fetch teachers error:', err);
     } finally {
       setLoading(false);
@@ -114,38 +137,88 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     }
 
     try {
+      console.log('[DEBUG] handleSave payload:', form);
+      console.log('[DEBUG] handleSave photo field:', form.photo);
+      console.log('[DEBUG] handleSave photo is base64:', form.photo?.startsWith('data:image'));
 
-      const payload = {
-        first_name: form.firstName,
-        last_name: form.lastName,
-        email: form.email,
-        phone_number: form.mobilePhone || undefined,
-        tsc_number: form.tscNumber || undefined,
-        qualifications: form.qualifications || undefined,
-        designation: form.designation,
-        branch: form.branch,
-        id_number: form.idNumber,
-      } as Parameters<typeof inviteTeacher>[0];
-      
-      console.log('[DEBUG] handleSave payload:', payload);
+      let photoUrl = form.photo || '';
+
+      // If photo is base64, upload it to Supabase Storage
+      if (photoUrl && photoUrl.startsWith('data:image')) {
+        console.log('[DEBUG] Uploading base64 photo to Supabase...');
+        const staffId = selected?.id || `temp-${Date.now()}`;
+        const uploadedUrl = await uploadStaffPhoto(photoUrl, staffId);
+        
+        if (uploadedUrl) {
+          // Upload succeeded - use the new URL
+          photoUrl = uploadedUrl;
+          console.log('[DEBUG] Photo uploaded successfully, new URL:', photoUrl);
+          setForm(f => ({ ...f, photo: photoUrl }));
+        } else {
+          // Upload failed - notify user and handle gracefully
+          console.warn('[DEBUG] Photo upload failed, handling gracefully');
+          if (selected?.photo) {
+            // Update mode: keep existing photo
+            photoUrl = selected.photo;
+            notify("⚠️ Photo upload failed. Keeping existing photo. Changes to other fields will be saved.");
+          } else {
+            // Create mode: clear photo (don't send base64 to backend)
+            photoUrl = '';
+            notify("⚠️ Photo upload failed. Saving without photo. You can add a photo later.");
+          }
+          console.log('[DEBUG] Using fallback photo URL:', photoUrl);
+        }
+      }
 
       if (selected?.id) {
-        // Update existing
+        // Update existing - pass camelCase form directly with uploaded photo URL
         console.log('[DEBUG] Updating teacher:', selected.id);
-        await updateTeacher(selected.id, payload, schoolId);
-        setToast("Staff record updated successfully.");
+        console.log('[DEBUG] form.photo before merge:', form.photo);
+        console.log('[DEBUG] photoUrl to merge:', photoUrl);
+        const formWithPhoto = { ...form, photo: photoUrl };
+        console.log('[DEBUG] formWithPhoto after merge:', formWithPhoto);
+        console.log('[DEBUG] formWithPhoto.photo explicitly:', formWithPhoto.photo);
+        console.log('[DEBUG] All keys in formWithPhoto:', Object.keys(formWithPhoto));
+        const updated = await updateTeacher(selected.id, formWithPhoto, schoolId);
+        setSelected(updated.data);
+        notify("Staff record updated successfully.");
       } else {
-        // Create new
-        console.log('[DEBUG] Creating new teacher');
-        await inviteTeacher(payload);
-        setToast("New staff member invited successfully. They will receive an email to complete registration.");
+        // Create new - convert to backend format for invite
+        const invitePayload = {
+          first_name: form.firstName,
+          last_name: form.lastName,
+          email: form.email,
+          phone_number: form.mobilePhone || form.phoneNumber,
+          tsc_number: form.tscNumber || null,
+          qualifications: form.qualifications || [],
+          date_joined: form.hireDate || new Date().toISOString().split('T')[0],
+          // NEW FIELDS
+          id_number: form.idNumber,
+          designation: form.designation,
+          branch: form.branch,
+          job_status: form.jobStatus,
+          staff_type: form.staffType,
+          salary: form.salary,
+          contract_start: form.contractStart,
+          contract_end: form.contractEnd,
+          date_of_birth: form.dateOfBirth,
+          gender: form.sex || form.gender,
+          county: form.county,
+          location: form.location,
+          subjects_taught: form.teachingSubjects,
+          photo: photoUrl // Add photo to invite payload
+        } as Parameters<typeof inviteTeacher>[0];
+        
+        console.log('[DEBUG] Creating new teacher with payload:', invitePayload);
+        await inviteTeacher(invitePayload);
+        notify("New staff member invited successfully. They will receive an email to complete registration.");
       }
       
       setView("list");
       setRefreshKey(k => k + 1);
     } catch (err: any) {
       console.error('[DEBUG] handleSave error:', err);
-      setToast(`Operation failed: ${err.message}`);
+      notify(`Operation failed: ${err.message}`);
     }
   };
 
@@ -153,10 +226,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   const del = async (id: string) => {
     try {
       await deleteTeacher(id);
-      setToast("Staff record deleted.");
+      notify("Staff record deleted.");
       setRefreshKey(k => k + 1);
     } catch (err: any) {
-      setToast(`Delete failed: ${err.message}`);
+      notify(`Delete failed: ${err.message}`);
       console.error('Delete error:', err);
     }
   };
@@ -252,7 +325,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
           trend: "up" as const,
           lastCheckin: "Today 8:00 AM",
           status: "present" as const,
-        }))}
+          employeeId: s.id,
+          joiningDate: s.hireDate,
+          qualifications: s.qualifications
+        } as any))}
       />
     );
   }

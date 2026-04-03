@@ -17,12 +17,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   staff, onBack, onViewList, onCreate, onViewPerformance, toast,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const activeStaff = staff.filter(s => s.jobStatus === "Active").length;
   const onLeaveStaff = staff.filter(s => s.jobStatus === "On Leave").length;
   const branches = [...new Set(staff.map(s => s.branch))].length;
   const teachingStaff = staff.filter(s => s.staffType === "teaching").length;
   const nonTeachingStaff = staff.filter(s => s.staffType === "non-teaching").length;
+
+  const handleImageError = (staffId: string) => {
+    setImageErrors(prev => ({ ...prev, [staffId]: true }));
+  };
 
   const quickActions = [
     { icon: UserPlus, label: "Register New Staff", sub: "Add teacher or support staff", action: onCreate, color: "#1A56DB", bg: "#EBF0FF" },
@@ -86,7 +91,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Recent Staff */}
+        {/* Recent Staff with Photo Support */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-4 border-b border-border flex justify-between items-center flex-wrap gap-3">
             <div>
@@ -121,15 +126,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   "flex items-center gap-3.5 px-5 py-3.5 cursor-pointer transition-colors hover:bg-muted/60",
                   i < arr.length - 1 && "border-b border-border"
                 )}
+                onClick={() => onViewList?.()}
               >
-                <Avatar staff={s} size={38} />
+                {/* Avatar with Photo Support */}
+                <div className="relative">
+                  {s.photo && !imageErrors[s.id] ? (
+                    <img
+                      src={s.photo}
+                      alt={`${s.firstName} ${s.lastName}`}
+                      className="w-[38px] h-[38px] rounded-full object-cover"
+                      onError={() => handleImageError(s.id)}
+                    />
+                  ) : (
+                    <Avatar staff={s} size={38} />
+                  )}
+                </div>
+                
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-foreground mb-0.5">{s.firstName} {s.lastName}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{s.designation} · {s.branch}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {s.designation || 'Teacher'} · {s.branch || 'No Branch'}
+                  </p>
                 </div>
                 <StatusBadge status={s.jobStatus} />
               </div>
             ))}
+            
+            {staff.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users size={40} className="mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No staff members found</p>
+                <button onClick={onCreate} className="text-primary text-sm mt-2 hover:underline">
+                  Add your first staff member
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

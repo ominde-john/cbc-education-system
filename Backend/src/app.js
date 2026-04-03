@@ -13,9 +13,27 @@ const app = express();
 // ==================== MIDDLEWARE ====================
 app.use(helmet()); // Security headers
 app.use(compression()); // Compress responses
+// CORS configuration - allow frontend and Supabase storage
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:5173', // Vite dev server
+  // Supabase storage is accessed from browser directly, so we don't need to whitelist it here
+  // But we allow requests from our app
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin:`, origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(morgan('combined')); // HTTP request logging
 app.use(cookieParser());
@@ -33,6 +51,8 @@ app.use('/api/', limiter);
 // ==================== ROUTES ====================
 // API Versioning
 app.use('/api/v1/auth', require('./routes/auth.routes'));
+app.use('/api/v1/classes', require('./routes/class.routes'));
+
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/v1/register', require('./routes/register.routes'));
 app.use('/api/v1/users', require('./routes/users.routes'));

@@ -27,8 +27,30 @@ export const FormView: React.FC<FormViewProps> = ({ form, selected, tab, slots, 
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
+    console.log('[DEBUG] FormView handlePhotoChange:', url);
     setPhotoPreview(url);
     onFieldChange("photo", url);
+  };
+
+  const handleImagePaste = (event: React.ClipboardEvent) => {
+    console.log('[DEBUG] handleImagePaste triggered');
+    const items = event.clipboardData.items;
+    for (const item of items) {
+      if (item.type.indexOf('image') !== -1) {
+        console.log('[DEBUG] Image item found, converting to base64...');
+        const blob = item.getAsFile();
+        if (blob) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64String = e.target?.result as string;
+            console.log('[DEBUG] Image converted to base64, length:', base64String.length);
+            setPhotoPreview(base64String);
+            onFieldChange('photo', base64String);
+          };
+          reader.readAsDataURL(blob);
+        }
+      }
+    }
   };
 
   const DD = ({ k, opts, placeholder }: { k: keyof StaffMember; opts: string[]; placeholder?: string }) => (
@@ -108,9 +130,15 @@ export const FormView: React.FC<FormViewProps> = ({ form, selected, tab, slots, 
                     </div>
                     <div className="flex-1">
                       <FormField label="Photo URL">
-                        <input className={inputClasses} value={form.photo || ""} onChange={handlePhotoChange} placeholder="Enter photo URL or leave empty" />
+                        <input 
+                          className={inputClasses} 
+                          value={form.photo || ""} 
+                          onChange={handlePhotoChange} 
+                          onPaste={handleImagePaste}
+                          placeholder="Enter photo URL or paste an image" 
+                        />
                       </FormField>
-                      <p className="text-[11px] text-muted-foreground mt-1.5">Paste a URL to a photo</p>
+                      <p className="text-[11px] text-muted-foreground mt-1.5">Paste a URL to a photo or paste an image directly</p>
                     </div>
                   </div>
                 </div>

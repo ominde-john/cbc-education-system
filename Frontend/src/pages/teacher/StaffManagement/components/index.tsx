@@ -32,7 +32,13 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function Avatar({ staff, size = 36 }: { staff: StaffMember; size?: number }) {
-  if (staff?.photo) {
+  const [imageError, setImageError] = React.useState(false);
+
+  const initials = staff.firstName && staff.lastName 
+    ? `${staff.firstName[0]}${staff.lastName[0]}`
+    : 'ST';
+
+  if (staff?.photo && !imageError) {
     return (
       <img
         src={staff.photo}
@@ -43,9 +49,14 @@ export function Avatar({ staff, size = 36 }: { staff: StaffMember; size?: number
           objectFit: "cover",
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}
+        onError={(e) => {
+          console.warn(`[Avatar] Failed to load photo for ${staff.firstName} ${staff.lastName}:`, staff.photo);
+          setImageError(true);
+        }}
       />
     );
   }
+  
   return (
     <div style={{
       width: size, height: size,
@@ -57,7 +68,7 @@ export function Avatar({ staff, size = 36 }: { staff: StaffMember; size?: number
       letterSpacing: "-0.01em",
       boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
     }}>
-      JD
+      {initials}
     </div>
   );
 }
