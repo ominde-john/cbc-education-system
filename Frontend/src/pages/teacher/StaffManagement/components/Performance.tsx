@@ -30,6 +30,7 @@ import {
   TrendingDown,
   TrendingUp as TrendingUpIcon,
   Minus,
+  ArrowLeft,
 } from "lucide-react";
 
 // Types
@@ -122,6 +123,7 @@ interface PerformanceDashboardProps {
   schoolId: string;
   term: string;
   year: number;
+  onBack?: () => void;
 }
 
 // Constants
@@ -158,6 +160,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
   schoolId,
   term,
   year,
+  onBack,
 }) => {
   const [activeTab, setActiveTab] = useState<"staff" | "non-staff" | "overview">("overview");
   const [dateRange, setDateRange] = useState<"today" | "week" | "month" | "term">("term");
@@ -238,6 +241,16 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center space-x-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 px-4 py-2 border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 shadow-sm rounded-lg"
+                  title="Back to Staff Management"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="font-medium text-sm">Back</span>
+                </button>
+              )}
               <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 import {
   Users,
   GraduationCap,
@@ -11,7 +12,9 @@ import {
   TrendingUp,
   BookOpen,
   User,
+  Loader2,
 } from 'lucide-react';
+import { getClasses } from '@/lib/api/classApi';
 
 interface TermPerformance {
   term: string;
@@ -22,125 +25,42 @@ interface TermPerformance {
 }
 
 interface ClassData {
-  grade: string;
+  id: string;
+  grade_level: string;
+  stream_name: string | null;
   totalStudents: number;
-  classTeacher: string;
-  classSecretary: string;
-  performance: TermPerformance[];
+  classTeacher: string | null;
+  branch: string | null;
+  is_active: boolean;
+  capacity: number | null;
+  performance: TermPerformance[]; // Keep for now, could be fetched separately later
 }
 
-const classData: ClassData[] = [
-  {
-    grade: 'Grade 1',
-    totalStudents: 48,
-    classTeacher: 'Mrs. Faith Wanjiku',
-    classSecretary: 'Alan Kamau',
-    performance: [
-      { term: 'Term 1', exceeding: 12, meeting: 22, approaching: 10, below: 4 },
-      { term: 'Term 2', exceeding: 14, meeting: 24, approaching: 7, below: 3 },
-      { term: 'Term 3', exceeding: 16, meeting: 25, approaching: 5, below: 2 },
-    ],
-  },
-  {
-    grade: 'Grade 2',
-    totalStudents: 55,
-    classTeacher: 'Mr. Peter Ochieng',
-    classSecretary: 'Brenda Akinyi',
-    performance: [
-      { term: 'Term 1', exceeding: 15, meeting: 25, approaching: 10, below: 5 },
-      { term: 'Term 2', exceeding: 18, meeting: 27, approaching: 7, below: 3 },
-      { term: 'Term 3', exceeding: 20, meeting: 28, approaching: 5, below: 2 },
-    ],
-  },
-  {
-    grade: 'Grade 3',
-    totalStudents: 50,
-    classTeacher: 'Ms. Rose Njeri',
-    classSecretary: 'Collins Mwangi',
-    performance: [
-      { term: 'Term 1', exceeding: 10, meeting: 22, approaching: 12, below: 6 },
-      { term: 'Term 2', exceeding: 12, meeting: 24, approaching: 10, below: 4 },
-      { term: 'Term 3', exceeding: 14, meeting: 26, approaching: 8, below: 2 },
-    ],
-  },
-  {
-    grade: 'Grade 4',
-    totalStudents: 47,
-    classTeacher: 'Mr. James Kariuki',
-    classSecretary: 'Diana Otieno',
-    performance: [
-      { term: 'Term 1', exceeding: 11, meeting: 20, approaching: 11, below: 5 },
-      { term: 'Term 2', exceeding: 13, meeting: 22, approaching: 9, below: 3 },
-      { term: 'Term 3', exceeding: 15, meeting: 23, approaching: 7, below: 2 },
-    ],
-  },
-  {
-    grade: 'Grade 5',
-    totalStudents: 42,
-    classTeacher: 'Mrs. Susan Muthoni',
-    classSecretary: 'Eric Kipkoech',
-    performance: [
-      { term: 'Term 1', exceeding: 9, meeting: 18, approaching: 10, below: 5 },
-      { term: 'Term 2', exceeding: 11, meeting: 20, approaching: 8, below: 3 },
-      { term: 'Term 3', exceeding: 13, meeting: 21, approaching: 6, below: 2 },
-    ],
-  },
-  {
-    grade: 'Grade 6',
-    totalStudents: 38,
-    classTeacher: 'Mr. David Otieno',
-    classSecretary: 'Florence Wambui',
-    performance: [
-      { term: 'Term 1', exceeding: 8, meeting: 16, approaching: 9, below: 5 },
-      { term: 'Term 2', exceeding: 10, meeting: 18, approaching: 7, below: 3 },
-      { term: 'Term 3', exceeding: 12, meeting: 19, approaching: 5, below: 2 },
-    ],
-  },
-  {
-    grade: 'Grade 7',
-    totalStudents: 35,
-    classTeacher: 'Ms. Anne Waweru',
-    classSecretary: 'George Njoroge',
-    performance: [
-      { term: 'Term 1', exceeding: 7, meeting: 15, approaching: 9, below: 4 },
-      { term: 'Term 2', exceeding: 9, meeting: 17, approaching: 7, below: 2 },
-      { term: 'Term 3', exceeding: 11, meeting: 18, approaching: 5, below: 1 },
-    ],
-  },
-  {
-    grade: 'Grade 8',
-    totalStudents: 30,
-    classTeacher: 'Mr. Samuel Ndung\'u',
-    classSecretary: 'Harriet Chebet',
-    performance: [
-      { term: 'Term 1', exceeding: 6, meeting: 13, approaching: 8, below: 3 },
-      { term: 'Term 2', exceeding: 8, meeting: 15, approaching: 5, below: 2 },
-      { term: 'Term 3', exceeding: 10, meeting: 16, approaching: 3, below: 1 },
-    ],
-  },
-  {
-    grade: 'Grade 9',
-    totalStudents: 25,
-    classTeacher: 'Mrs. Jane Maina',
-    classSecretary: 'Ian Kiplangat',
-    performance: [
-      { term: 'Term 1', exceeding: 5, meeting: 11, approaching: 6, below: 3 },
-      { term: 'Term 2', exceeding: 7, meeting: 12, approaching: 4, below: 2 },
-      { term: 'Term 3', exceeding: 9, meeting: 12, approaching: 3, below: 1 },
-    ],
-  },
-  {
-    grade: 'Grade 10',
-    totalStudents: 22,
-    classTeacher: 'Mr. Tom Kipchoge',
-    classSecretary: 'Josephine Auma',
-    performance: [
-      { term: 'Term 1', exceeding: 4, meeting: 10, approaching: 5, below: 3 },
-      { term: 'Term 2', exceeding: 6, meeting: 11, approaching: 3, below: 2 },
-      { term: 'Term 3', exceeding: 8, meeting: 11, approaching: 2, below: 1 },
-    ],
-  },
-];
+interface ApiClassItem {
+  id: string;
+  grade_level: string;
+  stream_name: string | null;
+  capacity: number | null;
+  is_active: boolean;
+  learner_count?: number | null;
+  teachers?: {
+    id: string;
+    user_id?: string;
+    users?: {
+      first_name?: string;
+      last_name?: string;
+    };
+  } | null;
+  branches?: {
+    id: string;
+    name: string;
+  } | null;
+  branch?: {
+    id: string;
+    name: string;
+  } | null;
+  created_at: string;
+}
 
 const gradeColors = [
   { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700', icon: 'bg-blue-100 text-blue-600' },
@@ -156,10 +76,50 @@ const gradeColors = [
 ];
 
 const StudentClasses: React.FC = () => {
+  const [classes, setClasses] = useState<ClassData[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchClasses = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await getClasses();
+      const apiClasses = response.data?.classes || [];
+
+      // Transform API data to component format
+      const transformedClasses: ClassData[] = apiClasses.map((item: ApiClassItem) => ({
+        id: item.id,
+        grade_level: item.grade_level,
+        stream_name: item.stream_name,
+        totalStudents: item.learner_count || 0,
+        classTeacher: item.teachers
+          ? `${item.teachers.users?.first_name || ''} ${item.teachers.users?.last_name || ''}`.trim() || 'Unassigned'
+          : 'Unassigned',
+        branch: item.branches?.name || item.branch?.name || null,
+        is_active: item.is_active,
+        capacity: item.capacity,
+        performance: [
+          { term: 'Term 1', exceeding: 0, meeting: 0, approaching: 0, below: 0 },
+          { term: 'Term 2', exceeding: 0, meeting: 0, approaching: 0, below: 0 },
+          { term: 'Term 3', exceeding: 0, meeting: 0, approaching: 0, below: 0 },
+        ], // Placeholder - could be fetched from separate API later
+      }));
+
+      setClasses(transformedClasses);
+    } catch (error) {
+      console.error('Failed to load classes:', error);
+      toast.error('Failed to load classes from backend');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchClasses();
+  }, [fetchClasses]);
 
   if (selectedClass) {
-    const idx = classData.findIndex((c) => c.grade === selectedClass.grade);
+    const idx = classes.findIndex((c) => c.id === selectedClass.id);
     const colors = gradeColors[idx % gradeColors.length];
 
     return (
@@ -174,7 +134,10 @@ const StudentClasses: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Classes
           </Button>
-          <h1 className="text-2xl font-bold">{selectedClass.grade} – Class Details</h1>
+          <h1 className="text-2xl font-bold">
+            {selectedClass.grade_level}
+            {selectedClass.stream_name ? ` ${selectedClass.stream_name}` : ''} – Class Details
+          </h1>
         </div>
 
         {/* Summary Cards */}
@@ -206,11 +169,13 @@ const StudentClasses: React.FC = () => {
           <Card className={`border ${colors.border} ${colors.bg}`}>
             <CardContent className="p-5 flex items-center gap-4">
               <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${colors.icon}`}>
-                <UserCheck className="h-6 w-6" />
+                <GraduationCap className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Class Secretary</p>
-                <p className="text-base font-semibold">{selectedClass.classSecretary}</p>
+                <p className="text-sm text-muted-foreground">Capacity</p>
+                <p className="text-base font-semibold">
+                  {selectedClass.capacity ? `${selectedClass.totalStudents}/${selectedClass.capacity}` : 'Unlimited'}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -303,43 +268,76 @@ const StudentClasses: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Student Classes</h1>
           <p className="text-sm text-muted-foreground">
-            Select a grade to view class details
+            Select a class to view details
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {classData.map((cls, idx) => {
-          const colors = gradeColors[idx % gradeColors.length];
-          return (
-            <Card
-              key={cls.grade}
-              className={`cursor-pointer border-2 ${colors.border} ${colors.bg} hover:shadow-md transition-all duration-200 hover:scale-[1.02]`}
-              onClick={() => setSelectedClass(cls)}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors.icon}`}
-                  >
-                    <GraduationCap className="h-5 w-5" />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading classes...</span>
+        </div>
+      ) : classes.length === 0 ? (
+        <div className="text-center py-12">
+          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No classes found</h3>
+          <p className="text-muted-foreground">No classes are available at the moment.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {classes.map((cls, idx) => {
+            const colors = gradeColors[idx % gradeColors.length];
+            const displayName = cls.stream_name
+              ? `${cls.grade_level} ${cls.stream_name}`
+              : cls.grade_level;
+
+            return (
+              <Card
+                key={cls.id}
+                className={`cursor-pointer border-2 ${colors.border} ${colors.bg} hover:shadow-md transition-all duration-200 hover:scale-[1.02] ${
+                  !cls.is_active ? 'opacity-60' : ''
+                }`}
+                onClick={() => setSelectedClass(cls)}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors.icon}`}
+                    >
+                      <GraduationCap className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Badge className={`text-xs ${colors.badge} border-0`}>
+                        {cls.totalStudents} students
+                      </Badge>
+                      {!cls.is_active && (
+                        <Badge variant="secondary" className="text-xs">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <Badge className={`text-xs ${colors.badge} border-0`}>
-                    {cls.totalStudents} students
-                  </Badge>
-                </div>
-                <h3 className="font-bold text-lg mb-1">{cls.grade}</h3>
-                <p className="text-xs text-muted-foreground mb-1">
-                  <span className="font-medium">Teacher:</span> {cls.classTeacher}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium">Secretary:</span> {cls.classSecretary}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  <h3 className="font-bold text-lg mb-1">{displayName}</h3>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    <span className="font-medium">Teacher:</span> {cls.classTeacher}
+                  </p>
+                  {cls.branch && (
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Branch:</span> {cls.branch}
+                    </p>
+                  )}
+                  {cls.capacity && (
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Capacity:</span> {cls.capacity}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

@@ -193,23 +193,10 @@ export const menuSections: MenuSection[] = [
       },
       {
         id: "classes",
-        label: "Classes & Subjects",
+        label: "Classes ",
         icon: Layers,
         href: "/school-admin/classes",
-        submenu: [
-          {
-            id: "classes-list",
-            label: "Classes",
-            href: "/school-admin/classes/list",
-            icon: School,
-          },
-          {
-            id: "subjects",
-            label: "Subjects",
-            href: "/school-admin/classes/subjects",
-            icon: BookOpen,
-          },
-        ],
+       
       },
       {
         id: "promotions",

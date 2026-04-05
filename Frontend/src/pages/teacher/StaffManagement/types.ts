@@ -11,9 +11,9 @@ export interface StaffMember {
   idNumber: string;
   tscNumber: string | null;
   designation: string;
-  branch: string;
-  county: string;
-  location: string;
+  branch: string | null;
+  county: string | null;
+  location: string | null;
   dateOfBirth: string | null;
   sex: string;
   gender?: string;
@@ -28,7 +28,7 @@ export interface StaffMember {
   qualifications: string[];
   staffType: StaffType;
   mobilePhone?: string;
-  photo?: string;
+  photo?: string | null;
   status: string;
   isActive?: boolean;
   createdAt?: string;

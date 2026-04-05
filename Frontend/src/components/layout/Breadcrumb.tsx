@@ -110,6 +110,9 @@ const menuSections: MenuSection[] = [
   }
 ];
 
+// Memoize the menu items flat map to avoid recalculation
+const flatMenuItems = menuSections.flatMap(s => s.items);
+
 export default function Breadcrumb({ pathname, theme }: BreadcrumbProps) {
   const segments = pathname.split('/').filter(Boolean);
   
@@ -117,32 +120,54 @@ export default function Breadcrumb({ pathname, theme }: BreadcrumbProps) {
     const crumbs = [{ label: 'Dashboard', href: '/school-admin/dashboard' }];
     
     let path = '';
-    segments.forEach((segment) => {
+    for (const segment of segments) {
       path += `/${segment}`;
-      const menuItem = menuSections
-        .flatMap(s => s.items)
-        .find(item => item.href === path);
       
-      if (menuItem) {
-        crumbs.push({ label: menuItem.label, href: path });
+      // Look for matching menu item
+      let foundItem = flatMenuItems.find(item => item.href === path);
+      
+      // If not found in main items, look in submenu
+      if (!foundItem) {
+        foundItem = flatMenuItems
+          .flatMap(item => item.submenu || [])
+          .find(subitem => subitem.href === path);
       }
-    });
+      
+      if (foundItem) {
+        crumbs.push({ label: foundItem.label, href: path });
+      }
+    }
     
     return crumbs;
   }, [segments]);
 
+  // Don't render if only dashboard
+  if (breadcrumbs.length <= 1) {
+    return null;
+  }
+
   return (
-    <nav className={cn("flex items-center gap-1 text-sm", theme.header.text)} aria-label="Breadcrumb">
+    <nav 
+      className={cn(
+        "flex items-center gap-1 text-sm whitespace-nowrap overflow-hidden",
+        theme.header.text
+      )} 
+      aria-label="Breadcrumb"
+    >
       {breadcrumbs.map((crumb, index) => (
-        <div key={crumb.href} className="flex items-center gap-1">
+        <div key={crumb.href} className="flex items-center gap-1 flex-shrink-0">
           <Link
             to={crumb.href}
-            className="hover:opacity-70 transition-opacity"
+            className={cn(
+              "hover:opacity-70 transition-opacity truncate max-w-[200px]",
+              index === breadcrumbs.length - 1 ? "font-semibold opacity-100" : "opacity-80"
+            )}
+            title={crumb.label}
           >
             {crumb.label}
           </Link>
           {index < breadcrumbs.length - 1 && (
-            <span className="opacity-50">/</span>
+            <span className="opacity-50 flex-shrink-0">/</span>
           )}
         </div>
       ))}

@@ -96,7 +96,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className={cn('min-h-screen flex', theme.main.bg)}>
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -105,7 +105,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
       )}
 
-      {/* Sidebar - Fixed position, 280px width */}
+      {/* Sidebar - Fixed position, proper width management */}
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 border-r',
@@ -141,7 +141,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <button
             className={cn(
-              'p-1 h-8 w-8 rounded-lg transition-colors hidden lg:flex items-center justify-center',
+              'p-1 h-8 w-8 rounded-lg transition-colors hidden lg:flex items-center justify-center flex-shrink-0',
               theme.sidebar.hoverBg
             )}
             onClick={toggleSidebar}
@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </button>
 
           <button
-            className={cn('lg:hidden transition-colors', theme.sidebar.hoverBg)}
+            className={cn('lg:hidden transition-colors flex-shrink-0', theme.sidebar.hoverBg)}
             onClick={() => setSidebarOpen(false)}
             aria-label="Close sidebar"
           >
@@ -198,17 +198,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 )
                           )}
                         >
-                          <div className="flex items-center gap-3">
-                            <Icon className={cn('flex-shrink-0', collapsed ? 'w-5 h-5' : 'w-5 h-5')} />
-                            {!collapsed && <span>{item.label}</span>}
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <Icon className="w-5 h-5 flex-shrink-0" />
+                            {!collapsed && <span className="truncate">{item.label}</span>}
                           </div>
                           
                           {!collapsed && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               {item.badge && (
                                 <span
                                   className={cn(
-                                    'flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold',
+                                    'flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold flex-shrink-0',
                                     theme.badge
                                   )}
                                 >
@@ -251,9 +251,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 )
                           )}
                         >
-                          <div className="flex items-center gap-3">
-                            <Icon className={cn('flex-shrink-0', collapsed ? 'w-5 h-5' : 'w-5 h-5')} />
-                            {!collapsed && <span>{item.label}</span>}
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <Icon className="w-5 h-5 flex-shrink-0" />
+                            {!collapsed && <span className="truncate">{item.label}</span>}
                           </div>
                           
                           {!collapsed && item.badge && (
@@ -301,7 +301,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                                 )}
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
-                                <span>{subitem.label}</span>
+                                <span className="truncate">{subitem.label}</span>
                               </Link>
                             );
                           })}
@@ -345,13 +345,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'
                 )}
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 flex-shrink-0" />
                 Sign out
               </button>
             </>
           ) : (
             <div className="flex flex-col items-center space-y-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                 <span className="text-sm font-bold text-white">
                   {user?.firstName?.[0]}
                   {user?.lastName?.[0]}
@@ -372,37 +372,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Main content - with left margin to account for fixed sidebar */}
-      <main 
+      {/* Main content wrapper - proper spacing calculation */}
+      <div 
         className={cn(
-          'flex-1 flex flex-col min-w-0 overflow-hidden',
-          'bg-gray-50 dark:bg-gray-900',
+          'flex flex-col flex-1 min-w-0 w-full transition-all duration-300',
+          'hidden lg:flex',
           collapsed ? 'lg:ml-16' : 'lg:ml-[280px]'
         )}
       >
-        {/* Header - full width, aligned with sidebar */}
-        <header
+        {/* Header - full width */}
+       <header
           className={cn(
             'flex-shrink-0 h-16 border-b flex items-center px-6 sticky top-0 z-40 w-full',
             theme.header.bg,
             theme.header.border
           )}
         >
-          <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
             <button
-              className={cn('lg:hidden p-2 rounded-lg transition-colors', theme.header.buttonHover)}
+              className={cn('lg:hidden p-2 rounded-lg transition-colors flex-shrink-0', theme.header.buttonHover)}
               onClick={() => setSidebarOpen(true)}
               aria-label="Open sidebar"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="hidden sm:block">
+            {/* Breadcrumb - with proper constraints */}
+            <div className="hidden sm:flex min-w-0 flex-1">
               <Breadcrumb pathname={location.pathname} theme={theme} />
             </div>
           </div>
 
-          <div className="flex items-center gap-2 lg:gap-4">
+          {/* Right side actions - fixed width */}
+          <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0 ml-4">
             <button
               className={cn('p-2 rounded-lg transition-colors hidden md:flex', theme.header.buttonHover)}
               aria-label="Search"
@@ -429,7 +431,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               )}
             </button>
 
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setNotificationOpen(!notificationOpen)}
                 className={cn('relative p-2 rounded-lg transition-colors', theme.header.buttonHover)}
@@ -456,13 +458,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               />
             </div>
 
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className={cn('flex items-center gap-2 p-1 rounded-lg transition-colors', theme.header.buttonHover)}
                 aria-label="User menu"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-xs font-bold text-white">
                     {user?.firstName?.[0]}
                     {user?.lastName?.[0]}
@@ -480,14 +482,80 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto p-6">
+        {/* Page Content - proper overflow handling */}
+        <main className="flex-1 overflow-auto w-full min-w-0">
+          <div className="animate-fade-in w-full min-h-full">
+            <div className={cn('w-full h-full px-6 py-8', theme.main.text)}>{children}</div>
+          </div>
+        </main>
+      </div>
+
+      {/* Mobile view - full screen */}
+      <div className="flex flex-col flex-1 lg:hidden w-screen">
+        {/* Mobile Header */}
+        <header
+          className={cn(
+            'flex-shrink-0 h-16 border-b flex items-center px-6 sticky top-0 z-40 w-full',
+            theme.header.bg,
+            theme.header.border
+          )}
+        >
+          <div className="flex items-center gap-4 flex-1">
+            <button
+              className={cn('p-2 rounded-lg transition-colors', theme.header.buttonHover)}
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="hidden sm:block">
+              <Breadcrumb pathname={location.pathname} theme={theme} />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className={cn('p-2 rounded-lg transition-colors', theme.header.buttonHover)}
+            >
+              {isDarkMode ? (
+                <Sun className="w-5 h-5 text-yellow-500" />
+              ) : (
+                <Moon className="w-5 h-5 text-blue-600" />
+              )}
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setNotificationOpen(!notificationOpen)}
+                className={cn('relative p-2 rounded-lg transition-colors', theme.header.buttonHover)}
+              >
+                <Bell className="w-5 h-5" />
+                {totalBadges > 0 && (
+                  <span className={cn('absolute top-1 right-1 w-4 h-4 rounded-full text-white text-xs flex items-center justify-center font-bold', theme.badge)}>
+                    {totalBadges > 9 ? '9+' : totalBadges}
+                  </span>
+                )}
+              </button>
+              <NotificationDropdown
+                isOpen={notificationOpen}
+                onClose={() => setNotificationOpen(false)}
+                notifications={notifications}
+                totalBadges={totalBadges}
+                theme={theme}
+              />
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile Content */}
+        <main className="flex-1 overflow-auto w-full px-6 py-8">
           <div className="animate-fade-in">
             <div className={theme.main.text}>{children}</div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
-

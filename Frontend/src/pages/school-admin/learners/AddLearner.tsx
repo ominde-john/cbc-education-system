@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from '@/components/ui/sonner';
 import { AuthService } from '@/lib/auth';
 import {
   ArrowLeft,
   Save,
+  X,
   User,
   Users,
   Camera,
@@ -20,6 +30,10 @@ import {
   CheckCircle2,
   Upload,
   Sparkles,
+  Clock,
+  AlertTriangle,
+  FileText,
+  Pill,
 } from 'lucide-react';
 
 interface StudentDetailsProps {
@@ -27,22 +41,105 @@ interface StudentDetailsProps {
   onBack?: () => void;
 }
 
+interface StudentData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  gender: string;
+  dateOfBirth: string;
+  admissionNumber: string;
+  gradeLevel: string;
+  specialNeeds: string;
+  admissionDate?: string;
+  previousSchool?: string;
+}
+
+interface ParentData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  relationship: string;
+  nationalId: string;
+  occupation: string;
+  address: string;
+}
+
+interface FormError {
+  [key: string]: string;
+}
+
+interface TabConfig {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  description: string;
+}
+
+const GRADES = [
+  'Play Group',
+  'PP1',
+  'PP2',
+  'Grade 1',
+  'Grade 2',
+  'Grade 3',
+  'Grade 4',
+  'Grade 5',
+  'Grade 6',
+  'Grade 7',
+  'Grade 8',
+  'Grade 9',
+];
+
+const RELATIONSHIPS = [
+  { value: 'Father', label: 'Father' },
+  { value: 'Mother', label: 'Mother' },
+  { value: 'Guardian', label: 'Guardian' },
+  { value: 'Grandparent', label: 'Grandparent' },
+  { value: 'Other', label: 'Other' },
+];
+
+const TABS: TabConfig[] = [
+  {
+    id: 'student',
+    label: 'Student Info',
+    icon: <GraduationCap className="w-4 h-4" />,
+    description: 'Personal and academic details',
+  },
+  {
+    id: 'parent',
+    label: 'Guardian Details',
+    icon: <Users className="w-4 h-4" />,
+    description: 'Parent or guardian information',
+  },
+  {
+    id: 'health',
+    label: 'Health & Special Needs',
+    icon: <Pill className="w-4 h-4" />,
+    description: 'Medical and accommodation info',
+  },
+  {
+    id: 'documents',
+    label: 'Documents',
+    icon: <FileText className="w-4 h-4" />,
+    description: 'Birth cert, documents upload',
+  },
+];
+
 const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState('student');
   const [isPhotoHovered, setIsPhotoHovered] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [errors, setErrors] = useState<FormError>({});
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      navigate('/school-admin/learners');
-    }
-  };
-
-  // Student state
-  const [student, setStudent] = useState({
+  const [student, setStudent] = useState<StudentData>({
     firstName: '',
     middleName: '',
     lastName: '',
@@ -51,10 +148,11 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
     admissionNumber: '',
     gradeLevel: '',
     specialNeeds: '',
+    admissionDate: '',
+    previousSchool: '',
   });
 
-  // Parent/Guardian state
-  const [parent, setParent] = useState({
+  const [parent, setParent] = useState<ParentData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -64,16 +162,6 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
     occupation: '',
     address: '',
   });
-
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
 
   useEffect(() => {
     if (studentId) {
@@ -86,6 +174,8 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
         admissionNumber: 'ADM001',
         gradeLevel: 'Grade 1',
         specialNeeds: '',
+        admissionDate: '2024-01-15',
+        previousSchool: 'St. Anne Primary',
       });
       setParent({
         firstName: 'John',
@@ -93,22 +183,74 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
         email: 'parent@example.com',
         phoneNumber: '0795387869',
         relationship: 'Father',
-        nationalId: '',
-        occupation: '',
-        address: '123 Main Street, Nairobi',
+        nationalId: '12345678',
+        occupation: 'Engineer',
+        address: '123 Main Street, Nairobi, Kenya',
       });
+      setLastSaved(new Date());
     }
   }, [studentId]);
 
-  const handleStudentChange = (field: string, value: string) => {
-    setStudent(prev => ({ ...prev, [field]: value }));
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image must be less than 5MB');
+        return;
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        toast.error('Only JPG, PNG, and WebP images are supported');
+        return;
+      }
+      setPhotoFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setHasChanges(true);
+    }
   };
 
-  const handleParentChange = (field: string, value: string) => {
-    setParent(prev => ({ ...prev, [field]: value }));
+  const handleStudentChange = (field: keyof StudentData, value: string) => {
+    setStudent((prev) => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleParentChange = (field: keyof ParentData, value: string) => {
+    setParent((prev) => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormError = {};
+
+    if (!student.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!student.lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!student.gender) newErrors.gender = 'Gender is required';
+    if (!student.gradeLevel) newErrors.gradeLevel = 'Grade level is required';
+
+    if (!parent.firstName.trim()) newErrors.parentFirstName = 'Parent first name is required';
+    if (!parent.lastName.trim()) newErrors.parentLastName = 'Parent last name is required';
+    if (!parent.email.trim()) newErrors.email = 'Email is required';
+    if (parent.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parent.email)) {
+      newErrors.email = 'Invalid email format';
+    }
+    if (!parent.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+    if (!parent.relationship) newErrors.relationship = 'Relationship is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
+    if (!validateForm()) {
+      toast.error('Please fix all errors before saving');
+      return;
+    }
+
     setIsSaving(true);
 
     const payload = {
@@ -120,6 +262,8 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
       gender: student.gender,
       gradeLevel: student.gradeLevel,
       specialNeeds: student.specialNeeds,
+      admissionDate: student.admissionDate,
+      previousSchool: student.previousSchool,
       parentEmail: parent.email,
       parentFirstName: parent.firstName,
       parentLastName: parent.lastName,
@@ -127,13 +271,15 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
       parentNationalId: parent.nationalId,
       parentOccupation: parent.occupation,
       parentRelationship: parent.relationship,
+      parentAddress: parent.address,
     };
 
     try {
       await AuthService.registerLearner(payload);
       setLastSaved(new Date());
-      toast.success('Student saved successfully');
-      navigate('/school-admin/learners');
+      setHasChanges(false);
+      toast.success(studentId ? 'Student updated successfully' : 'Student registered successfully');
+      setTimeout(() => navigate('/school-admin/learners'), 1500);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save student. Please try again.';
       console.error('Save error:', error);
@@ -143,464 +289,706 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({ studentId, onBack }) =>
     }
   };
 
+  const handleBack = () => {
+    if (hasChanges) {
+      setShowUnsavedDialog(true);
+    } else {
+      navigateBack();
+    }
+  };
+
+  const navigateBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/school-admin/learners');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 w-full">
-      <div className="w-full max-w-4xl mx-auto px-4 py-8 space-y-6">
-
-        {/* ── Premium Header ── */}
-        <div
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 p-6 shadow-xl animate-fade-in"
-          style={{ animationDelay: '0ms' }}
-        >
-          {/* Decorative background circles */}
-          <div className="pointer-events-none absolute -top-8 -right-8 w-48 h-48 rounded-full bg-white/5" />
-          <div className="pointer-events-none absolute -bottom-10 -left-6 w-36 h-36 rounded-full bg-white/5" />
-
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex flex-col">
+      {/* ── Sticky Header ── */}
+      <div className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+        <div className="w-full px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
               <Button
                 onClick={handleBack}
                 variant="ghost"
                 size="sm"
-                className="text-white/80 hover:text-white hover:bg-white/15 transition-all duration-200 rounded-xl border border-white/20"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <ArrowLeft className="w-4 h-4 mr-1.5" />
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <GraduationCap className="w-5 h-5 text-white/80" />
-                  <Badge className="bg-white/20 text-white border-0 text-xs font-medium hover:bg-white/30">
-                    {studentId ? 'Editing Record' : 'New Enrollment'}
-                  </Badge>
-                </div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">
-                  {studentId ? 'Edit Student' : 'Add New Student'}
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                  {studentId ? 'Edit Student Record' : 'Register New Student'}
                 </h1>
-                <p className="text-white/60 text-sm mt-0.5">
+                <p className="text-muted-foreground text-xs sm:text-sm mt-1">
                   {studentId
                     ? 'Update student and guardian information'
-                    : 'Fill in the details below to enroll a new learner'}
+                    : 'Complete all sections to enroll a new learner'}
                 </p>
               </div>
             </div>
 
             {lastSaved && (
-              <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2 border border-white/20 self-start sm:self-auto">
-                <CheckCircle2 className="w-4 h-4 text-green-300 shrink-0" />
-                <span className="text-xs text-white/80 whitespace-nowrap">
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 whitespace-nowrap">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="text-xs text-emerald-700 font-medium">
                   Saved {lastSaved.toLocaleTimeString()}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Progress steps */}
-          <div className="relative mt-5 flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-white text-primary text-xs font-bold flex items-center justify-center shadow-md">1</div>
-              <span className="text-white/90 text-sm font-medium hidden sm:block">Student Info</span>
-            </div>
-            <div className="flex-1 h-px bg-white/25 mx-1" />
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-white/25 text-white text-xs font-bold flex items-center justify-center border border-white/30">2</div>
-              <span className="text-white/60 text-sm hidden sm:block">Guardian Info</span>
-            </div>
+          {/* Status badges */}
+          <div className="flex items-center gap-2">
+            <Badge variant={studentId ? 'secondary' : 'default'} className="rounded-full text-xs">
+              {studentId ? 'Editing' : 'New Enrollment'}
+            </Badge>
+            {hasChanges && (
+              <Badge variant="outline" className="rounded-full bg-orange-50 text-orange-700 border-orange-200 text-xs">
+                <Clock className="w-3 h-3 mr-1" />
+                Unsaved Changes
+              </Badge>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* ── Student Information Card ── */}
-        <div
-          className="animate-fade-in"
-          style={{ animationDelay: '80ms' }}
-        >
-          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            {/* Colored top accent bar */}
-            <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-blue-500" />
+      {/* ── Unsaved Changes Dialog ── */}
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent className="rounded-xl">
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-600" />
+            Unsaved Changes
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved changes. Are you sure you want to leave without saving?
+          </AlertDialogDescription>
+          <div className="flex gap-3 justify-end mt-6">
+            <AlertDialogCancel className="rounded-lg">Keep Editing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={navigateBack}
+              className="bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90"
+            >
+              Discard Changes
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
 
-            {/* Card Header */}
-            <div className="flex items-start gap-4 px-6 pt-6 pb-5 border-b border-slate-100">
-              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Student Information</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Personal details and academic placement for the learner
-                </p>
-              </div>
+      {/* ── Main Content Area ── */}
+      <div className="flex-1 w-full overflow-y-auto">
+        <div className="w-full px-6 py-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+            {/* ── Tab Navigation ── */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-0 bg-transparent border-b border-slate-100">
+                {TABS.map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="rounded-none border-0 py-4 px-2 sm:px-4 data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none flex flex-col sm:flex-row items-center justify-center gap-2 text-xs sm:text-sm font-medium transition-all duration-200"
+                  >
+                    {tab.icon}
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
             </div>
 
-            <CardContent className="px-6 pt-6 pb-8 space-y-7">
-
-              {/* Profile picture upload */}
-              <div className="flex flex-col items-center gap-4">
-                <div
-                  className="relative w-28 h-28 rounded-full cursor-pointer group"
-                  onMouseEnter={() => setIsPhotoHovered(true)}
-                  onMouseLeave={() => setIsPhotoHovered(false)}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {/* Avatar circle */}
-                  <div className={`w-full h-full rounded-full overflow-hidden border-4 transition-all duration-300 shadow-md ${isPhotoHovered ? 'border-primary shadow-primary/20 shadow-lg scale-105' : 'border-white'}`}>
-                    {previewUrl ? (
-                      <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                        <User className="w-10 h-10 text-primary/40" />
-                      </div>
-                    )}
+            {/* ── Student Information Tab ── */}
+            <TabsContent value="student" className="space-y-6 animate-in fade-in duration-300 m-0">
+              <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow w-full">
+                <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-blue-500" />
+                
+                <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <GraduationCap className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle>Student Information</CardTitle>
+                      <CardDescription>Personal and academic details for the learner</CardDescription>
+                    </div>
                   </div>
+                </CardHeader>
 
-                  {/* Hover overlay */}
-                  <div className={`absolute inset-0 rounded-full flex items-center justify-center transition-all duration-300 ${isPhotoHovered ? 'bg-primary/60 opacity-100' : 'opacity-0'}`}>
-                    <div className="flex flex-col items-center gap-1">
-                      <Camera className="w-5 h-5 text-white" />
-                      <span className="text-white text-[10px] font-medium">Change</span>
+                <CardContent className="pt-8 pb-8 space-y-8">
+                  {/* Profile Photo Upload */}
+                  <div className="flex flex-col items-center gap-6 pb-6 border-b border-dashed border-slate-200">
+                    <div
+                      className="relative w-32 h-32 rounded-full cursor-pointer group"
+                      onMouseEnter={() => setIsPhotoHovered(true)}
+                      onMouseLeave={() => setIsPhotoHovered(false)}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <div
+                        className={`w-full h-full rounded-full overflow-hidden border-4 transition-all duration-300 shadow-lg ${
+                          isPhotoHovered
+                            ? 'border-primary shadow-primary/30 scale-105'
+                            : 'border-slate-200'
+                        }`}
+                      >
+                        {previewUrl ? (
+                          <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                            <User className="w-12 h-12 text-primary/40" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        className={`absolute inset-0 rounded-full flex items-center justify-center transition-all duration-300 ${
+                          isPhotoHovered ? 'bg-primary/60 opacity-100' : 'bg-primary/60 opacity-0'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <Camera className="w-5 h-5 text-white" />
+                          <span className="text-white text-xs font-medium">Change</span>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-primary border-2 border-white flex items-center justify-center shadow-lg transition-transform duration-300 ${
+                          isPhotoHovered ? 'scale-110' : 'scale-100'
+                        }`}
+                      >
+                        <Upload className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageChange}
+                    />
+
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-foreground">Profile Photo</p>
+                      <p className="text-xs text-muted-foreground mt-1">Optional • JPG, PNG, WebP up to 5 MB</p>
                     </div>
                   </div>
 
-                  {/* Upload badge */}
-                  <div className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary border-2 border-white flex items-center justify-center shadow-md transition-transform duration-300 ${isPhotoHovered ? 'scale-110' : 'scale-100'}`}>
-                    <Upload className="w-3.5 h-3.5 text-white" />
+                  {/* Student Fields */}
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName" className="font-medium">
+                          First Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="firstName"
+                          placeholder="e.g. Jane"
+                          value={student.firstName}
+                          onChange={(e) => handleStudentChange('firstName', e.target.value)}
+                          className={`h-10 rounded-lg transition-all ${
+                            errors.firstName ? 'border-destructive focus:ring-destructive/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {errors.firstName && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.firstName}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="middleName" className="font-medium">
+                          Middle Name <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="middleName"
+                          placeholder="e.g. Wanjiru"
+                          value={student.middleName}
+                          onChange={(e) => handleStudentChange('middleName', e.target.value)}
+                          className="h-10 rounded-lg border-slate-200"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName" className="font-medium">
+                          Last Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="lastName"
+                          placeholder="e.g. Doe"
+                          value={student.lastName}
+                          onChange={(e) => handleStudentChange('lastName', e.target.value)}
+                          className={`h-10 rounded-lg transition-all ${
+                            errors.lastName ? 'border-destructive focus:ring-destructive/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {errors.lastName && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.lastName}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="gender" className="font-medium">
+                          Gender <span className="text-destructive">*</span>
+                        </Label>
+                        <Select value={student.gender} onValueChange={(v) => handleStudentChange('gender', v)}>
+                          <SelectTrigger
+                            id="gender"
+                            className={`h-10 rounded-lg ${errors.gender ? 'border-destructive' : 'border-slate-200'}`}
+                          >
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-lg">
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {errors.gender && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.gender}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="dateOfBirth" className="font-medium">
+                          Date of Birth <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="dateOfBirth"
+                          type="date"
+                          value={student.dateOfBirth}
+                          onChange={(e) => handleStudentChange('dateOfBirth', e.target.value)}
+                          className="h-10 rounded-lg border-slate-200"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="admissionNumber" className="font-medium">
+                          Admission Number <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="admissionNumber"
+                          placeholder="e.g. ADM-2024-001"
+                          value={student.admissionNumber}
+                          onChange={(e) => handleStudentChange('admissionNumber', e.target.value)}
+                          className="h-10 rounded-lg border-slate-200"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="admissionDate" className="font-medium">
+                          Admission Date <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="admissionDate"
+                          type="date"
+                          value={student.admissionDate}
+                          onChange={(e) => handleStudentChange('admissionDate', e.target.value)}
+                          className="h-10 rounded-lg border-slate-200"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="gradeLevel" className="font-medium">
+                          Grade / Class <span className="text-destructive">*</span>
+                        </Label>
+                        <Select value={student.gradeLevel} onValueChange={(v) => handleStudentChange('gradeLevel', v)}>
+                          <SelectTrigger
+                            id="gradeLevel"
+                            className={`h-10 rounded-lg ${errors.gradeLevel ? 'border-destructive' : 'border-slate-200'}`}
+                          >
+                            <SelectValue placeholder="Select grade or class" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-lg max-h-60">
+                            {GRADES.map((grade) => (
+                              <SelectItem key={grade} value={grade}>
+                                {grade}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.gradeLevel && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.gradeLevel}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="previousSchool" className="font-medium">
+                          Previous School <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="previousSchool"
+                          placeholder="e.g. St. Anne Primary"
+                          value={student.previousSchool}
+                          onChange={(e) => handleStudentChange('previousSchool', e.target.value)}
+                          className="h-10 rounded-lg border-slate-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="specialNeeds" className="font-medium">
+                        Special Needs <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                      </Label>
+                      <Textarea
+                        id="specialNeeds"
+                        placeholder="Describe any special needs or accommodations required…"
+                        value={student.specialNeeds}
+                        onChange={(e) => handleStudentChange('specialNeeds', e.target.value)}
+                        className="min-h-24 resize-none rounded-lg border-slate-200"
+                      />
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  id="upload-photo"
-                  className="hidden"
-                  onChange={handleImageChange}
-                />
+            {/* ── Guardian Information Tab ── */}
+            <TabsContent value="parent" className="space-y-6 animate-in fade-in duration-300 m-0">
+              <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow w-full">
+                <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-primary" />
 
-                <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">Profile Photo</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Optional · JPG, PNG up to 5 MB</p>
-                </div>
-              </div>
+                <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Parent / Guardian Information</CardTitle>
+                      <CardDescription>Contact details for the student's parent or legal guardian</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
 
-              {/* Divider */}
-              <div className="border-t border-dashed border-slate-200" />
+                <CardContent className="pt-8 pb-8 space-y-6">
+                  {/* Info alert */}
+                  <div className="flex items-start gap-3 rounded-lg bg-blue-50 border border-blue-200 p-4">
+                    <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-blue-700 leading-relaxed">
+                      A parent account will be created with these details for portal access. Login credentials will be sent to the provided email address.
+                    </p>
+                  </div>
 
-              {/* Two-column fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Parent Fields */}
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="parentFirstName" className="font-medium">
+                          First Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="parentFirstName"
+                          placeholder="e.g. John"
+                          value={parent.firstName}
+                          onChange={(e) => handleParentChange('firstName', e.target.value)}
+                          className={`h-10 rounded-lg transition-all ${
+                            errors.parentFirstName ? 'border-destructive focus:ring-destructive/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {errors.parentFirstName && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.parentFirstName}
+                          </p>
+                        )}
+                      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-sm font-medium">
-                    First Name <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Input
-                    id="firstName"
-                    placeholder="e.g. Jane"
-                    value={student.firstName}
-                    onChange={(e) => handleStudentChange('firstName', e.target.value)}
-                    required
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="parentLastName" className="font-medium">
+                          Last Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="parentLastName"
+                          placeholder="e.g. Doe"
+                          value={parent.lastName}
+                          onChange={(e) => handleParentChange('lastName', e.target.value)}
+                          className={`h-10 rounded-lg transition-all ${
+                            errors.parentLastName ? 'border-destructive focus:ring-destructive/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {errors.parentLastName && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.parentLastName}
+                          </p>
+                        )}
+                      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="middleName" className="text-sm font-medium">
-                    Middle Name{' '}
-                    <span className="text-muted-foreground text-xs font-normal">(optional)</span>
-                  </Label>
-                  <Input
-                    id="middleName"
-                    placeholder="e.g. Wanjiru"
-                    value={student.middleName}
-                    onChange={(e) => handleStudentChange('middleName', e.target.value)}
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="parentEmail" className="font-medium">
+                          Email Address <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="parentEmail"
+                          type="email"
+                          placeholder="e.g. john.doe@email.com"
+                          value={parent.email}
+                          onChange={(e) => handleParentChange('email', e.target.value)}
+                          className={`h-10 rounded-lg transition-all ${
+                            errors.email ? 'border-destructive focus:ring-destructive/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {errors.email && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.email}
+                          </p>
+                        )}
+                      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-sm font-medium">
-                    Last Name <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Input
-                    id="lastName"
-                    placeholder="e.g. Doe"
-                    value={student.lastName}
-                    onChange={(e) => handleStudentChange('lastName', e.target.value)}
-                    required
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="parentPhone" className="font-medium">
+                          Phone Number <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="parentPhone"
+                          type="tel"
+                          placeholder="e.g. 0712 345 678"
+                          value={parent.phoneNumber}
+                          onChange={(e) => handleParentChange('phoneNumber', e.target.value)}
+                          className={`h-10 rounded-lg transition-all ${
+                            errors.phoneNumber ? 'border-destructive focus:ring-destructive/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {errors.phoneNumber && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.phoneNumber}
+                          </p>
+                        )}
+                      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-sm font-medium">
-                    Gender <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Select value={student.gender} onValueChange={(v) => handleStudentChange('gender', v)}>
-                    <SelectTrigger id="gender" className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="relationship" className="font-medium">
+                          Relationship to Student <span className="text-destructive">*</span>
+                        </Label>
+                        <Select value={parent.relationship} onValueChange={(v) => handleParentChange('relationship', v)}>
+                          <SelectTrigger
+                            id="relationship"
+                            className={`h-10 rounded-lg ${errors.relationship ? 'border-destructive' : 'border-slate-200'}`}
+                          >
+                            <SelectValue placeholder="Select relationship" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-lg">
+                            {RELATIONSHIPS.map((rel) => (
+                              <SelectItem key={rel.value} value={rel.value}>
+                                {rel.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.relationship && (
+                          <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            {errors.relationship}
+                          </p>
+                        )}
+                      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth" className="text-sm font-medium">Date of Birth</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={student.dateOfBirth}
-                    onChange={(e) => handleStudentChange('dateOfBirth', e.target.value)}
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="nationalId" className="font-medium">
+                          National ID Number <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="nationalId"
+                          placeholder="e.g. 12345678"
+                          value={parent.nationalId}
+                          onChange={(e) => handleParentChange('nationalId', e.target.value)}
+                          className="h-10 rounded-lg border-slate-200"
+                        />
+                      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="admissionNumber" className="text-sm font-medium">Admission Number</Label>
-                  <Input
-                    id="admissionNumber"
-                    placeholder="e.g. ADM-2024-001"
-                    value={student.admissionNumber}
-                    onChange={(e) => handleStudentChange('admissionNumber', e.target.value)}
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="occupation" className="font-medium">
+                          Occupation <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="occupation"
+                          placeholder="e.g. Teacher, Engineer, Business Owner"
+                          value={parent.occupation}
+                          onChange={(e) => handleParentChange('occupation', e.target.value)}
+                          className="h-10 rounded-lg border-slate-200"
+                        />
+                      </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="gradeLevel" className="text-sm font-medium">Grade / Class</Label>
-                  <Select value={student.gradeLevel} onValueChange={(v) => handleStudentChange('gradeLevel', v)}>
-                    <SelectTrigger id="gradeLevel" className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20">
-                      <SelectValue placeholder="Select grade or class" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem value="Play Group">Play Group</SelectItem>
-                      <SelectItem value="PP1">Pre-Primary 1 (PP1)</SelectItem>
-                      <SelectItem value="PP2">Pre-Primary 2 (PP2)</SelectItem>
-                      <SelectItem value="Grade 1">Grade 1</SelectItem>
-                      <SelectItem value="Grade 2">Grade 2</SelectItem>
-                      <SelectItem value="Grade 3">Grade 3</SelectItem>
-                      <SelectItem value="Grade 4">Grade 4</SelectItem>
-                      <SelectItem value="Grade 5">Grade 5</SelectItem>
-                      <SelectItem value="Grade 6">Grade 6</SelectItem>
-                      <SelectItem value="Grade 7">Grade 7</SelectItem>
-                      <SelectItem value="Grade 8">Grade 8</SelectItem>
-                      <SelectItem value="Grade 9">Grade 9</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="address" className="font-medium">
+                          Address <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                        </Label>
+                        <Textarea
+                          id="address"
+                          placeholder="Street address, city, county…"
+                          value={parent.address}
+                          onChange={(e) => handleParentChange('address', e.target.value)}
+                          className="min-h-24 resize-none rounded-lg border-slate-200"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="specialNeeds" className="text-sm font-medium">
-                    Special Needs{' '}
-                    <span className="text-muted-foreground text-xs font-normal">(optional)</span>
-                  </Label>
-                  <Textarea
-                    id="specialNeeds"
-                    placeholder="Describe any special needs or accommodations required…"
-                    value={student.specialNeeds}
-                    onChange={(e) => handleStudentChange('specialNeeds', e.target.value)}
-                    className="min-h-24 resize-none rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {/* ── Health & Special Needs Tab ── */}
+            <TabsContent value="health" className="space-y-6 animate-in fade-in duration-300 m-0">
+              <Card className="overflow-hidden border-0 shadow-lg w-full">
+                <div className="h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+
+                <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <Pill className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Health & Special Needs</CardTitle>
+                      <CardDescription>Medical information and accommodations</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-8 pb-8 space-y-6">
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
+                    <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-700">
+                      This information helps us provide appropriate support and accommodations for your child.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5">
+                    <div className="space-y-2">
+                      <Label className="font-medium">Allergies</Label>
+                      <Textarea placeholder="List any known allergies or dietary restrictions…" className="min-h-20 rounded-lg border-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="font-medium">Medical Conditions</Label>
+                      <Textarea placeholder="Any chronic conditions, medications, or health concerns…" className="min-h-20 rounded-lg border-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="font-medium">Learning Disabilities</Label>
+                      <Textarea placeholder="Note any learning disabilities or special educational needs…" className="min-h-20 rounded-lg border-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="font-medium">Required Accommodations</Label>
+                      <Textarea placeholder="Describe any accommodations or support needed at school…" className="min-h-20 rounded-lg border-slate-200" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="font-medium">Emergency Medical Contact</Label>
+                      <Input placeholder="Name and phone number" className="h-10 rounded-lg border-slate-200" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ── Documents Tab ── */}
+            <TabsContent value="documents" className="space-y-6 animate-in fade-in duration-300 m-0">
+              <Card className="overflow-hidden border-0 shadow-lg w-full">
+                <div className="h-1 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500" />
+
+                <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-green-50 to-emerald-50/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <CardTitle>Documents & Certificates</CardTitle>
+                      <CardDescription>Upload required documents for enrollment</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-8 pb-8 space-y-6">
+                  <div className="rounded-lg bg-green-50 border border-green-200 p-4 flex items-start gap-3">
+                    <Info className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-green-700">
+                      Upload copies of important documents. All files are stored securely.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {['Birth Certificate', 'Vaccination Records', 'Transfer Certificate', 'Previous Academic Records'].map((doc) => (
+                      <div
+                        key={doc}
+                        className="flex items-center justify-between p-4 rounded-lg border border-dashed border-slate-300 hover:border-primary hover:bg-primary/5 transition-all duration-200 cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors flex-shrink-0">
+                            <FileText className="w-5 h-5 text-slate-400 group-hover:text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground text-sm">{doc}</p>
+                            <p className="text-xs text-muted-foreground">PDF, JPG, PNG • Max 10 MB</p>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="rounded-lg flex-shrink-0 ml-2">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
+      </div>
 
-        {/* ── Parent / Guardian Information Card ── */}
-        <div
-          className="animate-fade-in"
-          style={{ animationDelay: '160ms' }}
-        >
-          <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            {/* Colored top accent bar */}
-            <div className="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-primary" />
-
-            {/* Card Header */}
-            <div className="flex items-start gap-4 px-6 pt-6 pb-5 border-b border-slate-100">
-              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-foreground">Parent / Guardian Information</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Contact details for the student's parent or legal guardian
-                </p>
-              </div>
+      {/* ── Sticky Footer Actions ── */}
+      <div className="sticky bottom-0 bg-white border-t border-slate-200 shadow-lg">
+        <div className="w-full px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs sm:text-sm text-muted-foreground order-last sm:order-first">
+              <span className="text-destructive font-bold">*</span> Required fields
+            </p>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
+                className="flex-1 sm:flex-none h-10 rounded-lg border-slate-200 hover:border-slate-300"
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex-1 sm:flex-none h-10 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all"
+              >
+                {isSaving ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {studentId ? 'Update Student' : 'Register Student'}
+                  </>
+                )}
+              </Button>
             </div>
-
-            <CardContent className="px-6 pt-6 pb-8 space-y-6">
-
-              {/* Helper description */}
-              <div className="flex items-start gap-3 rounded-xl bg-blue-50 border border-blue-100 p-4">
-                <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-blue-700 leading-relaxed">
-                  A parent account will be created with these details for portal access. Login credentials will be sent to the provided email address.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentFirstName" className="text-sm font-medium">
-                    First Name <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Input
-                    id="parentFirstName"
-                    placeholder="e.g. John"
-                    value={parent.firstName}
-                    onChange={(e) => handleParentChange('firstName', e.target.value)}
-                    required
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentLastName" className="text-sm font-medium">
-                    Last Name <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Input
-                    id="parentLastName"
-                    placeholder="e.g. Doe"
-                    value={parent.lastName}
-                    onChange={(e) => handleParentChange('lastName', e.target.value)}
-                    required
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentEmail" className="text-sm font-medium">
-                    Email Address <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Input
-                    id="parentEmail"
-                    type="email"
-                    placeholder="e.g. john.doe@email.com"
-                    value={parent.email}
-                    onChange={(e) => handleParentChange('email', e.target.value)}
-                    required
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentPhone" className="text-sm font-medium">
-                    Phone Number <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Input
-                    id="parentPhone"
-                    type="tel"
-                    placeholder="e.g. 0712 345 678"
-                    value={parent.phoneNumber}
-                    onChange={(e) => handleParentChange('phoneNumber', e.target.value)}
-                    required
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="relationship" className="text-sm font-medium">
-                    Relationship to Student <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Select value={parent.relationship} onValueChange={(v) => handleParentChange('relationship', v)}>
-                    <SelectTrigger id="relationship" className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/20">
-                      <SelectValue placeholder="Select relationship" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem value="Father">Father</SelectItem>
-                      <SelectItem value="Mother">Mother</SelectItem>
-                      <SelectItem value="Guardian">Guardian</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="nationalId" className="text-sm font-medium">
-                    National ID Number{' '}
-                    <span className="text-muted-foreground text-xs font-normal">(optional)</span>
-                  </Label>
-                  <Input
-                    id="nationalId"
-                    placeholder="e.g. 12345678"
-                    value={parent.nationalId}
-                    onChange={(e) => handleParentChange('nationalId', e.target.value)}
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="occupation" className="text-sm font-medium">
-                    Occupation{' '}
-                    <span className="text-muted-foreground text-xs font-normal">(optional)</span>
-                  </Label>
-                  <Input
-                    id="occupation"
-                    placeholder="e.g. Teacher, Engineer, Business Owner"
-                    value={parent.occupation}
-                    onChange={(e) => handleParentChange('occupation', e.target.value)}
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address" className="text-sm font-medium">
-                    Address{' '}
-                    <span className="text-muted-foreground text-xs font-normal">(optional)</span>
-                  </Label>
-                  <Textarea
-                    id="address"
-                    placeholder="Street address, city, county…"
-                    value={parent.address}
-                    onChange={(e) => handleParentChange('address', e.target.value)}
-                    className="min-h-24 resize-none rounded-xl border-slate-200 bg-slate-50/50 transition-all duration-200 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-slate-300"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ── Form Actions ── */}
-        <div
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 pb-8 animate-fade-in"
-          style={{ animationDelay: '240ms' }}
-        >
-          <p className="text-sm text-muted-foreground order-last sm:order-first">
-            <span className="text-destructive">*</span> Required fields
-          </p>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBack}
-              className="flex-1 sm:flex-none h-11 rounded-xl border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="flex-1 sm:flex-none h-11 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 font-medium"
-            >
-              {isSaving ? (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Student
-                </>
-              )}
-            </Button>
           </div>
         </div>
-
       </div>
     </div>
   );

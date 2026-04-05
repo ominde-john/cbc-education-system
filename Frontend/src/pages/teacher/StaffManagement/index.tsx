@@ -7,6 +7,7 @@ import {
   updateTeacher, 
   deleteTeacher
 } from "@/lib/api/teacherApi";
+import { getBranches, type Branch } from "@/lib/api/schoolsApi";
 import { uploadStaffPhoto } from "./photoUtils";
 
 const camelToSnake = (obj: Record<string, any>): Record<string, any> => {
@@ -53,7 +54,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   const [fStaffType, setFStaffType] = useState("all");
   const [tab, setTab]           = useState<"general"|"teaching"|"contact">("general");
   const [toast, setToast]       = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{show: boolean, teacher: StaffMember | null}>({show: false, teacher: null});
+  const [deleting, setDeleting] = useState(false);
   const [slots, setSlots]       = useState<string[]>(["","","",""]);
+  const [branches, setBranches] = useState<Branch[]>([]);
 
 
   const empty: StaffMember = { 
@@ -88,8 +92,17 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   const filtered = staff.filter(s => {
     const q = query.toLowerCase();
     const matchesQuery = !q || `${s.firstName} ${s.lastName} ${s.idNumber} ${s.email} ${s.tscNumber}`.toLowerCase().includes(q);
-    const matchesStatus = fStatus === "all" || s.jobStatus === fStatus;
-    const matchesBranch = fBranch === "all" || s.branch === fBranch;
+    const matchesStatus = fStatus === "all" || (() => {
+      const status = s.jobStatus?.toLowerCase().trim();
+      const filterStatus = fStatus.toLowerCase().trim();
+      return status === filterStatus || 
+             (filterStatus === "active" && (status === "currently working" || (!status && s.isActive !== false))) ||
+             (filterStatus === "onleave" && status === "away");
+    })();
+    const normalizedBranch = s.branch?.trim() || "";
+    const matchesBranch =
+      fBranch === "all" ||
+      (fBranch === "no_branch" ? normalizedBranch === "" : normalizedBranch === fBranch);
     const matchesStaffType = fStaffType === "all" || s.staffType === fStaffType;
     
     return matchesQuery && matchesStatus && matchesBranch && matchesStaffType;
@@ -108,6 +121,14 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     setSelected(null); setForm(empty);
     setSlots(["","","",""]); setTab("general"); setView("form");
   };
+
+  const discardChanges = () => {
+    if (selected) {
+      setForm({...selected});
+      setSlots([...selected.teachingSubjects, "","",""].slice(0,4));
+      setTab("general");
+    }
+  };
   const refresh = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
@@ -124,9 +145,21 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
     }
   }, [isAuthenticated, refreshKey]);
 
+  const fetchBranches = useCallback(async () => {
+    if (!isAuthenticated || !schoolId) return;
+    try {
+      const branchesData = await getBranches(schoolId);
+      setBranches(branchesData);
+    } catch (err: any) {
+      console.error('Fetch branches error:', err);
+      // Don't show error toast for branches, just use empty array
+    }
+  }, [isAuthenticated, schoolId]);
+
   useEffect(() => {
     refresh();
-  }, [refresh, refreshKey]);
+    fetchBranches();
+  }, [refresh, fetchBranches]);
 
   const handleSave = async () => {
     // Validate for update only
@@ -223,14 +256,24 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
   };
 
 
-  const del = async (id: string) => {
+  const del = async (teacher: StaffMember) => {
+    setDeleteConfirm({show: true, teacher});
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.teacher) return;
+    
+    setDeleting(true);
     try {
-      await deleteTeacher(id);
+      await deleteTeacher(deleteConfirm.teacher.id);
       notify("Staff record deleted.");
       setRefreshKey(k => k + 1);
     } catch (err: any) {
       notify(`Delete failed: ${err.message}`);
       console.error('Delete error:', err);
+    } finally {
+      setDeleting(false);
+      setDeleteConfirm({show: false, teacher: null});
     }
   };
 
@@ -259,6 +302,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
       <ListView
         staff={staff}
         filtered={filtered}
+        branches={branches}
         query={query}
         fStatus={fStatus}
         fBranch={fBranch}
@@ -287,8 +331,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
         selected={selected}
         tab={tab}
         slots={slots}
+        branches={branches}
         onBack={() => setView("list")}
         onSave={handleSave}
+        onDiscard={discardChanges}
         onTabChange={setTab}
         onFieldChange={setF}
         onSlotsChange={setSlots}
@@ -329,7 +375,39 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ onBack }) => {
           joiningDate: s.hireDate,
           qualifications: s.qualifications
         } as any))}
+        onBack={() => setView("dashboard")}
       />
+    );
+  }
+
+  // Delete Confirmation Dialog
+  if (deleteConfirm.show && deleteConfirm.teacher) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to delete <strong>{deleteConfirm.teacher.firstName} {deleteConfirm.teacher.lastName}</strong>?
+            This action cannot be undone.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm({show: false, teacher: null})}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 

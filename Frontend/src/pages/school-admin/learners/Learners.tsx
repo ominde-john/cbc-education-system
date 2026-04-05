@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  RefreshCw,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -43,8 +44,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
+import { getLearners } from '@/lib/api/learnersApi';
+import type { Learner } from './Learners';
 
 interface ParentInfo {
   first_name: string;
@@ -74,6 +85,28 @@ interface Learner {
   learner_parents: LearnerParent[] | null;
 }
 
+interface FetchOptions {
+  search?: string;
+  grade_level?: string;
+  gender?: string;
+  is_active?: string;
+  page?: number;
+  pageSize?: number;
+  retryCount?: number;
+}
+
+interface ApiResponse {
+  students: Learner[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+interface CacheEntry {
+  data: ApiResponse;
+  timestamp: number;
+}
+
 const GRADES = [
   'PP1', 'PP2',
   'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4',
@@ -82,6 +115,9 @@ const GRADES = [
 ];
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 1000; // 1 second
 
 const getPrimaryParent = (learnerParents: Learner['learner_parents']): ParentInfo | null => {
   if (!learnerParents || learnerParents.length === 0) return null;
@@ -91,12 +127,17 @@ const getPrimaryParent = (learnerParents: Learner['learner_parents']): ParentInf
 const getInitials = (firstName: string, lastName: string) =>
   `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
-const formatDateOfBirth = (dob: string): string =>
-  new Date(dob).toLocaleDateString('en-KE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+const formatDateOfBirth = (dob: string): string => {
+  try {
+    return new Date(dob).toLocaleDateString('en-KE', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return 'Invalid date';
+  }
+};
 
 const getPaginationPages = (currentPage: number, totalPages: number): (number | '…')[] => {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
@@ -150,9 +191,73 @@ const exportToCsv = (students: Learner[]) => {
   URL.revokeObjectURL(url);
 };
 
+// API Cache Manager
+class ApiCacheManager {
+  private cache = new Map<string, CacheEntry>();
+
+  generateKey(options: FetchOptions): string {
+    return JSON.stringify({
+      search: options.search || '',
+      grade_level: options.grade_level || '',
+      gender: options.gender || '',
+      is_active: options.is_active || '',
+      page: options.page || 1,
+      pageSize: options.pageSize || 1000,
+    });
+  }
+
+  get(options: FetchOptions): ApiResponse | null {
+    const key = this.generateKey(options);
+    const entry = this.cache.get(key);
+
+    if (entry && Date.now() - entry.timestamp < CACHE_DURATION) {
+      return entry.data;
+    }
+
+    if (entry) {
+      this.cache.delete(key);
+    }
+
+    return null;
+  }
+
+  set(options: FetchOptions, data: ApiResponse): void {
+    const key = this.generateKey(options);
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const apiCache = new ApiCacheManager();
+
+// Retry logic with exponential backoff
+const retryWithBackoff = async (
+  fn: () => Promise<ApiResponse>,
+  attempt = 0
+): Promise<ApiResponse> => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (attempt < RETRY_ATTEMPTS) {
+      const delay = RETRY_DELAY * Math.pow(2, attempt);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return retryWithBackoff(fn, attempt + 1);
+    }
+    throw error;
+  }
+};
+
 const StudentManagement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [students, setStudents] = useState<Learner[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,48 +268,102 @@ const StudentManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [retrying, setRetrying] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchStudents = useCallback(async () => {
+  const fetchStudents = useCallback(async (forceRefresh = false) => {
     try {
+      // Cancel previous request if still pending
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
       setLoading(true);
       setError(null);
+      setRetrying(false);
 
       if (!user?.schoolId) {
+        setError('School ID not found. Please login again.');
+        setLoading(false);
         return;
       }
 
-      const { data, error: fetchError } = await supabase
-        .from('learners')
-        .select(`
-          *,
-          learner_parents (
-            parents (
-              users (
-                first_name,
-                last_name,
-                phone_number
-              )
-            )
-          )
-        `)
-        .eq('school_id', user.schoolId)
-        .order('created_at', { ascending: false });
+      const fetchOptions: FetchOptions = {
+        search: searchTerm || undefined,
+        grade_level: selectedGrade !== 'all' ? selectedGrade : undefined,
+        gender: selectedGender !== 'all' ? selectedGender : undefined,
+        is_active: selectedStatus !== 'all' ? (selectedStatus === 'active' ? 'true' : 'false') : undefined,
+        page: 1,
+        pageSize: 1000,
+      };
 
-      if (fetchError) {
-        throw fetchError;
+      // Check cache if not forcing refresh
+      if (!forceRefresh) {
+        const cachedData = apiCache.get(fetchOptions);
+        if (cachedData) {
+          setStudents(cachedData.students);
+          setLastUpdated(new Date());
+          setLoading(false);
+          return;
+        }
       }
 
-      setStudents(data || []);
+      // Fetch with retry logic
+      const response = await retryWithBackoff(() =>
+        getLearners({
+          ...fetchOptions,
+          signal: abortControllerRef.current.signal,
+        })
+      );
+
+      // Validate response
+      if (!response.students || !Array.isArray(response.students)) {
+        throw new Error('Invalid response format from server');
+      }
+
+      setStudents(response.students);
+      apiCache.set(fetchOptions, response);
+      setLastUpdated(new Date());
+
+      toast({
+        title: 'Success',
+        description: `Loaded ${response.students.length} learners`,
+        duration: 2000,
+      });
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('Fetch request cancelled');
+        return;
+      }
+
       console.error('Error fetching students:', err);
-      setError('Failed to load students. Please try again.');
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to load students. Please try again.';
+      setError(errorMessage);
+
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
+      setRetrying(false);
     }
-  }, [user?.schoolId]);
+  }, [user?.schoolId, searchTerm, selectedGrade, selectedStatus, selectedGender, toast]);
 
   useEffect(() => {
     void fetchStudents();
+
+    // Cleanup on unmount
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchStudents]);
 
   // Reset to page 1 whenever filters change
@@ -212,22 +371,23 @@ const StudentManagement = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedGrade, selectedStatus, selectedGender, pageSize]);
 
-  const filteredStudents = useMemo(() =>
-    students.filter((student) => {
-      const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
-      const matchesSearch =
-        !searchTerm ||
-        fullName.includes(searchTerm.toLowerCase()) ||
-        student.admission_number.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGrade = selectedGrade === 'all' || student.grade_level === selectedGrade;
-      const matchesStatus =
-        selectedStatus === 'all' ||
-        (selectedStatus === 'active' && student.is_active) ||
-        (selectedStatus === 'inactive' && !student.is_active);
-      const matchesGender =
-        selectedGender === 'all' || student.gender.toLowerCase() === selectedGender;
-      return matchesSearch && matchesGrade && matchesStatus && matchesGender;
-    }),
+  const filteredStudents = useMemo(
+    () =>
+      students.filter((student) => {
+        const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
+        const matchesSearch =
+          !searchTerm ||
+          fullName.includes(searchTerm.toLowerCase()) ||
+          student.admission_number.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesGrade = selectedGrade === 'all' || student.grade_level === selectedGrade;
+        const matchesStatus =
+          selectedStatus === 'all' ||
+          (selectedStatus === 'active' && student.is_active) ||
+          (selectedStatus === 'inactive' && !student.is_active);
+        const matchesGender =
+          selectedGender === 'all' || student.gender.toLowerCase() === selectedGender;
+        return matchesSearch && matchesGrade && matchesStatus && matchesGender;
+      }),
     [students, searchTerm, selectedGrade, selectedStatus, selectedGender]
   );
 
@@ -254,26 +414,51 @@ const StudentManagement = () => {
     setSelectedGender('all');
   };
 
-  if (loading) {
+  const handleRefresh = async () => {
+    setRetrying(true);
+    await fetchStudents(true);
+  };
+
+  if (loading && !students.length) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
           <p className="mt-4 text-muted-foreground">Loading students...</p>
+          <p className="text-xs text-muted-foreground mt-2">This may take a moment...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !students.length) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="w-8 h-8 mx-auto text-destructive" />
-          <p className="mt-4 text-destructive">{error}</p>
-          <Button onClick={() => void fetchStudents()} className="mt-4" variant="outline">
-            Try Again
-          </Button>
+        <div className="text-center max-w-sm">
+          <AlertCircle className="w-10 h-10 mx-auto text-destructive mb-3" />
+          <p className="text-destructive font-semibold mb-2">Unable to Load Students</p>
+          <p className="text-muted-foreground text-sm mb-4">{error}</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => void handleRefresh()} disabled={retrying} variant="default">
+              {retrying ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Retrying...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => navigate(-1)}
+              variant="outline"
+            >
+              Go Back
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -288,8 +473,22 @@ const StudentManagement = () => {
           <p className="text-muted-foreground mt-1">
             View and manage every enrolled learner across all grades and classes.
           </p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Last updated: {lastUpdated.toLocaleTimeString('en-KE')}
+            </p>
+          )}
         </div>
         <div className="flex gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => void handleRefresh()}
+            disabled={loading || retrying}
+            title="Refresh data"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading || retrying ? 'animate-spin' : ''}`} />
+          </Button>
           <Button
             variant="outline"
             onClick={() => exportToCsv(filteredStudents)}
@@ -304,6 +503,24 @@ const StudentManagement = () => {
           </Button>
         </div>
       </div>
+
+      {/* Error Alert for partial load */}
+      {error && students.length > 0 && (
+        <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 flex gap-2">
+          <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-yellow-700 dark:text-yellow-400">{error}</p>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => void handleRefresh()}
+            disabled={loading || retrying}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -373,6 +590,7 @@ const StudentManagement = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 pr-9"
+                disabled={loading}
               />
               {searchTerm && (
                 <button
@@ -386,7 +604,7 @@ const StudentManagement = () => {
             </div>
 
             {/* Grade filter */}
-            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+            <Select value={selectedGrade} onValueChange={setSelectedGrade} disabled={loading}>
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="All Grades" />
               </SelectTrigger>
@@ -399,7 +617,7 @@ const StudentManagement = () => {
             </Select>
 
             {/* Gender filter */}
-            <Select value={selectedGender} onValueChange={setSelectedGender}>
+            <Select value={selectedGender} onValueChange={setSelectedGender} disabled={loading}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Gender" />
               </SelectTrigger>
@@ -411,7 +629,7 @@ const StudentManagement = () => {
             </Select>
 
             {/* Status filter */}
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus} disabled={loading}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -423,7 +641,13 @@ const StudentManagement = () => {
             </Select>
 
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0 text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="shrink-0 text-muted-foreground"
+                disabled={loading}
+              >
                 <X className="h-4 w-4 mr-1" />
                 Clear
               </Button>
@@ -449,6 +673,7 @@ const StudentManagement = () => {
             <Select
               value={String(pageSize)}
               onValueChange={(v) => setPageSize(Number(v))}
+              disabled={loading}
             >
               <SelectTrigger className="w-28">
                 <SelectValue />
@@ -462,6 +687,11 @@ const StudentManagement = () => {
           </div>
         </CardHeader>
         <CardContent className="p-0">
+          {loading && students.length > 0 && (
+            <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 flex items-center justify-center rounded-lg">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
           {pagedStudents.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
@@ -637,7 +867,7 @@ const StudentManagement = () => {
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || loading}
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
@@ -653,6 +883,7 @@ const StudentManagement = () => {
                   size="sm"
                   className="w-8 p-0"
                   onClick={() => setCurrentPage(item as number)}
+                  disabled={loading}
                 >
                   {item}
                 </Button>
@@ -662,7 +893,7 @@ const StudentManagement = () => {
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || loading}
             >
               Next
               <ChevronRight className="h-4 w-4" />

@@ -49,6 +49,10 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // ==================== ROUTES ====================
+
+// Learners API routes
+app.use('/api/v1/learners', require('./routes/learner.routes'));
+
 // API Versioning
 app.use('/api/v1/auth', require('./routes/auth.routes'));
 app.use('/api/v1/classes', require('./routes/class.routes'));

@@ -119,7 +119,7 @@ export const backendToStaffMember = (backend: any): StaffMember => {
     dateJoined: backend.date_joined || '',
     contractStart: backend.contract_start || '',
     contractEnd: backend.contract_end || '',
-    jobStatus: backend.job_status || 'active',
+    jobStatus: (backend.job_status && backend.job_status.trim()) ? backend.job_status : 'active',
     staffType: backend.staff_type || 'teaching',
     salary: Number(backend.salary) || 0,
     teachingSubjects: backend.subjects_taught || [],

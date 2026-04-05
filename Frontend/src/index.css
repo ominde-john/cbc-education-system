@@ -82,16 +82,23 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
 
-@layer base {
+  /* FIX: Prevent scrollbar layout shift - reserve space for scrollbar */
+  html {
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+  }
+
+  /* FIX: Remove global leading-relaxed that causes bending */
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply leading-normal;
+    margin: 0;
+    padding: 0;
   }
-  
-  * {
-    @apply leading-relaxed;
-  }
+
+  /* IMPORTANT: Don't apply leading-relaxed to ALL elements */
+  /* Remove: * { @apply leading-relaxed; } */
 }
 
 @layer base {
@@ -127,6 +134,13 @@
 
   .role-btn-selected {
     @apply bg-[hsl(var(--role-selected))] border-primary shadow-md;
+  }
+
+  /* Typography - apply leading where actually needed */
+  .prose, 
+  article,
+  .content {
+    @apply leading-relaxed;
   }
 }
 
