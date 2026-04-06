@@ -662,6 +662,8 @@ const deleteLearner = asyncHandler(async (req, res) => {
 // 6. POST /api/v1/learners/:id/enroll
 //    Enroll learner in a class
 // =============================================================================
+// Only update the enrollLearner function - paste this to replace lines 665-834
+
 const enrollLearner = asyncHandler(async (req, res) => {
   console.log('[DEBUG enrollLearner] START:', { 
     learnerId: req.params.id, 
@@ -773,6 +775,7 @@ const enrollLearner = asyncHandler(async (req, res) => {
         .single();
 
       if (error) {
+        console.error('[DEBUG enrollLearner] Re-enroll error:', error);
         return res.status(500).json({
           success: false,
           message: 'Failed to re-enroll learner',
@@ -780,6 +783,7 @@ const enrollLearner = asyncHandler(async (req, res) => {
         });
       }
 
+      console.log('[DEBUG enrollLearner] Re-enrolled successfully:', enrollment);
       return res.json({
         success: true,
         message: 'Learner re-enrolled successfully',
@@ -798,41 +802,47 @@ const enrollLearner = asyncHandler(async (req, res) => {
       .limit(1)
       .single();
     
+    console.log('[DEBUG enrollLearner] Current academic year:', currentYear);
     if (currentYear) {
       finalAcademicYearId = currentYear.id;
     }
   }
 
+  // ✅ FIX: Add school_id to enrollment insert
+const enrollmentPayload = {
+  learner_id: id,
+  class_id,
+  school_id: school_id || learner.school_id,
+  academic_year_id: finalAcademicYearId,
+  enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
+  status: 'enrolled'
+};
+  console.log('[DEBUG enrollLearner] Creating enrollment with payload:', enrollmentPayload);
+
   // Create new enrollment
   const { data: enrollment, error } = await supabase
     .from('learner_enrollments')
-    .insert({
-      learner_id: id,
-      class_id,
-      school_id: school_id,
-      academic_year_id: finalAcademicYearId,
-      term_id: term_id || null,
-      enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
-      status: 'enrolled'
-    })
+    .insert(enrollmentPayload)
     .select()
     .single();
 
   if (error) {
+    console.error('[DEBUG enrollLearner] Insert error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to enroll learner',
-      error: error.message
+      error: error.message,
+      details: error
     });
   }
 
+  console.log('[DEBUG enrollLearner] Success:', enrollment);
   res.status(201).json({
     success: true,
     message: 'Learner enrolled successfully',
     data: enrollment
   });
 });
-
 // =============================================================================
 // 7. GET /api/v1/learners/:id/enrollments
 //    Get learner enrollment history
