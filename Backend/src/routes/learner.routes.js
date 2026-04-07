@@ -1,6 +1,6 @@
-const express  = require('express');
-const multer   = require('multer');
-const router   = express.Router();
+const express = require('express');
+const multer = require('multer');
+const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const {
   registerLearner,
@@ -41,27 +41,31 @@ const csvUpload = multer({
   },
 });
 
-// All learner routes require authentication
+// ✅ All learner routes require authentication
 router.use(authenticate);
 
-// POST /api/v1/learners/upload-photo
-router.post('/upload-photo', authenticate, photoUpload.single('file'), uploadLearnerPhoto);
+// =============================================================================
+// ✅ SPECIAL ROUTES (Must come FIRST to avoid conflicts with /:id)
+// =============================================================================
 
-// =============================================================================
-// Bulk Operations
-// =============================================================================
+// ✅ POST /api/v1/learners/upload-photo
+// Uses your existing uploadLearnerPhoto handler with sharp optimization
+router.post('/upload-photo', photoUpload.single('file'), uploadLearnerPhoto);
+
 // POST /api/v1/learners/bulk-import
-router.post('/bulk-import', authenticate, csvUpload.single('file'), bulkImportLearners);
+router.post('/bulk-import', csvUpload.single('file'), bulkImportLearners);
 
 // =============================================================================
 // Basic CRUD
 // =============================================================================
+
 // POST /api/v1/learners
 router.post('/', registerLearner);
 
 // GET /api/v1/learners
 router.get('/', listLearners);
 
+// ✅ Parameterized routes come LAST
 // GET /api/v1/learners/:id
 router.get('/:id', getLearner);
 
@@ -74,6 +78,7 @@ router.delete('/:id', deleteLearner);
 // =============================================================================
 // Enrollment Management
 // =============================================================================
+
 // POST /api/v1/learners/:id/enroll
 router.post('/:id/enroll', enrollLearner);
 

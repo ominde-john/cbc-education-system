@@ -9,6 +9,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const asyncHandler = require('express-async-handler');
 const csv = require('csv-parse/sync');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // Supabase service-role client (bypasses RLS for admin operations)
 const supabase = createClient(
@@ -39,7 +41,7 @@ const getSchoolId = (req) => {
 
 // =============================================================================
 // 1. POST /api/v1/learners
-//    Register a new learner
+//    Register a new learner with ALL fields + create parent
 // =============================================================================
 const registerLearner = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
@@ -50,11 +52,30 @@ const registerLearner = asyncHandler(async (req, res) => {
   }
 
   const {
-    first_name, last_name, middle_name,
-    admission_number, date_of_birth, gender,
-    email, photo_url, special_needs,
-    parent_id, birth_certificate_number,
-    nemis_number, admission_date, nationality
+    // Basic info
+    first_name,
+    last_name,
+    middle_name,
+    admission_number,
+    date_of_birth,
+    gender,
+    email,
+    // Government & CBC
+    birth_certificate_number,
+    nemis_number,
+    nationality,
+    // Health info
+    special_needs,
+    medical_conditions,
+    allergies,
+    // Academic info
+    previous_school,
+    admission_date,
+    academic_year,
+    // Photo
+    profile_photo,
+    // Parent info
+    parent_info,
   } = req.body;
 
   // Validation
@@ -126,27 +147,33 @@ const registerLearner = asyncHandler(async (req, res) => {
     }
   }
 
-  // Create learner with all columns
+  // ✅ Create learner with ALL new fields
+  const learnerPayload = {
+    school_id,
+    first_name: first_name.trim(),
+    last_name: last_name.trim(),
+    middle_name: middle_name?.trim() || null,
+    admission_number,
+    date_of_birth,
+    gender: gender.toLowerCase(),
+    email: email?.trim() || null,
+    profile_photo: profile_photo || null,
+    special_needs: special_needs || null,
+    medical_conditions: medical_conditions || null,
+    allergies: allergies || null,
+    birth_certificate_number: birth_certificate_number?.trim() || null,
+    nemis_number: nemis_number?.trim() || null,
+    nationality: nationality || 'Kenyan',
+    previous_school: previous_school || null,
+    admission_date: admission_date || new Date().toISOString().split('T')[0],
+    academic_year: academic_year || new Date().getFullYear().toString(),
+    is_active: true,
+    created_by: req.user.id  // ✅ ADD THIS
+  };
+
   const { data: learner, error } = await supabase
     .from('learners')
-    .insert({
-      school_id,
-      first_name: first_name.trim(),
-      last_name: last_name.trim(),
-      middle_name: middle_name?.trim() || null,
-      admission_number,
-      date_of_birth,
-      gender: gender.toLowerCase(),
-      email: email?.trim() || null,
-      photo_url: photo_url || null,
-      special_needs: special_needs || null,
-      parent_id: parent_id || null,
-      birth_certificate_number: birth_certificate_number?.trim() || null,
-      nemis_number: nemis_number?.trim() || null,
-      admission_date: admission_date || new Date().toISOString().split('T')[0],
-      nationality: nationality || 'Kenyan',
-      is_active: true
-    })
+    .insert(learnerPayload)
     .select()
     .single();
 
@@ -158,16 +185,127 @@ const registerLearner = asyncHandler(async (req, res) => {
     });
   }
 
+  // ✅ Create parent if parent_info provided
+  let parentInfo = null;
+  if (parent_info && parent_info.email) {
+    try {
+      // Check if parent already exists with this email
+      const { data: existingParent } = await supabase
+        .from('parents')
+        .select('id, first_name, last_name, email')
+        .eq('email', parent_info.email.toLowerCase().trim())
+        .eq('school_id', school_id)
+        .maybeSingle();
+
+      if (existingParent) {
+        parentInfo = existingParent;
+        
+        // Link existing parent to learner
+        const { data: existingLink } = await supabase
+          .from('learner_parents')
+          .select('id')
+          .eq('parent_id', existingParent.id)
+          .eq('learner_id', learner.id)
+          .maybeSingle();
+
+        if (!existingLink) {
+          await supabase
+            .from('learner_parents')
+            .insert({
+              learner_id: learner.id,
+              parent_id: existingParent.id,
+              relationship: parent_info.relationship || 'guardian',
+              is_primary: true
+            });
+
+          await supabase
+            .from('learners')
+            .update({ parent_id: existingParent.id })
+            .eq('id', learner.id);
+        }
+      } else {
+        // ✅ CREATE USER FIRST
+        const tempPassword = crypto.randomBytes(12).toString('hex');
+        const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+        const { data: newUser, error: userError } = await supabase
+          .from('users')
+          .insert({
+            email: parent_info.email.toLowerCase().trim(),
+            password_hash: passwordHash,
+            first_name: parent_info.first_name,
+            last_name: parent_info.last_name,
+            phone_number: parent_info.phone_number || null,
+            role: 'parent',
+            status: 'pending',
+            email_verified: false,
+            school_id,
+            is_active: true
+          })
+          .select('id')
+          .single();
+
+        if (userError) {
+          console.warn('Failed to create parent user:', userError);
+          return;
+        }
+
+        // ✅ CREATE PARENT WITH USER_ID
+        const { data: parentRecord, error: parentError } = await supabase
+          .from('parents')
+          .insert({
+            user_id: newUser.id, // ✅ THIS IS REQUIRED
+            school_id,
+            first_name: parent_info.first_name,
+            last_name: parent_info.last_name,
+            email: parent_info.email.toLowerCase().trim(),
+            phone_number: parent_info.phone_number || null,
+            national_id: parent_info.national_id || null,
+            occupation: parent_info.occupation || null,
+            relationship: parent_info.relationship || 'guardian',
+            is_active: true
+          })
+          .select()
+          .single();
+
+        if (!parentError && parentRecord) {
+          parentInfo = parentRecord;
+
+          // Link parent to learner
+          await supabase
+            .from('learner_parents')
+            .insert({
+              learner_id: learner.id,
+              parent_id: parentRecord.id,
+              relationship: parent_info.relationship || 'guardian',
+              is_primary: true
+            });
+
+          await supabase
+            .from('learners')
+            .update({ parent_id: parentRecord.id })
+            .eq('id', learner.id);
+        }
+      }
+    } catch (error) {
+      console.warn('Error handling parent creation:', error);
+    }
+  }
+
   res.status(201).json({
     success: true,
     message: 'Learner registered successfully',
-    data: learner
+    data: {
+      ...learner,
+      parent: parentInfo
+    }
   });
 });
 
+
 // =============================================================================
 // 2. GET /api/v1/learners
-//    List learners for the school with pagination and filtering
+//    List learners with pagination and filtering - UPDATED with new fields
 // =============================================================================
 const listLearners = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
@@ -181,10 +319,15 @@ const listLearners = asyncHandler(async (req, res) => {
   }
 
   const {
-    page = 1, limit = 20,
-    search, gender, nationality, grade_level,
-    is_active, has_parent,
-    sort_by = 'first_name', sort_order = 'asc'
+    page = 1,
+    limit = 20,
+    search,
+    gender,
+    nationality,
+    is_active,
+    has_parent,
+    sort_by = 'first_name',
+    sort_order = 'asc'
   } = req.query;
 
   const pageNum = parseInt(page);
@@ -192,10 +335,11 @@ const listLearners = asyncHandler(async (req, res) => {
   const from = (pageNum - 1) * limitNum;
   const to = from + limitNum - 1;
 
-  // Build query with all columns
+  // ✅ Build query with ALL columns including new fields
   let query = supabase
     .from('learners')
-    .select(`
+    .select(
+      `
       id,
       admission_number,
       first_name,
@@ -204,17 +348,23 @@ const listLearners = asyncHandler(async (req, res) => {
       date_of_birth,
       gender,
       email,
-      photo_url,
+      profile_photo,
       special_needs,
+      medical_conditions,
+      allergies,
       is_active,
       parent_id,
       birth_certificate_number,
       nemis_number,
-      admission_date,
       nationality,
+      previous_school,
+      admission_date,
+      academic_year,
       created_at,
       updated_at
-    `, { count: 'exact' });
+    `,
+      { count: 'exact' }
+    );
 
   // Apply school filter (skip for super_admin)
   if (role !== 'super_admin' && school_id) {
@@ -248,11 +398,6 @@ const listLearners = asyncHandler(async (req, res) => {
     );
   }
 
-  // NEW: Filter by grade_level (derived from current enrollment class) - client-side since complex JOIN
-  if (grade_level) {
-    console.log(`Grade level filter: ${grade_level} - Note: Applied client-side due to Supabase query complexity`);
-  }
-
   // Add sorting
   const validSort = ['first_name', 'last_name', 'admission_number', 'created_at', 'nemis_number'];
   const sortField = validSort.includes(sort_by) ? sort_by : 'first_name';
@@ -272,32 +417,45 @@ const listLearners = asyncHandler(async (req, res) => {
     });
   }
 
-  // Get parent info for learners that have parent_id
-  const learnerIdsWithParent = (learners || []).filter(l => l.parent_id).map(l => l.parent_id);
+  // Get parent info for learners that have parent relationships
+  const learnerIds = (learners || []).map((l) => l.id);
   let parentMap = {};
 
-  if (learnerIdsWithParent.length > 0) {
-    const { data: parents } = await supabase
-      .from('parents')
-      .select('id, first_name, last_name, email, phone_number, relationship')
-      .in('id', learnerIdsWithParent);
+  if (learnerIds.length > 0) {
+    const { data: parentLinks } = await supabase
+      .from('learner_parents')
+      .select(
+        `
+        learner_id,
+        parents (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone_number,
+          relationship,
+          occupation
+        )
+      `
+      )
+      .in('learner_id', learnerIds);
 
-    if (parents) {
-      parentMap = parents.reduce((acc, parent) => {
-        acc[parent.id] = parent;
+    if (parentLinks) {
+      parentMap = parentLinks.reduce((acc, link) => {
+        acc[link.learner_id] = link.parents;
         return acc;
       }, {});
     }
   }
 
   // Get current enrollment for each learner
-  const learnerIds = (learners || []).map(l => l.id);
   let enrollmentMap = {};
 
   if (learnerIds.length > 0) {
     const { data: enrollments } = await supabase
       .from('learner_enrollments')
-      .select(`
+      .select(
+        `
         learner_id,
         class_id,
         status,
@@ -306,7 +464,8 @@ const listLearners = asyncHandler(async (req, res) => {
           grade_level,
           stream_name
         )
-      `)
+      `
+      )
       .in('learner_id', learnerIds)
       .eq('status', 'enrolled');
 
@@ -323,10 +482,10 @@ const listLearners = asyncHandler(async (req, res) => {
   }
 
   // Enrich learners with parent and enrollment data
-  const enrichedLearners = (learners || []).map(learner => ({
+  const enrichedLearners = (learners || []).map((learner) => ({
     ...learner,
     current_class: enrollmentMap[learner.id] || null,
-    parent: learner.parent_id ? parentMap[learner.parent_id] || null : null
+    parent: parentMap[learner.id] || null
   }));
 
   res.json({
@@ -343,17 +502,18 @@ const listLearners = asyncHandler(async (req, res) => {
 
 // =============================================================================
 // 3. GET /api/v1/learners/:id
-//    Get learner details with enrollments and parent
+//    Get learner details - UPDATED with new fields and parent relationship
 // =============================================================================
 const getLearner = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
   const { role } = req.user;
   const { id } = req.params;
 
-  // Build query with all columns
+  // ✅ Build query with ALL new columns
   let query = supabase
     .from('learners')
-    .select(`
+    .select(
+      `
       id,
       admission_number,
       first_name,
@@ -362,17 +522,22 @@ const getLearner = asyncHandler(async (req, res) => {
       date_of_birth,
       gender,
       email,
-      photo_url,
+      profile_photo,
       special_needs,
+      medical_conditions,
+      allergies,
       is_active,
       parent_id,
       birth_certificate_number,
       nemis_number,
-      admission_date,
       nationality,
+      previous_school,
+      admission_date,
+      academic_year,
       created_at,
       updated_at
-    `)
+    `
+    )
     .eq('id', id);
 
   // Apply school filter (skip for super_admin)
@@ -389,21 +554,50 @@ const getLearner = asyncHandler(async (req, res) => {
     });
   }
 
-  // Get parent info if exists
+  // ✅ Get parent info via learner_parents relationship table
   let parentInfo = null;
-  if (learner.parent_id) {
-    const { data: parent } = await supabase
-      .from('parents')
-      .select('id, first_name, last_name, email, phone_number, relationship, occupation')
-      .eq('id', learner.parent_id)
-      .single();
-    parentInfo = parent;
+  const { data: parentRelationships } = await supabase
+    .from('learner_parents')
+    .select(
+      `
+      id,
+      relationship,
+      is_primary,
+      parents (
+        id,
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        national_id,
+        occupation,
+        relationship,
+        users (
+          id,
+          email,
+          first_name,
+          last_name,
+          phone_number
+        )
+      )
+    `
+    )
+    .eq('learner_id', id)
+    .order('is_primary', { ascending: false });
+
+  if (parentRelationships && parentRelationships.length > 0) {
+    const primaryParent = parentRelationships.find((p) => p.is_primary) || parentRelationships[0];
+    parentInfo = {
+      ...primaryParent.parents,
+      relationship: primaryParent.relationship || primaryParent.parents?.relationship
+    };
   }
 
   // Get enrollment history
   const { data: enrollments } = await supabase
     .from('learner_enrollments')
-    .select(`
+    .select(
+      `
       id,
       class_id,
       academic_year_id,
@@ -413,12 +607,13 @@ const getLearner = asyncHandler(async (req, res) => {
       status,
       exit_reason,
       created_at
-    `)
+    `
+    )
     .eq('learner_id', id)
     .order('enrollment_date', { ascending: false });
 
   // Get class details for each enrollment
-  const classIds = (enrollments || []).map(e => e.class_id).filter(Boolean);
+  const classIds = (enrollments || []).map((e) => e.class_id).filter(Boolean);
   let classMap = {};
 
   if (classIds.length > 0) {
@@ -436,7 +631,7 @@ const getLearner = asyncHandler(async (req, res) => {
   }
 
   // Enrich enrollments with class data
-  const enrichedEnrollments = (enrollments || []).map(enrollment => ({
+  const enrichedEnrollments = (enrollments || []).map((enrollment) => ({
     ...enrollment,
     class: classMap[enrollment.class_id] || null
   }));
@@ -445,16 +640,17 @@ const getLearner = asyncHandler(async (req, res) => {
     success: true,
     data: {
       ...learner,
-      parent: parentInfo,
+      learner_parents: parentRelationships || [],
+      parents: parentInfo, // For compatibility with old structure
       enrollments: enrichedEnrollments,
-      current_enrollment: enrichedEnrollments.find(e => e.status === 'enrolled') || null
+      current_enrollment: enrichedEnrollments.find((e) => e.status === 'enrolled') || null
     }
   });
 });
 
 // =============================================================================
 // 4. PUT /api/v1/learners/:id
-//    Update learner details
+//    Update learner - FIXED to create parent with user account
 // =============================================================================
 const updateLearner = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
@@ -466,13 +662,17 @@ const updateLearner = asyncHandler(async (req, res) => {
   }
 
   const updates = req.body;
+  
+  // ✅ EXTRACT parent_info BEFORE deleting it
+  const parent_info = updates.parent_info;
+  delete updates.parent_info;
 
   // Remove fields that shouldn't be updated directly
   delete updates.id;
   delete updates.school_id;
   delete updates.created_at;
   delete updates.created_by;
-  delete updates.updated_by;
+  delete updates.deleted_by;
 
   // Validate gender if provided
   if (updates.gender && !GENDERS.includes(updates.gender.toLowerCase())) {
@@ -573,6 +773,7 @@ const updateLearner = asyncHandler(async (req, res) => {
   const { data: learner, error } = await updateQuery.select().single();
 
   if (error) {
+    console.error('[updateLearner] Update error:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update learner',
@@ -587,12 +788,182 @@ const updateLearner = asyncHandler(async (req, res) => {
     });
   }
 
+  // ✅ HANDLE PARENT UPDATE/CREATE with user account
+  let parentInfo = null;
+  if (parent_info && parent_info.email) {
+    try {
+      // Check if parent exists with this email in this school
+      const { data: existingParent } = await supabase
+        .from('parents')
+        .select('id, first_name, last_name, email, user_id')
+        .eq('email', parent_info.email.toLowerCase().trim())
+        .eq('school_id', school_id)
+        .maybeSingle();
+
+      if (existingParent) {
+        parentInfo = existingParent;
+        console.log('[updateLearner] Found existing parent:', existingParent.id);
+
+        // Check if learner is already linked to this parent
+        const { data: existingLink } = await supabase
+          .from('learner_parents')
+          .select('id')
+          .eq('parent_id', existingParent.id)
+          .eq('learner_id', id)
+          .maybeSingle();
+
+        // If not linked, link them
+        if (!existingLink) {
+          await supabase
+            .from('learner_parents')
+            .insert({
+              learner_id: id,
+              parent_id: existingParent.id,
+              relationship: parent_info.relationship || 'guardian',
+              is_primary: true
+            });
+
+          // Update learner's parent_id if not set
+          if (!learner.parent_id) {
+            await supabase
+              .from('learners')
+              .update({ parent_id: existingParent.id })
+              .eq('id', id);
+          }
+        }
+      } else {
+        // ✅ CREATE NEW PARENT WITH USER ACCOUNT
+        console.log('[updateLearner] Creating new parent account');
+
+        // Generate temporary password for user account
+        const tempPassword = crypto.randomBytes(12).toString('hex');
+        const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+        // Create user first
+        const { data: newUser, error: userError } = await supabase
+          .from('users')
+          .insert({
+            email: parent_info.email.toLowerCase().trim(),
+            password_hash: passwordHash,
+            first_name: parent_info.first_name,
+            last_name: parent_info.last_name,
+            phone_number: parent_info.phone_number || null,
+            role: 'parent',
+            status: 'pending',
+            email_verified: false,
+            school_id,
+            is_active: true
+          })
+          .select('id')
+          .single();
+
+        if (userError) {
+          console.error('[updateLearner] Failed to create user:', userError);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to create parent user account',
+            error: userError.message
+          });
+        }
+
+        const userId = newUser.id;
+        console.log('[updateLearner] Created user:', userId);
+
+        // Now create parent record with user_id
+        const { data: parentRecord, error: parentError } = await supabase
+          .from('parents')
+          .insert({
+            user_id: userId, // ✅ SET USER_ID
+            school_id,
+            first_name: parent_info.first_name,
+            last_name: parent_info.last_name,
+            email: parent_info.email.toLowerCase().trim(),
+            phone_number: parent_info.phone_number || null,
+            national_id: parent_info.national_id || null,
+            occupation: parent_info.occupation || null,
+            relationship: parent_info.relationship || 'guardian',
+            is_active: true
+          })
+          .select()
+          .single();
+
+        if (parentError) {
+          console.error('[updateLearner] Failed to create parent:', parentError);
+          // Roll back user if parent creation fails
+          await supabase.from('users').delete().eq('id', userId);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to create parent record',
+            error: parentError.message
+          });
+        }
+
+        parentInfo = parentRecord;
+        console.log('[updateLearner] Created parent:', parentRecord.id);
+
+        // Link parent to learner
+        await supabase
+          .from('learner_parents')
+          .insert({
+            learner_id: id,
+            parent_id: parentRecord.id,
+            relationship: parent_info.relationship || 'guardian',
+            is_primary: true
+          });
+
+        // Update learner's parent_id
+        await supabase
+          .from('learners')
+          .update({ parent_id: parentRecord.id })
+          .eq('id', id);
+      }
+    } catch (error) {
+      console.error('[updateLearner] Error handling parent:', error);
+      // Don't fail the whole update, just log the warning
+    }
+  }
+
+  // Get updated parent info from learner_parents if not set above
+  if (!parentInfo) {
+    const { data: parentRelationships } = await supabase
+      .from('learner_parents')
+      .select(
+        `
+        id,
+        relationship,
+        is_primary,
+        parents (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone_number,
+          national_id,
+          occupation,
+          relationship
+        )
+      `
+      )
+      .eq('learner_id', id)
+      .order('is_primary', { ascending: false });
+
+    if (parentRelationships && parentRelationships.length > 0) {
+      const primaryParent = parentRelationships[0];
+      parentInfo = primaryParent.parents;
+    }
+  }
+
   res.json({
     success: true,
     message: 'Learner updated successfully',
-    data: learner
+    data: {
+      ...learner,
+      parent: parentInfo
+    }
   });
 });
+
+
 
 // =============================================================================
 // 5. DELETE /api/v1/learners/:id
@@ -624,9 +995,9 @@ const deleteLearner = asyncHandler(async (req, res) => {
   // Build update query
   let updateQuery = supabase
     .from('learners')
-    .update({ 
-      is_active: false, 
-      updated_at: new Date().toISOString() 
+    .update({
+      is_active: false,
+      updated_at: new Date().toISOString()
     })
     .eq('id', id);
 
@@ -662,16 +1033,16 @@ const deleteLearner = asyncHandler(async (req, res) => {
 // 6. POST /api/v1/learners/:id/enroll
 //    Enroll learner in a class
 // =============================================================================
-// Only update the enrollLearner function - paste this to replace lines 665-834
-
 const enrollLearner = asyncHandler(async (req, res) => {
-  console.log('[DEBUG enrollLearner] START:', { 
-    learnerId: req.params.id, 
-    classId: req.body.class_id, 
-    schoolId: getSchoolId(req), 
-    user: req.user ? { role: req.user.role, schoolId: req.user.schoolId, school_id: req.user.school_id } : null 
+  console.log('[DEBUG enrollLearner] START:', {
+    learnerId: req.params.id,
+    classId: req.body.class_id,
+    schoolId: getSchoolId(req),
+    user: req.user
+      ? { role: req.user.role, schoolId: req.user.schoolId, school_id: req.user.school_id }
+      : null
   });
-  
+
   const school_id = getSchoolId(req);
   const { role } = req.user;
   const { id } = req.params;
@@ -801,25 +1172,24 @@ const enrollLearner = asyncHandler(async (req, res) => {
       .eq('is_current', true)
       .limit(1)
       .single();
-    
+
     console.log('[DEBUG enrollLearner] Current academic year:', currentYear);
     if (currentYear) {
       finalAcademicYearId = currentYear.id;
     }
   }
 
-  // ✅ FIX: Add school_id to enrollment insert
-const enrollmentPayload = {
-  learner_id: id,
-  class_id,
-  school_id: school_id || learner.school_id,
-  academic_year_id: finalAcademicYearId,
-  enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
-  status: 'enrolled'
-};
+  // ✅ Create enrollment with school_id
+  const enrollmentPayload = {
+    learner_id: id,
+    class_id,
+    school_id: school_id || learner.school_id,
+    academic_year_id: finalAcademicYearId,
+    enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
+    status: 'enrolled'
+  };
   console.log('[DEBUG enrollLearner] Creating enrollment with payload:', enrollmentPayload);
 
-  // Create new enrollment
   const { data: enrollment, error } = await supabase
     .from('learner_enrollments')
     .insert(enrollmentPayload)
@@ -843,6 +1213,7 @@ const enrollmentPayload = {
     data: enrollment
   });
 });
+
 // =============================================================================
 // 7. GET /api/v1/learners/:id/enrollments
 //    Get learner enrollment history
@@ -873,7 +1244,8 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
 
   const { data: enrollments, error } = await supabase
     .from('learner_enrollments')
-    .select(`
+    .select(
+      `
       id,
       class_id,
       academic_year_id,
@@ -883,7 +1255,8 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
       status,
       exit_reason,
       created_at
-    `)
+    `
+    )
     .eq('learner_id', id)
     .order('enrollment_date', { ascending: false });
 
@@ -896,7 +1269,7 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
   }
 
   // Get class details
-  const classIds = (enrollments || []).map(e => e.class_id).filter(Boolean);
+  const classIds = (enrollments || []).map((e) => e.class_id).filter(Boolean);
   let classMap = {};
 
   if (classIds.length > 0) {
@@ -913,7 +1286,7 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
     }
   }
 
-  const enrichedEnrollments = (enrollments || []).map(enrollment => ({
+  const enrichedEnrollments = (enrollments || []).map((enrollment) => ({
     ...enrollment,
     class: classMap[enrollment.class_id] || null
   }));
@@ -926,7 +1299,7 @@ const getEnrollmentHistory = asyncHandler(async (req, res) => {
 
 // =============================================================================
 // 8. POST /api/v1/learners/bulk-import
-//    Bulk import learners from CSV
+//    Bulk import learners from CSV - UPDATED with new fields
 // =============================================================================
 const bulkImportLearners = asyncHandler(async (req, res) => {
   const school_id = getSchoolId(req);
@@ -968,6 +1341,7 @@ const bulkImportLearners = asyncHandler(async (req, res) => {
           throw new Error(`Invalid gender: ${record.gender}. Must be male or female`);
         }
 
+        // ✅ Include new fields in learner data
         const learnerData = {
           school_id,
           first_name: record.first_name.trim(),
@@ -977,12 +1351,16 @@ const bulkImportLearners = asyncHandler(async (req, res) => {
           date_of_birth: record.date_of_birth,
           gender: record.gender?.toLowerCase() || null,
           email: record.email?.trim() || null,
-          photo_url: record.photo_url || null,
+          profile_photo: record.profile_photo || null,
           special_needs: record.special_needs || null,
+          medical_conditions: record.medical_conditions || null,
+          allergies: record.allergies || null,
           birth_certificate_number: record.birth_certificate_number?.trim() || null,
           nemis_number: record.nemis_number?.trim() || null,
-          admission_date: record.admission_date || new Date().toISOString().split('T')[0],
           nationality: record.nationality || 'Kenyan',
+          previous_school: record.previous_school || null,
+          admission_date: record.admission_date || new Date().toISOString().split('T')[0],
+          academic_year: record.academic_year || new Date().getFullYear().toString(),
           is_active: true
         };
 
@@ -1002,7 +1380,6 @@ const bulkImportLearners = asyncHandler(async (req, res) => {
           name: `${learner.first_name} ${learner.last_name}`,
           id: learner.id
         });
-
       } catch (error) {
         results.failed.push({
           row: record,
@@ -1016,7 +1393,6 @@ const bulkImportLearners = asyncHandler(async (req, res) => {
       message: `Import completed. ${results.successful.length} successful, ${results.failed.length} failed`,
       data: results
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
