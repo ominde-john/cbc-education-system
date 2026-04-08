@@ -41,6 +41,7 @@ import {
   Filter,
   BookOpen,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -67,12 +68,15 @@ interface ParentInfo {
   first_name: string;
   last_name: string;
   phone_number: string;
+  email?: string;
+  occupation?: string;
 }
 
 interface LearnerParent {
-  parents: {
-    users: ParentInfo;
-  } | null;
+  id: string;
+  relationship: string;
+  is_primary: boolean;
+  parents: ParentInfo | null;
 }
 
 interface Learner {
@@ -89,6 +93,7 @@ interface Learner {
   is_active: boolean;
   created_at: string;
   learner_parents: LearnerParent[] | null;
+  parent?: ParentInfo | null;
 }
 
 interface FetchOptions {
@@ -102,7 +107,8 @@ interface FetchOptions {
 }
 
 interface ApiResponse {
-  students: Learner[];
+  data?: Learner[];
+  students?: Learner[];
   total: number;
   page: number;
   pageSize: number;
@@ -132,9 +138,16 @@ const CACHE_DURATION = 5 * 60 * 1000;
 const RETRY_ATTEMPTS = 3;
 const RETRY_DELAY = 1000;
 
+// ✅ IMPROVED: Get primary parent with better null handling
 const getPrimaryParent = (learnerParents: Learner['learner_parents']): ParentInfo | null => {
   if (!learnerParents || learnerParents.length === 0) return null;
-  return learnerParents[0]?.parents?.users ?? null;
+
+  // Find primary parent
+  const primaryParent = learnerParents.find((lp) => lp.is_primary);
+  if (primaryParent?.parents) return primaryParent.parents;
+
+  // Fallback to first parent if no primary
+  return learnerParents[0]?.parents ?? null;
 };
 
 const getInitials = (firstName: string, lastName: string) =>
@@ -189,6 +202,8 @@ const exportToCsv = (students: Learner[]) => {
     'Status',
     'Guardian Name',
     'Guardian Phone',
+    'Guardian Email',
+    'Guardian Relationship',
   ];
 
   const rows = students.map((s) => {
@@ -204,6 +219,8 @@ const exportToCsv = (students: Learner[]) => {
       s.is_active ? 'Active' : 'Inactive',
       parent ? `${parent.first_name} ${parent.last_name}` : '',
       parent?.phone_number ?? '',
+      parent?.email ?? '',
+      parent?.occupation ?? '',
     ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
   });
 
@@ -296,6 +313,8 @@ const StudentManagement = () => {
   const [retrying, setRetrying] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   const fetchStudents = useCallback(
     async (forceRefresh = false) => {
@@ -332,7 +351,8 @@ const StudentManagement = () => {
         if (!forceRefresh) {
           const cachedData = apiCache.get(fetchOptions);
           if (cachedData) {
-            setStudents(cachedData.students);
+            const data = cachedData.data || cachedData.students || [];
+            setStudents(Array.isArray(data) ? data : []);
             setLastUpdated(new Date());
             setLoading(false);
             return;
@@ -342,21 +362,22 @@ const StudentManagement = () => {
         const response = await retryWithBackoff(() =>
           getLearners({
             ...fetchOptions,
-            signal: abortControllerRef.current.signal,
-          })
+            signal: abortControllerRef.current?.signal,
+          } as any)
         );
 
-        if (!response.students || !Array.isArray(response.students)) {
+        const studentData = response.data || response.students || [];
+        if (!Array.isArray(studentData)) {
           throw new Error('Invalid response format from server');
         }
 
-        setStudents(response.students);
+        setStudents(studentData);
         apiCache.set(fetchOptions, response);
         setLastUpdated(new Date());
 
         toast({
           title: 'Success',
-          description: `Loaded ${response.students.length} learners`,
+          description: `Loaded ${studentData.length} learners`,
           duration: 2000,
         });
       } catch (err) {
@@ -443,6 +464,43 @@ const StudentManagement = () => {
   const handleRefresh = async () => {
     setRetrying(true);
     await fetchStudents(true);
+  };
+
+  const handleDeactivateStudent = async () => {
+    if (!selectedStudentId) return;
+
+    try {
+      const response = await fetch(`/api/v1/learners/${selectedStudentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('cbe_access_token')}`,
+        },
+        body: JSON.stringify({ is_active: false }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to deactivate student');
+      }
+
+      setStudents((prev) =>
+        prev.map((s) => (s.id === selectedStudentId ? { ...s, is_active: false } : s))
+      );
+
+      toast({
+        title: 'Success',
+        description: 'Student deactivated successfully',
+      });
+
+      setDeleteDialogOpen(false);
+      setSelectedStudentId(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to deactivate student',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading && !students.length) {
@@ -538,6 +596,16 @@ const StudentManagement = () => {
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Export CSV</span>
+          </Button>
+          {/* ✅ NEW: Bulk Import Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/school-admin/learners/bulk-import')}
+            className="border-slate-200 hover:bg-slate-100 gap-2 h-10 border-orange-300 text-orange-700 hover:bg-orange-50"
+          >
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Bulk Import</span>
           </Button>
           <Button
             onClick={() => navigate('/school-admin/learners/add')}
@@ -802,7 +870,6 @@ const StudentManagement = () => {
                     <TableHead className="font-semibold text-slate-700 h-12">Grade / Class</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12">Gender</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12">Guardian</TableHead>
-                    <TableHead className="font-semibold text-slate-700 h-12">Phone</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12">Status</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12 text-right">Actions</TableHead>
                   </TableRow>
@@ -870,23 +937,30 @@ const StudentManagement = () => {
                           {student.gender}
                         </TableCell>
 
-                        {/* Guardian */}
+                        {/* ✅ IMPROVED Guardian Cell */}
                         <TableCell className="py-4">
                           {parent ? (
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                              <span className="text-sm text-slate-700 truncate max-w-[140px]">
-                                {parent.first_name} {parent.last_name}
-                              </span>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                <span className="text-sm font-medium text-slate-900 truncate max-w-[160px]">
+                                  {parent.first_name} {parent.last_name}
+                                </span>
+                              </div>
+                              {parent.phone_number && (
+                                <p className="text-xs text-slate-500 ml-6 truncate max-w-[160px]">
+                                  📱 {parent.phone_number}
+                                </p>
+                              )}
+                              {parent.email && (
+                                <p className="text-xs text-slate-400 ml-6 truncate max-w-[160px]">
+                                  {parent.email}
+                                </p>
+                              )}
                             </div>
                           ) : (
                             <span className="text-sm text-slate-400 italic">Not assigned</span>
                           )}
-                        </TableCell>
-
-                        {/* Phone */}
-                        <TableCell className="py-4 text-sm text-slate-600">
-                          {parent?.phone_number || '—'}
                         </TableCell>
 
                         {/* Status */}
@@ -944,10 +1018,18 @@ const StudentManagement = () => {
                                 View Classes
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="gap-2 cursor-pointer text-red-600 hover:bg-red-50">
-                                <Trash2 className="h-4 w-4" />
-                                Deactivate
-                              </DropdownMenuItem>
+                              {student.is_active && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedStudentId(student.id);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  className="gap-2 cursor-pointer text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Deactivate
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -970,13 +1052,23 @@ const StudentManagement = () => {
                     : 'Get started by enrolling your first student.'}
                 </p>
                 {!hasActiveFilters && (
-                  <Button
-                    onClick={() => navigate('/school-admin/learners/add')}
-                    className="mt-4 bg-orange-500 hover:bg-orange-600 text-white gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Enroll First Student
-                  </Button>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      onClick={() => navigate('/school-admin/learners/add')}
+                      className="mt-4 bg-orange-500 hover:bg-orange-600 text-white gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Student
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/school-admin/learners/bulk-import')}
+                      variant="outline"
+                      className="mt-4 gap-2 border-orange-300 text-orange-700"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Bulk Import
+                    </Button>
+                  </div>
                 )}
                 {hasActiveFilters && (
                   <Button
@@ -1055,6 +1147,25 @@ const StudentManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Deactivate Student</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to deactivate this student? They will no longer appear in active student lists but their records will be preserved.
+          </AlertDialogDescription>
+          <div className="flex gap-2 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeactivateStudent}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Deactivate
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

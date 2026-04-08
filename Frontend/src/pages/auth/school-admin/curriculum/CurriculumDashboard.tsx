@@ -1,10 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -12,34 +11,35 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
-import {
   Tooltip, TooltipContent, TooltipTrigger, TooltipProvider,
 } from "@/components/ui/tooltip";
 import {
-  Plus, Download, Eye, Edit, Trash2,
-  BookOpen, Layers, AlignLeft, CheckSquare, GraduationCap,
-  X, Archive, Settings2, Award, ChevronRight, FileSpreadsheet, Loader2, RefreshCw,
+  Search, Plus, Download, Eye, Edit, Trash2, AlertCircle, CheckCircle2,
+  BookOpen, Layers, GraduationCap, X, Award, Loader2, RefreshCw, Check,
+  Filter, Grid3x3, List, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 import CurriculumStats from "./CurriculumStats";
-import CurriculumFilters from "./CurriculumFilters";
 import LearningAreasTable from "./LearningAreasTable";
 
+import { LEVEL_CONFIG } from "@/services/curriculumService";
 import {
-  LEVEL_CONFIG,
-  LearningArea as LocalLearningArea,
-} from "@/services/curriculumService";
+  getLearningAreas as fetchLearningAreasApi,
+  createLearningArea,
+  updateLearningArea,
+  hardDeleteLearningArea,
+} from "@/lib/api/curriculumApi";
+import { toast } from "sonner";
 
-import { getLearningAreas as fetchLearningAreasApi, createLearningArea, updateLearningArea, hardDeleteLearningArea } from "@/lib/api/curriculumApi";
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES & INTERFACES
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Types for computed stats
 interface CurriculumStatsType {
   total: number;
   byLevel: Record<string, number>;
@@ -54,158 +54,170 @@ interface LevelCard {
   value: number;
   sub: string;
   gradient: string;
+  icon: React.ReactNode;
 }
 
-// Type for table display - combines API and local format
-type TableRow = LocalLearningArea & { levelId: string; level: string; grades: string };
+type TableRow = {
+  id: string;
+  code: string;
+  name: string;
+  level: string;
+  levelId: string;
+  grades: string;
+  strands: number;
+  subStrands: number;
+  competencies: number;
+  optional: boolean;
+  desc: string;
+  strandList: any[];
+  competencyList: any[];
+};
 
-// Map API response to table format  
-// Note: API returns strand_count but NOT full strands array
+type SortKey = "code" | "name" | "level" | "strands" | "subStrands" | "competencies" | null;
+type LevelFilter = "pp" | "lp" | "up" | "js" | null;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═════════════════════════════════════════��═════════════════════════════════
+
 const mapApiToTableRows = (data: any[]): TableRow[] => {
   return data.map((la: any) => {
     const grades = la.grade_levels || [];
-    let levelId = "lp";
+    let levelId: LevelFilter = "lp";
     let level = "Lower Primary";
     let gradeRange = "Grade 1 – 3";
-    
+
     if (grades.some((g: string) => g?.startsWith("PP"))) {
       levelId = "pp";
       level = "Pre-Primary";
       gradeRange = "PP1 – PP2";
-    } else if (grades.some((g: string) => g === "Grade 4" || g === "Grade 5" || g === "Grade 6")) {
+    } else if (grades.some((g: string) => ["Grade 4", "Grade 5", "Grade 6"].includes(g))) {
       levelId = "up";
       level = "Upper Primary";
       gradeRange = "Grade 4 – 6";
-    } else if (grades.some((g: string) => g === "Grade 7" || g === "Grade 8" || g === "Grade 9")) {
+    } else if (grades.some((g: string) => ["Grade 7", "Grade 8", "Grade 9"].includes(g))) {
       levelId = "js";
       level = "Junior Secondary";
       gradeRange = "Grade 7 – 9";
     }
-    
-    // API returns strand_count (number), not strands array
-    // Use strand_count if available, otherwise default to 0
-    const strandCount = typeof la.strand_count === 'number' ? la.strand_count : 0;
-    
+
     return {
-      ...la,
-      levelId,
-      level,
-      grades: gradeRange,
-      name: la.name,
+      id: la.id,
       code: la.code,
-      strands: strandCount,
-      subStrands: 0, // Not available in list endpoint
-      competencies: 0, // Not available in list endpoint
+      name: la.name,
+      level,
+      levelId,
+      grades: gradeRange,
+      strands: typeof la.strand_count === "number" ? la.strand_count : 0,
+      subStrands: 0,
+      competencies: 0,
       optional: false,
       desc: la.description || "",
-      strandList: [], // Not available in list endpoint
-      competencyList: [] // Not available in list endpoint
+      strandList: [],
+      competencyList: [],
     };
   });
 };
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+const getGradeLevelsFromLevel = (level: string): string[] => {
+  const gradeLevelMap: Record<string, string[]> = {
+    pp: ["PP1", "PP2"],
+    lp: ["Grade 1", "Grade 2", "Grade 3"],
+    up: ["Grade 4", "Grade 5", "Grade 6"],
+    js: ["Grade 7", "Grade 8", "Grade 9"],
+  };
+  return gradeLevelMap[level] || [];
+};
+
+const exportToCSV = (data: TableRow[]) => {
+  const headers = ["Code", "Name", "Level", "Strands", "Sub-Strands", "Competencies", "Type", "Description"];
+  const csvContent = [
+    headers.join(","),
+    ...data.map((row) => [
+      row.code,
+      `"${row.name}"`,
+      row.level,
+      row.strands,
+      row.subStrands,
+      row.competencies,
+      row.optional ? "Optional" : "Core",
+      `"${(row.desc || "").replace(/"/g, '""')}"`,
+    ].join(",")),
+  ].join("\n");
+
+  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `curriculum_export_${new Date().toISOString().split("T")[0]}.csv`);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
+
 export default function CurriculumDashboard() {
+  // ───────────────────────────────────────────────────────────────────────
+  // STATE MANAGEMENT
+  // ───────────────────────────────────────────────────────────────────────
+
+  // API State
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiData, setApiData] = useState<TableRow[]>([]);
+
+  // Filter State
   const [search, setSearch] = useState("");
   const [levelFilter, setLevel] = useState("all");
   const [typeFilter, setType] = useState("all");
   const [minStrands, setMinStrands] = useState("");
   const [minComp, setMinComp] = useState("");
-  const [sortKey, setSortKey] = useState<"code" | "name" | "level" | "strands" | "subStrands" | "competencies" | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [selectedRows, setSelected] = useState(new Set<string>());
+  const [kpiFilter, setKpiFilter] = useState<LevelFilter>(null);
+  const [showAdvFilter, setShowAdv] = useState(false);
+
+  // Pagination State
   const [rowsPerPage, setRowsPerPage] = useState("10");
   const [page, setPage] = useState(1);
+
+  // Selection State
+  const [selectedRows, setSelected] = useState(new Set<string>());
+
+  // UI State
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [viewRow, setViewRow] = useState<TableRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [kpiFilter, setKpiFilter] = useState<"pp" | "lp" | "up" | "js" | null>(null);
-  const [showAdvFilter, setShowAdv] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  
-  // API state
-  const [isLoading, setIsLoading] = useState(true);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [apiData, setApiData] = useState<TableRow[]>([]);
 
-  // Add Learning Area form state
+  // Form State - Add
   const [newLaCode, setNewLaCode] = useState("");
   const [newLaName, setNewLaName] = useState("");
   const [newLaLevel, setNewLaLevel] = useState("");
   const [newLaDesc, setNewLaDesc] = useState("");
-  const [newLaType, setNewLaType] = useState("core");
   const [isAdding, setIsAdding] = useState(false);
 
-  // Edit Learning Area state
-  const [editOpen, setEditOpen] = useState(false);
+  // Form State - Edit
   const [editLaId, setEditLaId] = useState("");
   const [editLaCode, setEditLaCode] = useState("");
   const [editLaName, setEditLaName] = useState("");
   const [editLaLevel, setEditLaLevel] = useState("");
   const [editLaDesc, setEditLaDesc] = useState("");
-  const [editLaType, setEditLaType] = useState("core");
   const [isEditing, setIsEditing] = useState(false);
 
-  // Delete state
+  // Delete State
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Helper to convert level to grade levels
-  const getGradeLevelsFromLevel = (level: string): string[] => {
-    switch (level) {
-      case 'pp': return ['PP1', 'PP2'];
-      case 'lp': return ['Grade 1', 'Grade 2', 'Grade 3'];
-      case 'up': return ['Grade 4', 'Grade 5', 'Grade 6'];
-      case 'js': return ['Grade 7', 'Grade 8', 'Grade 9'];
-      default: return [];
-    }
-  };
+  // ───────────────────────────────────────────────────────────────────────
+  // API CALLS
+  // ──────────��────────────────────────────────────────────────────────────
 
-  // Handle Add Learning Area
-  const handleAddLearningArea = async () => {
-    if (!newLaCode || !newLaName || !newLaLevel) {
-      alert('Please fill in all required fields (Code, Name, Level)');
-      return;
-    }
-    setIsAdding(true);
-    try {
-      const gradeLevels = getGradeLevelsFromLevel(newLaLevel);
-      await createLearningArea({
-        code: newLaCode,
-        name: newLaName,
-        description: newLaDesc,
-        grade_levels: gradeLevels
-      });
-      // Refresh data
-      const response = await fetchLearningAreasApi({ is_active: true });
-      if (response.success && response.data) {
-        const mappedData = mapApiToTableRows(response.data.learning_areas);
-        setApiData(mappedData);
-      }
-      // Reset form and close
-      setNewLaCode('');
-      setNewLaName('');
-      setNewLaLevel('');
-      setNewLaDesc('');
-      setNewLaType('core');
-      setAddOpen(false);
-    } catch (err: any) {
-      console.error('Failed to create learning area:', err);
-      alert(err.message || 'Failed to create learning area');
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  // Reset add form
-  const resetAddForm = () => {
-    setNewLaCode('');
-    setNewLaName('');
-    setNewLaLevel('');
-    setNewLaDesc('');
-    setNewLaType('core');
-  };
-
-  // Fetch data from API with retry capability
-  const fetchData = async (isRetry = false) => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     setApiError(null);
     try {
@@ -216,24 +228,144 @@ export default function CurriculumDashboard() {
       }
     } catch (err) {
       console.error("Failed to fetch learning areas:", err);
-      setApiError(isRetry 
-        ? "Failed to load data from server after multiple attempts. Please check your connection and try again."
-        : "Failed to load data from server. Please check your connection.");
+      setApiError("Failed to load data from server. Please check your connection.");
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  const handleAddLearningArea = async () => {
+    if (!newLaCode?.trim() || !newLaName?.trim() || !newLaLevel) {
+      toast.error("Please fill in all required fields", {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const gradeLevels = getGradeLevelsFromLevel(newLaLevel);
+      await createLearningArea({
+        code: newLaCode.trim(),
+        name: newLaName.trim(),
+        description: newLaDesc.trim(),
+        grade_levels: gradeLevels,
+      });
+
+      await fetchData();
+      setNewLaCode("");
+      setNewLaName("");
+      setNewLaLevel("");
+      setNewLaDesc("");
+      setAddOpen(false);
+
+      toast.success(`✓ Learning area "${newLaName}" created successfully`, {
+        icon: <Check className="h-4 w-4" />,
+        duration: 3000,
+      });
+    } catch (err: any) {
+      console.error("Failed to create learning area:", err);
+      toast.error(err.message || "Failed to create learning area", {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
+
+  const handleEditLearningArea = async () => {
+    if (!editLaCode?.trim() || !editLaName?.trim() || !editLaLevel) {
+      toast.error("Please fill in all required fields", {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
+      return;
+    }
+
+    setIsEditing(true);
+    try {
+      const gradeLevels = getGradeLevelsFromLevel(editLaLevel);
+      await updateLearningArea(editLaId, {
+        code: editLaCode.trim(),
+        name: editLaName.trim(),
+        description: editLaDesc.trim(),
+        grade_levels: gradeLevels,
+      });
+
+      await fetchData();
+      setEditOpen(false);
+
+      toast.success(`✓ Learning area updated successfully`, {
+        icon: <Check className="h-4 w-4" />,
+        duration: 3000,
+      });
+    } catch (err: any) {
+      console.error("Failed to update learning area:", err);
+      toast.error(err.message || "Failed to update learning area", {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedRows.size === 0) return;
+
+    setIsDeleting(true);
+    const rowsToDelete = Array.from(selectedRows);
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (const code of rowsToDelete) {
+        const rowData = apiData.find((r) => r.code === code);
+        const deleteId = rowData?.id || code;
+
+        try {
+          await hardDeleteLearningArea(deleteId);
+          successCount++;
+        } catch (err) {
+          errorCount++;
+          console.error(`Error deleting ${code}:`, err);
+        }
+      }
+
+      if (successCount > 0) {
+        await fetchData();
+        setSelected(new Set());
+        setDeleteOpen(false);
+        toast.success(`✓ Deleted ${successCount} learning area(s)`, {
+          icon: <Check className="h-4 w-4" />,
+        });
+      }
+
+      if (errorCount > 0) {
+        toast.error(`Failed to delete ${errorCount} learning area(s)`, {
+          icon: <AlertCircle className="h-4 w-4" />,
+        });
+      }
+    } catch (err: any) {
+      console.error("Delete failed:", err);
+      toast.error(err.message || "Failed to delete learning areas", {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // ───────────────────────────────────────────────────────────────────────
+  // EFFECTS
+  // ───────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  // Handle retry
-  const handleRetry = () => {
-    fetchData(true);
-  };
+  // ───────────────────────────────────────────────────────────────────────
+  // COMPUTED VALUES
+  // ───────────────────────────────────────────────────────────────────────
 
-  // Compute stats from API data only - NO FALLBACK
   const stats = useMemo((): CurriculumStatsType => {
     const byLevel: Record<string, number> = { pp: 0, lp: 0, up: 0, js: 0 };
     let totalStrands = 0;
@@ -241,11 +373,9 @@ export default function CurriculumDashboard() {
     let totalCompetencies = 0;
 
     apiData.forEach((row) => {
-      // Count by level
       if (row.levelId && byLevel[row.levelId] !== undefined) {
         byLevel[row.levelId]++;
       }
-      // Sum up strands, subStrands, competencies
       totalStrands += row.strands || 0;
       totalSubStrands += row.subStrands || 0;
       totalCompetencies += row.competencies || 0;
@@ -260,584 +390,959 @@ export default function CurriculumDashboard() {
     };
   }, [apiData]);
 
-  // Compute level cards from API data only
   const levelCards = useMemo((): LevelCard[] => {
-    const cards: LevelCard[] = [
-      { id: "all", title: "All Levels", value: stats.total, sub: "Total areas", gradient: "from-slate-600 to-slate-500" },
-      { id: "pp", title: "Pre-Primary", value: stats.byLevel.pp || 0, sub: "PP1 – PP2", gradient: "from-blue-600 to-blue-400" },
-      { id: "lp", title: "Lower Primary", value: stats.byLevel.lp || 0, sub: "Grade 1 – 3", gradient: "from-emerald-600 to-emerald-400" },
-      { id: "up", title: "Upper Primary", value: stats.byLevel.up || 0, sub: "Grade 4 – 6", gradient: "from-violet-600 to-violet-400" },
-      { id: "js", title: "Junior Secondary", value: stats.byLevel.js || 0, sub: "Grade 7 – 9", gradient: "from-orange-500 to-orange-400" },
+    return [
+      {
+        id: "all",
+        title: "All Levels",
+        value: stats.total,
+        sub: "Total areas",
+        gradient: "from-slate-600 to-slate-500",
+        icon: <Grid3x3 className="h-5 w-5" />,
+      },
+      {
+        id: "pp",
+        title: "Pre-Primary",
+        value: stats.byLevel.pp || 0,
+        sub: "PP1 – PP2",
+        gradient: "from-blue-600 to-blue-400",
+        icon: <GraduationCap className="h-5 w-5" />,
+      },
+      {
+        id: "lp",
+        title: "Lower Primary",
+        value: stats.byLevel.lp || 0,
+        sub: "Grade 1 – 3",
+        gradient: "from-emerald-600 to-emerald-400",
+        icon: <BookOpen className="h-5 w-5" />,
+      },
+      {
+        id: "up",
+        title: "Upper Primary",
+        value: stats.byLevel.up || 0,
+        sub: "Grade 4 – 6",
+        gradient: "from-violet-600 to-violet-400",
+        icon: <Layers className="h-5 w-5" />,
+      },
+      {
+        id: "js",
+        title: "Junior Secondary",
+        value: stats.byLevel.js || 0,
+        sub: "Grade 7 – 9",
+        gradient: "from-orange-500 to-orange-400",
+        icon: <Award className="h-5 w-5" />,
+      },
     ];
-    return cards;
   }, [stats]);
 
-  // Use ONLY API data - no fallback
-  const allRows = apiData;
-
-  const filters = { search, level: levelFilter, type: typeFilter, minStrands, minComp };
-
-  // Filter data locally - based on API data only
   const filtered = useMemo(() => {
-    let rows = allRows.filter(row => {
-      // Level filter
-      const lvl = kpiFilter || filters.level;
+    let rows = apiData.filter((row) => {
+      const lvl = kpiFilter || levelFilter;
       if (lvl !== "all" && lvl !== null && row.levelId !== lvl) return false;
-      
-      // Type filter (optional vs core)
-      if (filters.type !== "all") {
-        if (filters.type === "optional" ? !row.optional : row.optional) return false;
+
+      if (typeFilter !== "all") {
+        if (typeFilter === "optional" ? !row.optional : row.optional) return false;
       }
-      
-      // Min strands filter
-      if (filters.minStrands && row.strands < parseInt(filters.minStrands)) return false;
-      
-      // Min competencies filter
-      if (filters.minComp && row.competencies < parseInt(filters.minComp)) return false;
-      
-      // Search filter
-      if (filters.search.trim()) {
-        const q = filters.search.toLowerCase();
-        if (!row.name.toLowerCase().includes(q) && 
-            !row.code.toLowerCase().includes(q) && 
-            !row.level.toLowerCase().includes(q)) {
-          return false;
-        }
+
+      if (minStrands && row.strands < parseInt(minStrands)) return false;
+      if (minComp && row.competencies < parseInt(minComp)) return false;
+
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        return (
+          row.name.toLowerCase().includes(q) ||
+          row.code.toLowerCase().includes(q) ||
+          row.level.toLowerCase().includes(q)
+        );
       }
-      
+
       return true;
     });
 
-    // Sort if needed
     if (sortKey) {
       rows = [...rows].sort((a: any, b: any) => {
-        const va = a[sortKey] as string | number;
-        const vb = b[sortKey] as string | number;
+        const va = a[sortKey];
+        const vb = b[sortKey];
         let cmp = 0;
-        if (typeof va === 'string' && typeof vb === 'string') {
+
+        if (typeof va === "string" && typeof vb === "string") {
           cmp = va.localeCompare(vb);
-        } else if (typeof va === 'number' && typeof vb === 'number') {
+        } else if (typeof va === "number" && typeof vb === "number") {
           cmp = va - vb;
         }
+
         return sortDir === "asc" ? cmp : -cmp;
       });
     }
+
     return rows;
-  }, [allRows, levelFilter, typeFilter, minStrands, minComp, search, sortKey, sortDir, kpiFilter]);
+  }, [apiData, levelFilter, typeFilter, minStrands, minComp, search, sortKey, sortDir, kpiFilter]);
 
   const rpp = rowsPerPage === "all" ? filtered.length : parseInt(rowsPerPage);
   const totalPages = Math.max(1, Math.ceil(filtered.length / rpp));
   const pageRows = filtered.slice((page - 1) * rpp, page * rpp);
 
   const hasActiveFilters = search || levelFilter !== "all" || typeFilter !== "all" || minStrands || minComp || kpiFilter;
-
-  // Export to XLS function
-  const handleExportXLS = () => {
-    const dataToExport = selectedRows.size > 0 
-      ? filtered.filter((row: any) => selectedRows.has(row.code))
-      : filtered;
-    
-    const headers = ['Code', 'Name', 'Level', 'Strands', 'Sub-Strands', 'Competencies', 'Type', 'Description'];
-    const csvContent = [
-      headers.join(','),
-      ...dataToExport.map((row: any) => [
-        row.code,
-        `"${row.name}"`,
-        row.level,
-        row.strands,
-        row.subStrands,
-        row.competencies,
-        row.optional ? 'Optional' : 'Core',
-        `"${row.desc || ''}"`
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `curriculum_export_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleDelete = async () => {
-    if (selectedRows.size === 0) return;
-    
-    setIsDeleting(true);
-    const rowsToDelete = Array.from(selectedRows);
-    let successCount = 0;
-    let errorCount = 0;
-    
-    try {
-      for (const code of rowsToDelete) {
-        const rowData = apiData.find((r: any) => r.code === code);
-        const deleteId = rowData?.id || code;
-        
-        try {
-          await hardDeleteLearningArea(deleteId);
-          successCount++;
-        } catch (err) {
-          errorCount++;
-          console.error(`Error deleting ${code}:`, err);
-        }
-      }
-      
-      if (successCount > 0) {
-        const response = await fetchLearningAreasApi({ is_active: true });
-        if (response.success && response.data) {
-          const mappedData = mapApiToTableRows(response.data.learning_areas);
-          setApiData(mappedData);
-        }
-      }
-      
-      if (successCount > 0) alert(`Deleted ${successCount} learning area(s)`);
-      if (errorCount > 0) alert(`Failed to delete ${errorCount} learning area(s)`);
-      
-    } catch (err: any) {
-      console.error('Delete failed:', err);
-      alert('Failed to delete: ' + err.message);
-    } finally {
-      setSelected(new Set());
-      setDeleteOpen(false);
-      setIsDeleting(false);
-    }
-  };
-
-  const resetFilters = () => {
-    setSearch(""); setLevel("all"); setType("all");
-    setMinStrands(""); setMinComp(""); setKpiFilter(null); setPage(1);
-  };
-
-  const toggleSort = (key: typeof sortKey) => {
-    if (!key) return;
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("asc"); }
-  };
-
-  const toggleSelect = (code: string) => setSelected(prev => {
-    const s = new Set(prev);
-    s.has(code) ? s.delete(code) : s.add(code);
-    return s;
-  });
-
-  const toggleAll = () => {
-    if (selectedRows.size === pageRows.length) setSelected(new Set());
-    else setSelected(new Set(pageRows.map((r: any) => r.code)));
-  };
-
   const allSelected = pageRows.length > 0 && selectedRows.size === pageRows.length;
   const someSelected = selectedRows.size > 0 && !allSelected;
 
-  const handleFilterChange = (key: string, value: string) => {
-    switch (key) {
-      case 'search': setSearch(value); break;
-      case 'level': setLevel(value); setKpiFilter(null); break;
-      case 'type': setType(value); break;
-      case 'minStrands': setMinStrands(value); break;
-      case 'minComp': setMinComp(value); break;
+  // ───────────────────────────────────────────────────────────────────────
+  // HANDLERS
+  // ───────────────────────────────────────────────────────────────────────
+
+  const handleExportCSV = useCallback(() => {
+    try {
+      const dataToExport =
+        selectedRows.size > 0
+          ? filtered.filter((row) => selectedRows.has(row.code))
+          : filtered;
+
+      exportToCSV(dataToExport);
+
+      toast.success(`✓ Exported ${dataToExport.length} learning area(s)`, {
+        icon: <Check className="h-4 w-4" />,
+      });
+    } catch (err) {
+      toast.error("Failed to export data", {
+        icon: <AlertCircle className="h-4 w-4" />,
+      });
     }
+  }, [selectedRows, filtered]);
+
+  const resetFilters = useCallback(() => {
+    setSearch("");
+    setLevel("all");
+    setType("all");
+    setMinStrands("");
+    setMinComp("");
+    setKpiFilter(null);
     setPage(1);
-  };
+    toast.info("Filters cleared", { duration: 2000 });
+  }, []);
+
+  const toggleSort = useCallback((key: SortKey) => {
+    if (!key) return;
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }, [sortKey]);
+
+  const toggleSelect = useCallback((code: string) => {
+    setSelected((prev) => {
+      const s = new Set(prev);
+      s.has(code) ? s.delete(code) : s.add(code);
+      return s;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (selectedRows.size === pageRows.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(pageRows.map((r) => r.code)));
+    }
+  }, [selectedRows.size, pageRows]);
+
+  // ───────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ───────────────────────────────────────────────────────────────────────
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 p-6 space-y-6">
-        
-        {/* Loading State */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100 dark:from-slate-950 dark:via-slate-900/40 dark:to-slate-900 p-4 md:p-6 space-y-6">
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* HEADER */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-slate-100 dark:to-slate-400 bg-clip-text text-transparent">
+              Curriculum Management
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Manage CBC learning areas, strands, and competencies
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewMode(viewMode === "table" ? "grid" : "table")}
+                  className="gap-2"
+                >
+                  {viewMode === "table" ? <Grid3x3 className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                  <span className="hidden sm:inline">{viewMode === "table" ? "Grid" : "Table"}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Switch view mode</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCSV}
+                  disabled={filtered.length === 0}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">Export</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Export to CSV</TooltipContent>
+            </Tooltip>
+
+            <Button
+              onClick={() => setAddOpen(true)}
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Learning Area</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* ════════════════���═══════════════════════════════════════════════ */}
+        {/* LOADING STATE */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading curriculum data...</span>
+          <div className="flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+              <Loader2 className="h-12 w-12 animate-spin text-primary relative" />
+            </div>
+            <p className="text-foreground font-semibold mt-4">Loading curriculum data...</p>
+            <p className="text-sm text-muted-foreground">Please wait while we fetch your data</p>
           </div>
         )}
 
-        {/* Error Notice with Retry */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* ERROR STATE */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+
         {apiError && !isLoading && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <p className="text-sm text-red-800 font-medium">Error Loading Data</p>
-                <p className="text-sm text-red-600 mt-1">{apiError}</p>
+          <div className="bg-gradient-to-br from-red-50 to-red-50/50 dark:from-red-950/30 dark:to-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-6 shadow-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="h-6 w-6 text-red-600" />
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRetry}
-                className="border-red-300 text-red-700 hover:bg-red-100 hover:text-red-800"
+              <div className="flex-1">
+                <p className="font-semibold text-red-900 dark:text-red-100">Unable to Load Data</p>
+                <p className="text-sm text-red-700 dark:text-red-200 mt-1">{apiError}</p>
+              </div>
+              <Button
+                onClick={() => fetchData()}
+                className="bg-red-600 hover:bg-red-700 text-white gap-2 flex-shrink-0"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
+                <RefreshCw className="h-4 w-4" />
+                Try Again
               </Button>
             </div>
           </div>
         )}
 
-        {/* ── Statistics Grid ── */}
-        {!isLoading && <CurriculumStats stats={stats} />}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* MAIN CONTENT */}
+        {/* ════════════════════════════════════════════════════════════════ */}
 
-        {/* ── Level Filter Cards ── */}
-        {!isLoading && (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {levelCards.map(card => (
-              <button
-                key={card.id}
-                onClick={() => {
-                  const newFilter = card.id === "all" ? null : card.id as "pp" | "lp" | "up" | "js";
-                  setKpiFilter(newFilter);
-                  setLevel("all");
-                  setPage(1);
-                }}
-                className={`
-                  relative overflow-hidden rounded-xl p-4 text-left transition-all duration-200
-                  hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5
-                  ${(kpiFilter === card.id || (card.id === "all" && !kpiFilter))
-                    ? "ring-2 ring-offset-2 shadow-xl scale-[1.02]" 
-                    : "shadow-md border border-gray-200 dark:border-gray-700"
-                  }
-                `}
-                style={{ background: `linear-gradient(135deg, ${card.gradient.includes('slate') ? '#475569,#64748b' : card.gradient.includes('blue') ? '#2563eb,#60a5fa' : card.gradient.includes('emerald') ? '#059669,#34d399' : card.gradient.includes('violet') ? '#7c3aed,#a78bfa' : '#f97316,#fb923c'})` }}
-              >
-                <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/10" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <BookOpen className="h-5 w-5 text-white/90" />
-                  </div>
-                  <p className="text-2xl font-bold text-white">{card.value}</p>
-                  <p className="text-sm font-medium text-white/90">{card.title}</p>
-                  <p className="text-xs text-white/70">{card.sub}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ── Filters Bar ── */}
-        {!isLoading && (
+        {!isLoading && !apiError && (
           <>
-            <div className="flex items-center justify-between gap-3">
-              <CurriculumFilters
-                filters={filters}
-                showAdvFilter={showAdvFilter}
-                filteredCount={filtered.length}
-                totalCount={allRows.length}
-                onFilterChange={handleFilterChange}
-                onToggleAdvFilter={() => setShowAdv(v => !v)}
-                onResetFilters={resetFilters}
-              />
-              <Button 
-                onClick={() => setAddOpen(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Learning Area
-              </Button>
+            {/* Statistics */}
+            <CurriculumStats stats={stats} />
+
+            {/* Level Filter Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {levelCards.map((card) => (
+                <Tooltip key={card.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => {
+                        const newFilter = card.id === "all" ? null : (card.id as LevelFilter);
+                        setKpiFilter(newFilter);
+                        setLevel("all");
+                        setPage(1);
+                      }}
+                      className={`relative overflow-hidden rounded-xl p-4 text-left transition-all duration-300 cursor-pointer group bg-gradient-to-r ${
+                        card.gradient
+                      } ${
+                        kpiFilter === card.id || (card.id === "all" && !kpiFilter)
+                          ? "ring-2 ring-offset-2 ring-primary shadow-2xl scale-105"
+                          : "shadow-lg border border-white/50 dark:border-slate-700/50 hover:border-white/80 hover:shadow-2xl hover:scale-105"
+                      }`}
+                    >
+                      <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/20 blur-3xl group-hover:scale-150 transition-transform" />
+                      <div className="relative">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-white/90">{card.icon}</div>
+                          {(kpiFilter === card.id || (card.id === "all" && !kpiFilter)) && (
+                            <CheckCircle2 className="h-5 w-5 text-white" />
+                          )}
+                        </div>
+                        <p className="text-3xl font-bold text-white">{card.value}</p>
+                        <p className="text-sm font-semibold text-white/95 mt-1">{card.title}</p>
+                        <p className="text-xs text-white/75">{card.sub}</p>
+                      </div>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Filter by {card.title}</TooltipContent>
+                </Tooltip>
+              ))}
             </div>
 
-            {/* ── Bulk Action Toolbar ── */}
+            {/* Filters Bar */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-4 space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                  {/* Search */}
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name, code, or level..."
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setPage(1);
+                      }}
+                      className="pl-9 h-10 bg-slate-50 dark:bg-slate-800"
+                    />
+                  </div>
+
+                  {/* Level Filter */}
+                  <Select
+                    value={levelFilter}
+                    onValueChange={(v) => {
+                      setLevel(v);
+                      setKpiFilter(null);
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full lg:w-[180px] h-10 bg-slate-50 dark:bg-slate-800">
+                      <SelectValue placeholder="Level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="pp">Pre-Primary</SelectItem>
+                      <SelectItem value="lp">Lower Primary</SelectItem>
+                      <SelectItem value="up">Upper Primary</SelectItem>
+                      <SelectItem value="js">Junior Secondary</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Type Filter */}
+                  <Select
+                    value={typeFilter}
+                    onValueChange={(v) => {
+                      setType(v);
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full lg:w-[140px] h-10 bg-slate-50 dark:bg-slate-800">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="core">Core</SelectItem>
+                      <SelectItem value="optional">Optional</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Advanced Filter Toggle */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAdv(!showAdvFilter)}
+                    className="gap-2 h-10 whitespace-nowrap"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {showAdvFilter ? "Simple" : "Advanced"}
+                  </Button>
+
+                  {/* Reset */}
+                  {hasActiveFilters && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetFilters}
+                      className="gap-2 h-10 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    >
+                      <X className="h-4 w-4" />
+                      Reset
+                    </Button>
+                  )}
+                </div>
+
+                {/* Advanced Filters */}
+                {showAdvFilter && (
+                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs font-semibold mb-2 block">Min Strands</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 5"
+                          value={minStrands}
+                          onChange={(e) => {
+                            setMinStrands(e.target.value);
+                            setPage(1);
+                          }}
+                          className="h-9 bg-slate-50 dark:bg-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold mb-2 block">Min Competencies</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 10"
+                          value={minComp}
+                          onChange={(e) => {
+                            setMinComp(e.target.value);
+                            setPage(1);
+                          }}
+                          className="h-9 bg-slate-50 dark:bg-slate-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Results Count */}
+              <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-muted-foreground">
+                  Showing <span className="font-semibold text-foreground">{filtered.length}</span> of{" "}
+                  <span className="font-semibold text-foreground">{apiData.length}</span> learning areas
+                  {hasActiveFilters && " (filtered)"}
+                </p>
+              </div>
+            </div>
+
+            {/* Bulk Action Toolbar */}
             {selectedRows.size > 0 && (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground shadow-lg">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <CheckSquare className="h-4 w-4" />
+              <div className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 shadow-lg animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <CheckCircle2 className="h-5 w-5" />
                   {selectedRows.size} row{selectedRows.size > 1 ? "s" : ""} selected
                 </div>
-                <Separator orientation="vertical" className="h-5 bg-primary-foreground/30" />
+                <Separator orientation="vertical" className="h-6 bg-primary/20" />
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={handleExportXLS}>
-                    <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" /> Export XLS
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 text-xs gap-1 bg-white hover:bg-slate-50 shadow-sm"
+                    onClick={handleExportCSV}
+                  >
+                    <Download className="h-3 w-3" />
+                    Export
                   </Button>
-                  <Button size="sm" variant="secondary" className="h-8 text-xs" onClick={() => setDeleteOpen(true)}>
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 text-xs gap-1"
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Delete
                   </Button>
                 </div>
-                <Button size="sm" variant="ghost" className="ml-auto h-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={() => setSelected(new Set())}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto h-8 px-2 text-primary/70 hover:text-primary hover:bg-primary/10"
+                  onClick={() => setSelected(new Set())}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             )}
 
-            {/* ── Table ── */}
-            <LearningAreasTable
-              rows={pageRows as any}
-              selectedRows={selectedRows}
-              sortKey={sortKey}
-              sortDir={sortDir}
-              allSelected={allSelected}
-              someSelected={someSelected}
-              onToggleSort={toggleSort}
-              onToggleSelect={toggleSelect}
-              onToggleAll={toggleAll}
-              onViewDetails={setViewRow as any}
-            />
-
-            {/* ── Pagination ── */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span>Rows per page:</span>
-                <Select value={rowsPerPage} onValueChange={v => { setRowsPerPage(v); setPage(1); }}>
-                  <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="all">All</SelectItem>
-                  </SelectContent>
-                </Select>
-                <span>
-                  Showing <span className="font-semibold text-foreground">{Math.min((page - 1) * rpp + 1, filtered.length)}</span>–<span className="font-semibold text-foreground">{Math.min(page * rpp, filtered.length)}</span> of <span className="font-semibold text-foreground">{filtered.length}</span> records
-                </span>
+            {/* Table View */}
+            {viewMode === "table" && (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg bg-white dark:bg-slate-950">
+                <LearningAreasTable
+                  rows={pageRows}
+                  selectedRows={selectedRows}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  allSelected={allSelected}
+                  someSelected={someSelected}
+                  onToggleSort={toggleSort}
+                  onToggleSelect={toggleSelect}
+                  onToggleAll={toggleAll}
+                  onViewDetails={setViewRow}
+                  onEdit={(row) => {
+                    setEditLaId(row.id);
+                    setEditLaCode(row.code);
+                    setEditLaName(row.name);
+                    setEditLaLevel(row.levelId);
+                    setEditLaDesc(row.desc);
+                    setEditOpen(true);
+                  }}
+                />
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(1)}>«</Button>
-                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹ Prev</Button>
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  const p = i + 1;
-                  return (
-                    <Button key={p} variant={page === p ? "default" : "outline"} size="sm" className="w-9" onClick={() => setPage(p)}>
-                      {p}
-                    </Button>
-                  );
-                })}
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next ›</Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(totalPages)}>»</Button>
+            )}
+
+            {/* Grid View */}
+            {viewMode === "grid" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pageRows.map((row) => (
+                  <button
+                    key={row.code}
+                    onClick={() => setViewRow(row)}
+                    className="group relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] text-left hover:border-primary/50 dark:hover:border-primary/50"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div
+                        className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                          LEVEL_CONFIG[row.levelId]?.bg || "bg-primary/10"
+                        }`}
+                      >
+                        <GraduationCap
+                          className={`h-5 w-5 ${
+                            LEVEL_CONFIG[row.levelId]?.text || "text-primary"
+                          }`}
+                        />
+                      </div>
+                      <Badge
+                        variant={row.optional ? "secondary" : "default"}
+                        className="text-xs"
+                      >
+                        {row.optional ? "Optional" : "Core"}
+                      </Badge>
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{row.name}</h3>
+                    <p className="text-xs font-mono text-muted-foreground mb-2">{row.code}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+                      {row.desc || "No description provided"}
+                    </p>
+                    <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-200 dark:border-slate-700">
+                      <Badge variant="outline" className="text-xs">
+                        {row.level}
+                      </Badge>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span>{row.strands} strands</span>
+                        <span>•</span>
+                        <span>{row.competencies} comps</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {filtered.length === 0 && (
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="h-10 w-10 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No learning areas found</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {hasActiveFilters
+                    ? "Try adjusting your filters to find what you're looking for"
+                    : "Get started by creating your first learning area"}
+                </p>
+                {hasActiveFilters ? (
+                  <Button variant="outline" onClick={resetFilters} className="gap-2">
+                    <X className="h-4 w-4" />
+                    Clear Filters
+                  </Button>
+                ) : (
+                  <Button onClick={() => setAddOpen(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Learning Area
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {filtered.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 rounded-xl border bg-white dark:bg-slate-900 shadow-sm">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                  <span className="whitespace-nowrap">Rows per page:</span>
+                  <Select
+                    value={rowsPerPage}
+                    onValueChange={(v) => {
+                      setRowsPerPage(v);
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-9 w-20 bg-slate-50 dark:bg-slate-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="whitespace-nowrap">
+                    Page{" "}
+                    <span className="font-semibold text-foreground">
+                      {totalPages > 0 ? page : 0}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-semibold text-foreground">{totalPages}</span>
+                  </span>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page === 1}
+                        onClick={() => setPage(1)}
+                        className="h-9 w-9"
+                      >
+                        «
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>First page</TooltipContent>
+                  </Tooltip>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 1}
+                    onClick={() => setPage((p) => p - 1)}
+                    className="h-9"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const p = i + 1;
+                    return (
+                      <Button
+                        key={p}
+                        variant={page === p ? "default" : "outline"}
+                        size="sm"
+                        className="h-9 w-9"
+                        onClick={() => setPage(p)}
+                      >
+                        {p}
+                      </Button>
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="h-9"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page >= totalPages}
+                        onClick={() => setPage(totalPages)}
+                        className="h-9 w-9"
+                      >
+                        »
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Last page</TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* DIALOGS */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+
+        {/* Add Learning Area Dialog */}
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Learning Area</DialogTitle>
+              <DialogDescription>
+                Create a new learning area with required information
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="code" className="text-sm font-semibold mb-2 block">
+                    Code *
+                  </Label>
+                  <Input
+                    id="code"
+                    value={newLaCode}
+                    onChange={(e) => setNewLaCode(e.target.value)}
+                    placeholder="e.g., EN"
+                    className="h-10"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="level" className="text-sm font-semibold mb-2 block">
+                    Level *
+                  </Label>
+                  <Select value={newLaLevel} onValueChange={setNewLaLevel}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pp">Pre-Primary</SelectItem>
+                      <SelectItem value="lp">Lower Primary</SelectItem>
+                      <SelectItem value="up">Upper Primary</SelectItem>
+                      <SelectItem value="js">Junior Secondary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="name" className="text-sm font-semibold mb-2 block">
+                  Name *
+                </Label>
+                <Input
+                  id="name"
+                  value={newLaName}
+                  onChange={(e) => setNewLaName(e.target.value)}
+                  placeholder="e.g., English Language"
+                  className="h-10"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description" className="text-sm font-semibold mb-2 block">
+                  Description
+                </Label>
+                <Input
+                  id="description"
+                  value={newLaDesc}
+                  onChange={(e) => setNewLaDesc(e.target.value)}
+                  placeholder="Add a description..."
+                  className="h-10"
+                />
               </div>
             </div>
 
-            {/* ── View Details Dialog ── */}
-            <Dialog open={!!viewRow} onOpenChange={() => setViewRow(null)}>
-              <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-                <DialogHeader className="flex-shrink-0">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${viewRow ? LEVEL_CONFIG[viewRow.levelId]?.icon : ''}`}>
-                      <GraduationCap className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <DialogTitle className="text-xl">{viewRow?.name}</DialogTitle>
-                      <DialogDescription className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className={`font-mono text-xs ${viewRow ? LEVEL_CONFIG[viewRow.levelId]?.badge : ''}`}>
-                          {viewRow?.code}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">{viewRow?.level}</Badge>
-                        {viewRow?.optional ? (
-                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">Optional</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">Core</Badge>
-                        )}
-                      </DialogDescription>
-                    </div>
-                  </div>
-                </DialogHeader>
-                
-                {viewRow && (
-                  <div className="flex-1 overflow-y-auto px-1">
-                    <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="w-full grid grid-cols-4">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="strands">Strands</TabsTrigger>
-                        <TabsTrigger value="substrands">Sub-Strands</TabsTrigger>
-                        <TabsTrigger value="competencies">Competencies</TabsTrigger>
-                      </TabsList>
-                      
-                      {/* Overview Tab */}
-                      <TabsContent value="overview" className="space-y-4 mt-4">
-                        <div className="bg-muted/30 rounded-lg p-4">
-                          <p className="text-sm text-muted-foreground mb-3">Description</p>
-                          <p className="text-sm">{(viewRow as any).desc}</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
-                            <p className="text-3xl font-bold text-blue-700">{viewRow.strands}</p>
-                            <p className="text-sm font-medium text-blue-600">Strands</p>
-                          </div>
-                          <div className="bg-violet-50 rounded-xl border border-violet-200 p-4 text-center">
-                            <p className="text-3xl font-bold text-violet-700">{viewRow.subStrands}</p>
-                            <p className="text-sm font-medium text-violet-600">Sub-Strands</p>
-                          </div>
-                          <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4 text-center">
-                            <p className="text-3xl font-bold text-emerald-700">{viewRow.competencies}</p>
-                            <p className="text-sm font-medium text-emerald-600">Competencies</p>
-                          </div>
-                        </div>
-                        <div className="bg-muted/30 rounded-lg p-4">
-                          <p className="text-sm text-muted-foreground mb-3">Grade Levels</p>
-                          <p className="text-sm font-medium">{viewRow.grades}</p>
-                        </div>
-                      </TabsContent>
-                      
-                      {/* Strands Tab */}
-                      <TabsContent value="strands" className="mt-4">
-                        <div className="space-y-3">
-                          {(viewRow.strandList as any[])?.length > 0 ? (viewRow.strandList as any[]).map((strand: any, i: number) => (
-                            <div key={i} className="rounded-lg border border-border bg-background p-4 hover:shadow-md transition-shadow">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="h-8 w-8 rounded-md bg-blue-100 flex items-center justify-center">
-                                  <Layers className="h-4 w-4 text-blue-600" />
-                                </div>
-                                <span className="font-semibold text-sm">{strand.name}</span>
-                                <Badge variant="secondary" className="ml-auto text-xs">
-                                  {strand.subStrands?.length || 0} sub-strands
-                                </Badge>
-                              </div>
-                              <div className="pl-11 space-y-2">
-                                {(strand.subStrands || []).map((ss: string, j: number) => (
-                                  <div key={j} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <ChevronRight className="h-3 w-3" />
-                                    <span>{ss}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )) : (
-                            <p className="text-sm text-muted-foreground">No strands data available</p>
-                          )}
-                        </div>
-                      </TabsContent>
-                      
-                      {/* Sub-Strands Tab */}
-                      <TabsContent value="substrands" className="mt-4">
-                        <div className="space-y-2">
-                          {(viewRow.strandList as any[])?.length > 0 ? (viewRow.strandList as any[]).flatMap((s: any, si: number) => 
-                            (s.subStrands || []).map((ss: string, ssi: number) => (
-                              <div key={`${si}-${ssi}`} className="flex items-center gap-3 rounded-lg bg-violet-50/50 border border-violet-100 px-4 py-3 hover:bg-violet-100/50 transition-colors">
-                                <div className="h-2 w-2 rounded-full bg-violet-400 flex-shrink-0" />
-                                <span className="text-sm font-medium text-violet-800">{ss}</span>
-                                <Badge variant="outline" className="ml-auto text-xs bg-white">{viewRow.level}</Badge>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No sub-strands data available</p>
-                          )}
-                        </div>
-                      </TabsContent>
-                      
-                      {/* Competencies Tab */}
-                      <TabsContent value="competencies" className="mt-4">
-                        <div className="space-y-2">
-                          {(viewRow.competencyList as any[])?.length > 0 ? (viewRow.competencyList as any[]).map((comp: string, i: number) => (
-                            <div key={i} className="flex items-start gap-3 rounded-lg bg-emerald-50/50 border border-emerald-100 px-4 py-3 hover:bg-emerald-100/50 transition-colors">
-                              <Award className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                              <span className="text-sm font-medium text-emerald-800 leading-relaxed">{comp}</span>
-                            </div>
-                          )) : (
-                            <p className="text-sm text-muted-foreground">No competencies data available</p>
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                )}
-                
-                <DialogFooter className="flex-shrink-0 mt-4">
-                  <Button variant="outline" onClick={() => setViewRow(null)}>Close</Button>
-                  <Button variant="default">
-                    <Edit className="h-4 w-4 mr-2" /> Edit Area
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAddOpen(false);
+                  setNewLaCode("");
+                  setNewLaName("");
+                  setNewLaLevel("");
+                  setNewLaDesc("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddLearningArea}
+                disabled={isAdding}
+                className="gap-2"
+              >
+                {isAdding && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isAdding ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-            {/* ── Add Dialog ── */}
-            <Dialog open={addOpen} onOpenChange={(open) => { if (!open) resetAddForm(); setAddOpen(open); }}>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Add Learning Area</DialogTitle>
-                  <DialogDescription>Create a new learning area in the CBC curriculum.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-2">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="la-code" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Code *</Label>
-                      <Input 
-                        id="la-code" 
-                        placeholder="e.g. UPMATH" 
-                        className="font-mono"
-                        value={newLaCode}
-                        onChange={(e) => setNewLaCode(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Level *</Label>
-                      <Select value={newLaLevel} onValueChange={setNewLaLevel}>
-                        <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pp">Pre-Primary</SelectItem>
-                          <SelectItem value="lp">Lower Primary</SelectItem>
-                          <SelectItem value="up">Upper Primary</SelectItem>
-                          <SelectItem value="js">Junior Secondary</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+        {/* Edit Learning Area Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Learning Area</DialogTitle>
+              <DialogDescription>Update the learning area details</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-code" className="text-sm font-semibold mb-2 block">
+                    Code *
+                  </Label>
+                  <Input
+                    id="edit-code"
+                    value={editLaCode}
+                    onChange={(e) => setEditLaCode(e.target.value)}
+                    placeholder="e.g., EN"
+                    className="h-10"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-level" className="text-sm font-semibold mb-2 block">
+                    Level *
+                  </Label>
+                  <Select value={editLaLevel} onValueChange={setEditLaLevel}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pp">Pre-Primary</SelectItem>
+                      <SelectItem value="lp">Lower Primary</SelectItem>
+                      <SelectItem value="up">Upper Primary</SelectItem>
+                      <SelectItem value="js">Junior Secondary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-name" className="text-sm font-semibold mb-2 block">
+                  Name *
+                </Label>
+                <Input
+                  id="edit-name"
+                  value={editLaName}
+                  onChange={(e) => setEditLaName(e.target.value)}
+                  placeholder="e.g., English Language"
+                  className="h-10"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-description" className="text-sm font-semibold mb-2 block">
+                  Description
+                </Label>
+                <Input
+                  id="edit-description"
+                  value={editLaDesc}
+                  onChange={(e) => setEditLaDesc(e.target.value)}
+                  placeholder="Add a description..."
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleEditLearningArea}
+                disabled={isEditing}
+                className="gap-2"
+              >
+                {isEditing && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? "Updating..." : "Update"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Learning Areas?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to delete {selectedRows.size} learning area{selectedRows.size > 1 ? "s" : ""}. This
+                action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteSelected}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* View Details Dialog */}
+        {viewRow && (
+          <Dialog open={!!viewRow} onOpenChange={(open) => !open && setViewRow(null)}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{viewRow.name}</DialogTitle>
+                <DialogDescription>{viewRow.code}</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Level</p>
+                    <p className="font-semibold text-foreground">{viewRow.level}</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name *</Label>
-                    <Input 
-                      placeholder="e.g. Mathematics" 
-                      value={newLaName}
-                      onChange={(e) => setNewLaName(e.target.value)}
-                    />
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Type</p>
+                    <Badge variant={viewRow.optional ? "secondary" : "default"}>
+                      {viewRow.optional ? "Optional" : "Core"}
+                    </Badge>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</Label>
-                    <Input 
-                      placeholder="Brief description of this learning area" 
-                      value={newLaDesc}
-                      onChange={(e) => setNewLaDesc(e.target.value)}
-                    />
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Strands</p>
+                    <p className="font-semibold text-foreground">{viewRow.strands}</p>
                   </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Type</Label>
-                    <Select value={newLaType} onValueChange={setNewLaType}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="core">Core</SelectItem>
-                        <SelectItem value="optional">Optional</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Competencies</p>
+                    <p className="font-semibold text-foreground">{viewRow.competencies}</p>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => { resetAddForm(); setAddOpen(false); }}>Cancel</Button>
-                  <Button onClick={handleAddLearningArea} disabled={isAdding}>
-                    {isAdding ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Adding...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Learning Area
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
 
-            {/* ── Delete Confirmation Dialog ── */}
-            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete {selectedRows.size} selected learning area{selectedRows.size > 1 ? 's' : ''}. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">
-                    <Trash2 className="h-4 w-4 mr-2" /> Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </>
+                {viewRow.desc && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-2">Description</p>
+                    <p className="text-sm text-foreground">{viewRow.desc}</p>
+                  </div>
+                )}
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Grade Levels</p>
+                  <p className="text-sm text-foreground">{viewRow.grades}</p>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setViewRow(null)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setEditLaId(viewRow.id);
+                    setEditLaCode(viewRow.code);
+                    setEditLaName(viewRow.name);
+                    setEditLaLevel(viewRow.levelId);
+                    setEditLaDesc(viewRow.desc);
+                    setEditOpen(true);
+                    setViewRow(null);
+                  }}
+                  className="gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </TooltipProvider>
   );
 }
-

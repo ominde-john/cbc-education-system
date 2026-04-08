@@ -2,9 +2,12 @@
   width: 100%;
   min-height: 100vh;
   margin: 0;
-  padding: 0;
+  padding-left: 280px; /* Fixed sidebar space reservation */
+  transition: padding-left 0.3s ease;
   text-align: left;
-  /* Remove max-width, margin: auto, and padding from here */
+}
+#root.sidebar-collapsed {
+  padding-left: 64px;
 }
 
 /* Create a container class for content that needs max-width */
@@ -52,3 +55,4 @@
 .read-the-docs {
   color: #888;
 }
+

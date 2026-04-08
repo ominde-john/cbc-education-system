@@ -11,8 +11,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import GlobalSkeletonLoader from "@/components/GlobalSkeletonLoader";
 import NavigationSpinner from "@/components/NavigationSpinner";
-import { motion } from "framer-motion";
-import { MessageCircle } from "lucide-react";
 import ContactPage from './pages/website-pages/Contact';
 
 // Public Pages
@@ -25,10 +23,10 @@ import TermsPage from "@/pages/website-pages/TermsPage";
 import SecurityPage from "@/pages/website-pages/SecurityPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import GetStartedPage from "@/pages/website-pages/signup";
-import Analytics from "@/pages/website-pages/Platform";
-import TeamMmembersPage from '@/pages/website-pages/TeamPage';
+import NoneaaPlatformPage from "@/pages/website-pages/Platform";
 import ClientsPage from '@/pages/website-pages/ClientsPage';
 import Feature from "@/pages/website-pages/Features";
+import TeamMembersPage from '@/pages/website-pages/TeamPage';
 
 // Admin Registration
 import AdminRegistrationPage from "@/pages/admin-registration";
@@ -45,49 +43,44 @@ import Teacher from "./pages/teacher/TeacherProfile";
 import AdminStaff from "./pages/teacher/StaffList";
 import StaffManagement from "./pages/teacher/StaffManagement";
 import TeacherPortal from "./pages/Teacher-Portal/Teacher-Portal";
+
 // Layouts
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // School Admin Pages
-import  DashboardWidgets  from "./pages/school-admin/learners/DashboardWidgets";
+import DashboardWidgets from "./pages/school-admin/learners/DashboardWidgets";
 import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
-import Learnerlistpage from "@/pages/auth/school-admin/learners/Learners";
+import StudentManagement from "@/pages/auth/school-admin/learners/Learners";  // ✅ Keep only one
 import AddLearnerPage from "./pages/auth/school-admin/learners/AddLearner";
+import BulkImportPage from "@/pages/auth/school-admin/learners/BulkImportPage";
 import FeeManagement from "./pages/school-admin/learners/FeesManagent/FeeManagement";
 import Assessments from "./pages/school-admin/Assessment";
 import AdminAttendance from "./pages/teacher/StaffAttendance";
 import Calendar from "./pages/Calendar/Calendar";
 import Classes from "./pages/ClassesManagement/ClassManagement";
 import Student from "./pages/auth/school-admin/learners/LearnerProfile";
-
-// ✅ Student Management Page
-import StudentManagement from "@/pages/auth/school-admin/learners/Learners";
 import StudentClasses from "./pages/auth/school-admin/learners/StudentClasses";
-
+import ParentManagement from "./pages/auth/school-admin/parents/parents";
 import EducationalResourcesPage from "./pages/website-pages/Educationalresourcespage";
 import SystemStatusPage from "@/pages/website-pages/SystemStatusPage";
 import ReportIncidentPage from "@/pages/website-pages/ReportIncidentPage";
-import AdminLoginPage from '@/pages/auth/AdminLoginPage';
 import UserManagement from "./pages/Users/UserManagement";
 import ModernDashboard from "@/components/ModernDashboard";
 
-//Parent Portal
+// Parent Portal
 import ParentPortal from "./pages/Parent-Portal/Parent-Portal";
 
 // Department Pages
 import DepartmentsPage from "@/pages/auth/school-admin/teachers/departments/DepartmentsPage";
-import DepartmentDetailsPage from "@/pages/auth/school-admin/teachers/departments/DepartmentDetailsPage";
 
 // Placeholder Pages
 import CurriculumPage from "@/pages/auth/school-admin/Curriculum";
 import ReportsPage from "@/pages/auth/school-admin/Reports";
-import SettingsPage from "@/pages/auth/school-admin/Settings";
-import ProfileSettings from "@/pages/auth/school-admin/ProfileSettings";
+import SettingsPage from "./pages/auth/school-admin/Settings/Settings";
+import ProfileSettings from "./pages/auth/school-admin/Settings/ProfileSettings";
 
 import NotFound from "./pages/website-pages/NotFound";
-import NoneaaPlatformPage from "@/pages/website-pages/Platform";
-import TeamMembersPage from "@/pages/website-pages/TeamPage";
 
 const queryClient = new QueryClient();
 
@@ -250,8 +243,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ── Admin Registration ── */}
-
       {/* ── Admin Login (redirects to unified login) ── */}
       <Route path="/admin-login" element={<Navigate to="/login" replace />} />
 
@@ -263,38 +254,39 @@ function AppRoutes() {
             <DashboardLayout>
               <Routes>
                 <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardWidgets/>} />
+                <Route path="dashboard" element={<DashboardWidgets />} />
 
-                {/* Teachers */}
+                {/* ── Teachers ── */}
                 <Route path="teachers" element={<TeachersListPage />} />
                 <Route path="teachers/add" element={<AddTeacherPage />} />
                 <Route path="teachers/departments" element={<DepartmentsPage />} />
-                <Route path="teachers/departments/:id" element={<DepartmentDetailsPage />} />
                 <Route path="teacher-profile" element={<Teacher />} />
                 <Route path="teacher-list" element={<AdminStaff />} />
                 <Route path="staff-manage" element={<StaffManagement />} />
                 <Route path="classes" element={<Classes />} />
 
-                {/* Learners */}
-                <Route path="learners/all" element={<StudentManagement />} />
+                {/* ── Learners ── */}
+                <Route path="learners" element={<StudentManagement />} />
+                <Route path="learners/add" element={<AddLearnerPage />} />
+                <Route path="learners/bulk-import" element={<BulkImportPage />} />
+                <Route path="learners/profile" element={<Student />} />
                 <Route path="learners/classes" element={<StudentClasses />} />
-                <Route path="learners/list" element={<StudentManagement />} />
 
-                {/* Other Admin Pages */}
+                {/* ── Other Admin Pages ── */}
                 <Route path="curriculum" element={<CurriculumPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="settings/profile" element={<ProfileSettings />} />
                 <Route path="users" element={<UserManagement />} />
                 <Route path="demo" element={<ModernDashboard />} />
-                <Route path="learners/add" element={<AddLearnerPage />} />
-                <Route path="learners/profile" element={<Student/>} />
-                <Route path="fee-management/" element={<FeeManagement onBack={() => window.history.back()} />} />
-                <Route path="assessments/" element={<Assessments/>} />
-                <Route path="staff-attendance/" element={<AdminAttendance/>} />
-                <Route path="calendar" element={<Calendar/>} />
-                {/* Fallback */}
-                <Route path="" element={<Navigate to="dashboard" replace />} />
+                <Route path="fee-management" element={<FeeManagement onBack={() => window.history.back()} />} />
+                <Route path="assessments" element={<Assessments />} />
+                <Route path="staff-attendance" element={<AdminAttendance />} />
+                <Route path="parents" element={<ParentManagement />} />
+                <Route path="calendar" element={<Calendar />} />
+
+                {/* ── Fallback ── */}
+                <Route path="*" element={<Navigate to="dashboard" replace />} />
               </Routes>
             </DashboardLayout>
           </AdminRoute>

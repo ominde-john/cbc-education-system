@@ -1,30 +1,23 @@
-# CBC Education System - BLACKBOXAI Task Progress
+# AUTH LOGIN JSON PARSE FIX - Progress Tracker
 
-## Current Task: Fix AddLearner 500 Errors (Photo Upload + Enrollment)
+## Steps (Approved Plan Implementation)
 
-### ✅ IMPLEMENTED:
+- [x] **Step 1**: Create this TODO.md file ✅ **DONE**
+- [x] **Step 2**: Edit Backend/src/controllers/auth.controller.js to add safe JSON.parse for trusted_devices with try-catch fallback to [] ✅ **DONE**
+- [ ] **Step 3**: Restart backend server (npm run dev in Backend/) or wait for nodemon hot-reload
+- [ ] **Step 4**: Test login with codemaster5362@gmail.com / Admin123! 
+- [ ] **Step 5**: Verify no JSON error and successful token response (expect ✅✅✅ LOGIN SUCCESSFUL log)
+- [x] **Step 6**: Update TODO.md with completion (partial)
+- [ ] **Step 7**: Optional DB cleanup: `UPDATE users SET trusted_devices='[]' WHERE trusted_devices IS NULL OR trusted_devices='' OR trusted_devices NOT LIKE '[%';`
 
-**1. ✅ Fix Photo Upload - AddLearner.tsx**
-   - Added `formData.append('school_id', user?.schoolId || '')` to uploadPhoto()
-   
-**2. ✅ Add Enrollment Debug Logging - learner.controller.js**
-   - `[DEBUG enrollLearner]` logs for school_id, learner, class queries
-   - Added `school_id` to SELECT queries for diagnosis
+**Status**: Code fix implemented. Ready for testing!
 
-**3. [TESTING NEEDED] Test Complete Flow**
-   - Restart backend (`npm run dev` in Backend/)
-   - Test: AddLearner → Upload photo → Create learner → Auto-enroll
-   - **Check backend console** for `[DEBUG enrollLearner]` output
-   
-**4. [PENDING] Backend Safety** (after testing)
-   - Photo controller: Validate school_id fallback
-   - Classes table: Verify `school_id` column exists
+**Test Instructions**:
+1. Backend terminal: Ctrl+C then `npm run dev` (or wait if nodemon reloaded)
+2. Frontend: Try login at http://localhost:5173
+3. Check backend logs for success (no JSON error)
+4. On success: Update remaining checkboxes
 
----
-
-## Next Action: 
-**TEST NOW**: Backend restarted? Try creating a learner with photo + class selection.
-
-**Expected**: Photo uploads ✓ | Learner creates ✓ | Enrollment logs show school_id match/failure
-
-**Status: READY FOR TESTING**
+**Notes**:
+- Fix handles malformed trusted_devices (logs warning, resets to [])
+- Should now pass LOGIN SECURITY CHECKS safely

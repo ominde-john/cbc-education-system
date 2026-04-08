@@ -40,23 +40,18 @@ export const menuSections: MenuSection[] = [
       },
       {
         id: "students",
-        label: "Students",
+        label: "Student Management",
         icon: GraduationCap,
         href: "/school-admin/learners",
-        badge: 2,
         submenu: [
+    
           {
-            id: "manage-students",
-            label: "Student List",
-            href: "/school-admin/learners/list",
-            icon: UserCog,
-          },
-          {
-            id: "add-student",
-            label: "Add Student",
-            href: "/school-admin/learners/add",
+            id: "student-list",
+            label: "Learners-List",
+            href: "/school-admin/learners",
             icon: PlusCircle,
           },
+          
           {
             id: "student-classes",
             label: "Student Classes",

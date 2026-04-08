@@ -1,0 +1,79 @@
+const nodemailer = require('nodemailer');
+
+// Configure transporter (use environment variables in production)
+// FIXED: createTransport (not createTransporter)
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.EMAIL_PORT || '587'),
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASS || 'your-app-password',
+  },
+});
+
+const sendLoginAlertEmail = async (email, firstName, ip, userAgent) => {
+  try {
+    const deviceInfo = getDeviceInfo(userAgent);
+    
+    const mailOptions = {
+      from: `"CBC Education System" <${process.env.EMAIL_USER || 'noreply@cbc-education.com'}>`,
+      to: email,
+      subject: 'New Login Alert - CBC Education System',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>New login detected</h2>
+          <p>Hello <strong>${firstName}</strong>,</p>
+          <p>We detected a new login to your CBC Education System account:</p>
+          <ul>
+            <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
+            <li><strong>IP Address:</strong> ${ip}</li>
+            <li><strong>Device:</strong> ${deviceInfo?.deviceName || 'Unknown'}</li>
+            <li><strong>User Agent:</strong> ${userAgent?.substring(0, 100) || 'Unknown'}...</li>
+          </ul>
+          <p>If this was you, you can safely ignore this email.</p>
+          <p style="color: red; font-weight: bold;">
+            If you didn't log in, <a href="${process.env.FRONTEND_URL || 'https://yourapp.com'}/security">secure your account immediately</a>.
+          </p>
+          <hr>
+          <p>Best regards,<br> CBC Education System Team</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Login alert email sent to ${email}`);
+  } catch (error) {
+    console.error('❌ Failed to send login alert email:', error);
+    // Don't fail login on email issues
+  }
+};
+
+// Simple device info helper
+const getDeviceInfo = (userAgent) => {
+  const ua = userAgent || '';
+  let deviceType = 'desktop';
+  let deviceName = 'Unknown Device';
+  
+  if (ua.includes('Mobile') || ua.includes('Android') || ua.includes('iPhone')) {
+    deviceType = 'mobile';
+  } else if (ua.includes('iPad')) {
+    deviceType = 'tablet';
+  }
+  
+  if (ua.includes('Chrome')) deviceName = 'Chrome';
+  else if (ua.includes('Firefox')) deviceName = 'Firefox';
+  else if (ua.includes('Safari')) deviceName = 'Safari';
+  else if (ua.includes('Edge')) deviceName = 'Edge';
+  
+  let os = 'Unknown OS';
+  if (ua.includes('Windows')) os = 'Windows';
+  else if (ua.includes('Mac')) os = 'macOS';
+  else if (ua.includes('Linux')) os = 'Linux';
+  else if (ua.includes('Android')) os = 'Android';
+  else if (ua.includes('iOS') || ua.includes('iPhone')) os = 'iOS';
+  
+  return { deviceType, deviceName: `${deviceName} on ${os}` };
+};
+
+module.exports = { sendLoginAlertEmail };

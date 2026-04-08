@@ -13,10 +13,15 @@ const app = express();
 // ==================== MIDDLEWARE ====================
 app.use(helmet()); // Security headers
 app.use(compression()); // Compress responses
+
+// Serve static files for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // CORS configuration - allow frontend and Supabase storage
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
   'http://localhost:5173', // Vite dev server
+  'http://localhost:5174', // Alternative Vite port
   // Supabase storage is accessed from browser directly, so we don't need to whitelist it here
   // But we allow requests from our app
 ];
@@ -59,7 +64,11 @@ app.use('/api/v1/classes', require('./routes/class.routes'));
 
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/v1/register', require('./routes/register.routes'));
+
+// ========== USER ROUTES (includes profile endpoints) ==========
+// This now includes both admin user management AND profile endpoints (/me)
 app.use('/api/v1/users', require('./routes/users.routes'));
+
 app.use('/api/v1/schools', require('./routes/schools.routes'));
 app.use('/api/v1/password', require('./routes/password.routes'));
 app.use('/api/v1/academic-terms', require('./routes/academicTermsRoutes'));
@@ -72,6 +81,10 @@ app.use('/api/v1/ai-assistant', require('./routes/aiAssistant.routes'));
 
 // Parents API routes  
 app.use('/api/v1/parents', require('./routes/parent.routes'));
+
+// ========== PROFILE SETTINGS (alternative endpoint without version prefix) ==========
+// This makes it compatible with both /api/v1/users/me and /api/users/me
+app.use('/api/users', require('./routes/users.routes'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -93,4 +106,3 @@ app.use('*', (req, res) => {
 });
 
 module.exports = app;
-

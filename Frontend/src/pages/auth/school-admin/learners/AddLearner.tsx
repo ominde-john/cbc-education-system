@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,10 +33,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Gender } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
 import { getClasses } from '@/lib/api/classApi';
 import { enrollLearner } from '@/lib/api/learnersApi';
 
+// ✅ INTERFACES
 interface CreateLearnerPayload {
   admission_number: string;
   first_name: string;
@@ -46,10 +46,14 @@ interface CreateLearnerPayload {
   gender: string;
   birth_certificate_number?: string;
   nemis_number?: string;
+  nationality?: string;
   special_needs?: string;
   medical_conditions?: string;
   allergies?: string;
   profile_photo?: string;
+  previous_school?: string;
+  admission_date?: string;
+  academic_year?: string;
   parent_info?: {
     first_name: string;
     last_name: string;
@@ -68,6 +72,42 @@ interface Class {
   is_active: boolean;
 }
 
+interface LearnerDetailsResponse {
+  id: string;
+  admission_number: string;
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  date_of_birth: string;
+  gender: string;
+  birth_certificate_number?: string;
+  nemis_number?: string;
+  nationality?: string;
+  special_needs?: string;
+  medical_conditions?: string;
+  allergies?: string;
+  profile_photo?: string;
+  previous_school?: string;
+  admission_date?: string;
+  academic_year?: string;
+  grade_level: string;
+  stream_name?: string;
+  learner_parents?: Array<{
+    parents: {
+      users: {
+        first_name: string;
+        last_name: string;
+        phone_number: string;
+        email?: string;
+        national_id?: string;
+        occupation?: string;
+        relationship?: string;
+      };
+    };
+  }>;
+}
+
+// ✅ UTILITY FUNCTIONS
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error) {
     return error.message;
@@ -80,10 +120,20 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 type TabValue = 'student' | 'academic' | 'guardian' | 'health' | 'documents' | 'notes';
 
+// ✅ MAIN COMPONENT
 export default function AddLearnerPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Get the edit ID from query params
+  const editId = searchParams.get('edit');
+  const isEditMode = !!editId;
+
+  // ✅ STATE MANAGEMENT
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingExistingData, setIsLoadingExistingData] = useState(isEditMode);
   const [activeTab, setActiveTab] = useState<TabValue>('student');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     student: true,
@@ -93,8 +143,6 @@ export default function AddLearnerPage() {
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  const { user } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [classesLoading, setClassesLoading] = useState(true);
@@ -115,13 +163,27 @@ export default function AddLearnerPage() {
     allergies: '',
     previousSchool: '',
     academicYear: new Date().getFullYear().toString(),
-    admissionDate: '',
+    admissionDate: new Date().toISOString().split('T')[0],
     term: 'Term 1',
     gradeLevel: '',
     streamName: '',
   });
 
-  // Fetch classes on mount
+  const [parentData, setParentData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    nationalId: '',
+    occupation: '',
+    relationship: '',
+  });
+
+  const [documentsData, setDocumentsData] = useState({
+    notes: '',
+  });
+
+  // ✅ EFFECT: Fetch classes on mount
   useEffect(() => {
     const fetchClasses = async () => {
       try {
@@ -142,20 +204,95 @@ export default function AddLearnerPage() {
     fetchClasses();
   }, [toast]);
 
-  const [parentData, setParentData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    nationalId: '',
-    occupation: '',
-    relationship: '',
-  });
+  // ✅ EFFECT: Fetch existing learner data if in edit mode
+  useEffect(() => {
+    if (!isEditMode || !editId) return;
 
-  const [documentsData, setDocumentsData] = useState({
-    notes: '',
-  });
+    const fetchLearnerDetails = async () => {
+      try {
+        setIsLoadingExistingData(true);
+        const response = await fetch(`/api/v1/learners/${editId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('cbe_access_token')}`,
+          },
+        });
 
+        if (!response.ok) {
+          throw new Error('Failed to fetch learner details');
+        }
+
+        const result = await response.json();
+        const data: LearnerDetailsResponse = result.data;
+
+        // Populate learner data with all fields including new ones
+        setLearnerData({
+          admissionNumber: data.admission_number || '',
+          firstName: data.first_name || '',
+          lastName: data.last_name || '',
+          middleName: data.middle_name || '',
+          dateOfBirth: data.date_of_birth || '',
+          gender: data.gender || '',
+          profilePhoto: null,
+          birthCertificateNumber: data.birth_certificate_number || '',
+          nemisNumber: data.nemis_number || '',
+          nationality: data.nationality || 'Kenyan',
+          specialNeeds: data.special_needs || '',
+          medicalConditions: data.medical_conditions || '',
+          allergies: data.allergies || '',
+          previousSchool: data.previous_school || '',
+          academicYear: data.academic_year || new Date().getFullYear().toString(),
+          admissionDate: data.admission_date || new Date().toISOString().split('T')[0],
+          term: 'Term 1',
+          gradeLevel: data.grade_level || '',
+          streamName: data.stream_name || '',
+        });
+
+        // Find and set the class ID
+        const matchingClass = classes.find(
+          (c) =>
+            c.grade_level === data.grade_level &&
+            (c.stream_name === data.stream_name || (!c.stream_name && !data.stream_name))
+        );
+        if (matchingClass) {
+          setSelectedClassId(matchingClass.id);
+        }
+
+        // Populate parent data if available
+        if (data.learner_parents?.[0]?.parents?.users) {
+          const parentInfo = data.learner_parents[0].parents.users;
+          setParentData({
+            firstName: parentInfo.first_name || '',
+            lastName: parentInfo.last_name || '',
+            email: (parentInfo as any).email || '',
+            phoneNumber: parentInfo.phone_number || '',
+            nationalId: parentInfo.national_id || '',
+            occupation: parentInfo.occupation || '',
+            relationship: parentInfo.relationship || '',
+          });
+        }
+
+        toast({
+          title: 'Success',
+          description: 'Learner details loaded successfully',
+          duration: 2000,
+        });
+      } catch (error) {
+        console.error('Error fetching learner details:', error);
+        toast({
+          title: 'Error',
+          description: getErrorMessage(error, 'Failed to load learner details'),
+          variant: 'destructive',
+        });
+        setTimeout(() => navigate('/school-admin/learners'), 2000);
+      } finally {
+        setIsLoadingExistingData(false);
+      }
+    };
+
+    fetchLearnerDetails();
+  }, [isEditMode, editId, classes, toast, navigate]);
+
+  // ✅ HANDLERS
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
       ...prev,
@@ -190,14 +327,14 @@ export default function AddLearnerPage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.warn('Photo upload failed:', errorData);
-        return null; // Return null but don't throw - allow form submission
+        return null;
       }
 
       const data = await response.json();
       return data.photoUrl || data.url || null;
     } catch (error) {
       console.warn('Photo upload error:', error);
-      return null; // Don't fail the whole process
+      return null;
     }
   };
 
@@ -250,7 +387,6 @@ export default function AddLearnerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
     if (!validateForm()) {
       const firstErrorKey = Object.keys(validationErrors)[0];
       let errorMessage = 'Please fill in all required fields:';
@@ -265,7 +401,6 @@ export default function AddLearnerPage() {
         variant: 'destructive',
       });
 
-      // Auto-scroll to first tab with error
       if (firstErrorKey?.includes('parent')) {
         setActiveTab('guardian');
       } else if (firstErrorKey?.includes('grade') || firstErrorKey?.includes('academic')) {
@@ -280,7 +415,6 @@ export default function AddLearnerPage() {
     setIsLoading(true);
 
     try {
-      // Upload photo if provided (but don't fail if it doesn't work)
       let photoUrl = null;
       if (learnerData.profilePhoto) {
         console.log('Attempting to upload photo...');
@@ -290,7 +424,7 @@ export default function AddLearnerPage() {
         }
       }
 
-      // Prepare payload
+      // ✅ COMPLETE PAYLOAD WITH ALL FIELDS
       const payload: CreateLearnerPayload = {
         admission_number: learnerData.admissionNumber,
         first_name: learnerData.firstName,
@@ -300,10 +434,14 @@ export default function AddLearnerPage() {
         gender: learnerData.gender,
         birth_certificate_number: learnerData.birthCertificateNumber || undefined,
         nemis_number: learnerData.nemisNumber || undefined,
+        nationality: learnerData.nationality || undefined,
         special_needs: learnerData.specialNeeds || undefined,
         medical_conditions: learnerData.medicalConditions || undefined,
         allergies: learnerData.allergies || undefined,
         profile_photo: photoUrl || undefined,
+        previous_school: learnerData.previousSchool || undefined,
+        admission_date: learnerData.admissionDate || undefined,
+        academic_year: learnerData.academicYear || undefined,
         parent_info: {
           first_name: parentData.firstName,
           last_name: parentData.lastName,
@@ -315,11 +453,13 @@ export default function AddLearnerPage() {
         },
       };
 
-      console.log('Creating learner with payload:', payload);
+      console.log(`${isEditMode ? 'Updating' : 'Creating'} learner with payload:`, payload);
 
-      // Call API endpoint: POST /api/v1/learners
-      const response = await fetch(`/api/v1/learners`, {
-        method: 'POST',
+      const endpoint = isEditMode ? `/api/v1/learners/${editId}` : `/api/v1/learners`;
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('cbe_access_token')}`,
@@ -329,20 +469,19 @@ export default function AddLearnerPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Learner creation API Error Response:', errorData);
+        console.error(`Learner ${isEditMode ? 'update' : 'creation'} API Error Response:`, errorData);
         throw new Error(
           errorData.message || `API Error: ${response.status} ${response.statusText}`
         );
       }
 
       const result = await response.json();
-      console.log('Learner created successfully:', result);
+      console.log(`Learner ${isEditMode ? 'updated' : 'created'} successfully:`, result);
 
-      const learnerId = result.data?.id;
+      const learnerId = result.data?.id || editId;
       let enrollmentSuccess = false;
 
-      // Enroll learner in selected class
-      if (selectedClassId && learnerId) {
+      if (!isEditMode && selectedClassId && learnerId) {
         try {
           console.log('Enrolling learner in class:', selectedClassId);
           await enrollLearner(learnerId, selectedClassId);
@@ -350,7 +489,6 @@ export default function AddLearnerPage() {
           enrollmentSuccess = true;
         } catch (enrollError) {
           console.warn('Enrollment in class failed, but learner was created:', enrollError);
-          // Don't throw - learner was created successfully
           toast({
             title: 'Partial Success',
             description: `Student ${learnerData.firstName} ${learnerData.lastName} was created successfully, but enrollment in the class failed. You can enroll them manually later.`,
@@ -359,28 +497,34 @@ export default function AddLearnerPage() {
         }
       }
 
-      // Show success message
-      if (enrollmentSuccess) {
+      if (isEditMode) {
+        toast({
+          title: 'Success',
+          description: `${learnerData.firstName} ${learnerData.lastName}'s details have been updated successfully.`,
+        });
+      } else if (enrollmentSuccess) {
         toast({
           title: 'Success',
           description: `${learnerData.firstName} ${learnerData.lastName} has been created and enrolled in ${learnerData.gradeLevel}${learnerData.streamName ? ` ${learnerData.streamName}` : ''}. Parent account created for ${parentData.firstName} ${parentData.lastName}.`,
         });
-      } else if (!selectedClassId) {
+      } else {
         toast({
           title: 'Success',
-          description: `${learnerData.firstName} ${learnerData.lastName} has been created successfully. Parent account created for ${parentData.firstName} ${parentData.lastName}.`,
+          description: `${learnerData.firstName} ${learnerData.lastName} has been created successfully with all details saved.`,
         });
       }
 
-      // Redirect after success
       setTimeout(() => {
         navigate('/school-admin/learners');
       }, 1500);
     } catch (error: unknown) {
-      console.error('Error creating learner:', error);
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} learner:`, error);
       toast({
-        title: 'Creation Failed',
-        description: getErrorMessage(error, 'Failed to create learner. Please try again.'),
+        title: `${isEditMode ? 'Update' : 'Creation'} Failed`,
+        description: getErrorMessage(
+          error,
+          `Failed to ${isEditMode ? 'update' : 'create'} learner. Please try again.`
+        ),
         variant: 'destructive',
       });
     } finally {
@@ -400,7 +544,6 @@ export default function AddLearnerPage() {
       }));
     }
 
-    // Clear validation error
     if (validationErrors.gradeLevel) {
       setValidationErrors((prev) => ({
         ...prev,
@@ -415,7 +558,6 @@ export default function AddLearnerPage() {
       ...prev,
       [name]: value,
     }));
-    // Clear error for this field
     if (validationErrors[name]) {
       setValidationErrors((prev) => ({
         ...prev,
@@ -430,7 +572,6 @@ export default function AddLearnerPage() {
       ...prev,
       [name]: value,
     }));
-    // Clear error for this field
     const errorKey = `parent${name.charAt(0).toUpperCase() + name.slice(1)}`;
     if (validationErrors[errorKey]) {
       setValidationErrors((prev) => ({
@@ -440,6 +581,20 @@ export default function AddLearnerPage() {
     }
   };
 
+  // ✅ LOADING STATE
+  if (isLoadingExistingData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto text-orange-500" />
+          <p className="text-lg font-medium text-slate-900">Loading learner details...</p>
+          <p className="text-sm text-slate-500">Please wait while we fetch the information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ RENDER
   return (
     <div className="w-full space-y-6 p-4 md:p-6 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       {/* Header */}
@@ -456,10 +611,12 @@ export default function AddLearnerPage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-            New Admission Application
+            {isEditMode ? 'Edit Student Details' : 'New Admission Application'}
           </h1>
           <p className="text-slate-600 mt-2">
-            Complete the form to submit a new student application.
+            {isEditMode
+              ? 'Update the student information below.'
+              : 'Complete the form to submit a new student application.'}
           </p>
         </div>
       </div>
@@ -555,7 +712,6 @@ export default function AddLearnerPage() {
             <form onSubmit={handleSubmit} noValidate className="w-full">
               {/* Student Tab */}
               <TabsContent value="student" className="p-6 space-y-6 m-0 bg-white">
-                {/* Basic Information Card */}
                 <Card className="border-2 border-slate-200 bg-slate-50">
                   <CardHeader className="pb-4 border-b border-slate-200">
                     <div
@@ -637,9 +793,11 @@ export default function AddLearnerPage() {
                           value={learnerData.admissionNumber}
                           onChange={handleLearnerChange}
                           required
+                          disabled={isEditMode}
                           className={cn(
                             'h-11 border-slate-200 focus:border-orange-500 focus:ring-orange-500/10',
-                            validationErrors.admissionNumber && 'border-red-500'
+                            validationErrors.admissionNumber && 'border-red-500',
+                            isEditMode && 'bg-slate-100 cursor-not-allowed'
                           )}
                         />
                         {validationErrors.admissionNumber && (
@@ -647,6 +805,9 @@ export default function AddLearnerPage() {
                             <AlertCircle className="w-3 h-3" />
                             {validationErrors.admissionNumber}
                           </p>
+                        )}
+                        {isEditMode && (
+                          <p className="text-xs text-slate-500">Admission number cannot be changed</p>
                         )}
                       </div>
 
@@ -1151,7 +1312,6 @@ export default function AddLearnerPage() {
                                 ...prev,
                                 relationship: value,
                               }));
-                              // Clear error
                               if (validationErrors.parentRelationship) {
                                 setValidationErrors((prev) => ({
                                   ...prev,
@@ -1294,7 +1454,7 @@ export default function AddLearnerPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="notes" className="font-semibold text-slate-900">
-                      Additional Notes
+                      Additional Information
                     </Label>
                     <textarea
                       id="notes"
@@ -1312,7 +1472,6 @@ export default function AddLearnerPage() {
                   </div>
                 </div>
               </TabsContent>
-
               {/* Navigation */}
               <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
                 <Button
@@ -1332,11 +1491,11 @@ export default function AddLearnerPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating...
+                      {isEditMode ? 'Updating...' : 'Creating...'}
                     </>
                   ) : (
                     <>
-                      Create Student
+                      {isEditMode ? 'Update Student' : 'Create Student'}
                       <CheckCircle2 className="h-4 w-4" />
                     </>
                   )}

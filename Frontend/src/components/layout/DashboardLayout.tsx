@@ -59,6 +59,55 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const totalBadges = getTotalBadges();
 
+  // Activity tracker - every 4min interval + visibility change
+  useEffect(() => {
+    let lastActivityUpdate = 0;
+    
+    const updateActivity = async () => {
+      const now = Date.now();
+      if (now - lastActivityUpdate < 240000) return; // 4 minutes
+      lastActivityUpdate = now;
+      
+      try {
+        const token = localStorage.getItem('cbe_access_token');
+        if (token) {
+          const res = await fetch('/api/users/me/update-activity', {
+            method: 'POST',
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (res.ok) console.log('✅ Activity updated');
+        }
+      } catch (error) {
+        console.error('Activity update failed:', error);
+      }
+    };
+
+    // Interval every 4 minutes
+    const interval = setInterval(updateActivity, 240000);
+    
+    // On focus/visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateActivity();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', updateActivity);
+    
+    // Initial update
+    updateActivity();
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', updateActivity);
+    };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('theme-mode', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
@@ -376,8 +425,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div 
         className={cn(
           'flex flex-col flex-1 min-w-0 w-full transition-all duration-300',
-          'hidden lg:flex',
-          collapsed ? 'lg:ml-16' : 'lg:ml-[280px]'
+'flex', // Fixed: Always show on desktop+, was hidden below lg breakpoint
+collapsed ? 'ml-16 md:ml-16' : 'ml-[280px] md:ml-[280px]'
         )}
       >
         {/* Header - full width */}
@@ -483,7 +532,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content - proper overflow handling */}
-        <main className="flex-1 overflow-auto w-full min-w-0">
+<main className="flex-1 overflow-auto w-full min-w-0 pl-4 md:pl-6 pr-6">
           <div className="animate-fade-in w-full min-h-full">
             <div className={cn('w-full h-full px-6 py-8', theme.main.text)}>{children}</div>
           </div>

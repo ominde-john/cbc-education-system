@@ -18,20 +18,34 @@ router.get('/',
       }
 
       const queryText = `
-        SELECT id, name, email, phone, address, created_at
+        SELECT 
+          id, 
+          name, 
+          code,
+          email, 
+          phone_number, 
+          physical_address,
+          county,
+          sub_county,
+          ward,
+          level,
+          school_type,
+          is_active,
+          created_at
         FROM schools
+        WHERE deleted_at IS NULL
         ORDER BY name ASC
       `;
 
       const result = await db.query(queryText);
 
-      res.json({
+      return res.json({
         success: true,
         data: result.rows
       });
     } catch (error) {
       console.error('Error fetching schools:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch schools',
         error: error.message
@@ -55,9 +69,22 @@ router.get('/:id',
       const { id } = req.params;
 
       const queryText = `
-        SELECT id, name, email, phone, address, created_at
+        SELECT 
+          id, 
+          name, 
+          code,
+          email, 
+          phone_number, 
+          physical_address,
+          county,
+          sub_county,
+          ward,
+          level,
+          school_type,
+          is_active,
+          created_at
         FROM schools
-        WHERE id = $1
+        WHERE id = $1 AND deleted_at IS NULL
       `;
 
       const result = await db.query(queryText, [id]);
@@ -69,13 +96,13 @@ router.get('/:id',
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         data: result.rows[0]
       });
     } catch (error) {
       console.error('Error fetching school:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch school',
         error: error.message
@@ -101,39 +128,10 @@ router.get('/:schoolId/branches',
       }
 
       if (!db || !db.query) {
-        // Demo mode - return sample branches
-        const demoBranches = [
-          {
-            id: "c1000000-0000-0000-0000-000000000001",
-            school_id: schoolId,
-            name: "Main Campus",
-            code: "MAIN",
-            physical_address: "Parklands Road, Off Limuru Road, Nairobi",
-            phone_number: "+254712345678",
-            email: "main@greenfieldacademy.ac.ke",
-            is_main_campus: true,
-            is_active: true,
-            created_at: "2026-02-27 15:40:13.733902+00",
-            updated_at: "2026-02-27 15:40:13.733902+00"
-          },
-          {
-            id: "c1000000-0000-0000-0000-000000000002",
-            school_id: schoolId,
-            name: "Westlands Campus",
-            code: "WEST",
-            physical_address: "Westlands Avenue, Westlands, Nairobi",
-            phone_number: "+254712345679",
-            email: "westlands@greenfieldacademy.ac.ke",
-            is_main_campus: false,
-            is_active: true,
-            created_at: "2026-02-27 15:40:13.733902+00",
-            updated_at: "2026-02-27 15:40:13.733902+00"
-          }
-        ];
-
+        // Demo mode - return empty array
         return res.json({
           success: true,
-          data: demoBranches.filter(b => b.school_id === schoolId)
+          data: []
         });
       }
 
@@ -157,13 +155,13 @@ router.get('/:schoolId/branches',
 
       const result = await db.query(queryText, [schoolId]);
 
-      res.json({
+      return res.json({
         success: true,
         data: result.rows
       });
     } catch (error) {
       console.error('Error fetching branches:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: 'Failed to fetch branches',
         error: error.message

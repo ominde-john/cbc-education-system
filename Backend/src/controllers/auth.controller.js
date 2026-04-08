@@ -245,6 +245,61 @@ exports.login = async (req, res) => {
     }
     console.log('✅ Password verified successfully');
 
+    // ========== LOGIN SECURITY CHECKS ==========
+    console.log('\n🔐 LOGIN SECURITY CHECKS');
+    
+    // Get device fingerprint + auto-trust + alerts
+    const { getDeviceFingerprint, getDeviceInfo } = require('../utils/deviceFingerprint');
+    const deviceFingerprint = getDeviceFingerprint(userAgent, clientIp);
+    const deviceInfo = getDeviceInfo(userAgent);
+    
+    // Auto-add current device to trusted list
+    const trustedResult = await query('SELECT trusted_devices, trusted_devices_only, login_alerts_enabled, email, first_name FROM users WHERE id = $1', [user.id]);
+    const userSecurity = trustedResult.rows[0];
+    let trustedDevices = [];
+    if (userSecurity?.trusted_devices) {
+      const rawTrusted = userSecurity.trusted_devices;
+      if (typeof rawTrusted === 'string') {
+        try {
+          trustedDevices = JSON.parse(rawTrusted);
+          if (!Array.isArray(trustedDevices)) {
+            console.warn('trusted_devices is not an array, resetting:', rawTrusted);
+            trustedDevices = [];
+          }
+        } catch (parseError) {
+          console.warn('Invalid trusted_devices JSON, resetting to []:', rawTrusted, parseError.message);
+          trustedDevices = [];
+        }
+      } else if (Array.isArray(rawTrusted)) {
+        trustedDevices = rawTrusted;
+      } else {
+        console.warn('trusted_devices invalid type, resetting:', typeof rawTrusted);
+        trustedDevices = [];
+      }
+    }
+    
+    if (!trustedDevices.some(d => d.deviceId === deviceFingerprint)) {
+      trustedDevices.push({
+        deviceId: deviceFingerprint,
+        deviceName: deviceInfo.deviceName,
+        deviceType: deviceInfo.deviceType,
+        addedAt: new Date().toISOString(),
+        lastUsed: new Date().toISOString()
+      });
+      console.log('🔐 Auto-added device to trusted:', deviceInfo.deviceName);
+      await query('UPDATE users SET trusted_devices = $1 WHERE id = $2', [JSON.stringify(trustedDevices), user.id]);
+    }
+    
+    // Check trusted devices + alerts (now always trusted)
+    if (userSecurity?.login_alerts_enabled) {
+      const { sendLoginAlertEmail } = require('../utils/email');
+      sendLoginAlertEmail(userSecurity.email, userSecurity.first_name, clientIp, userAgent);
+      console.log('📧 Login alert email sent');
+    }
+    
+    // Update last login + activity
+    await query('UPDATE users SET last_login = NOW(), last_login_ip = $1, last_activity = NOW() WHERE id = $2', [clientIp, user.id]);
+
     // Step 6: Email verification check
     console.log('\n📋 STEP 6: Checking email verification');
     console.log('REQUIRE_EMAIL_VERIFICATION:', process.env.REQUIRE_EMAIL_VERIFICATION);
