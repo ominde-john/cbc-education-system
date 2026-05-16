@@ -186,8 +186,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const loginUrl = (() => {
         // Normalize API_URL: remove any trailing '/api' and trailing slashes
         const normalized = API_URL ? API_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '') : '';
-        // backend app mounts routes under /api (common pattern), so use /api/v1/login.
-        return `${normalized}/api/auth/login`;
+        // Backend routes are at /api/v1/login (v1 is the versioning prefix)
+        return `${normalized}/api/v1/login`;
       })();
 
       console.log('[AuthContext] Full API URL:', loginUrl);
