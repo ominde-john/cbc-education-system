@@ -39,20 +39,25 @@ const defaultOrigins = [
   'https://localhost:5173',
   'https://localhost:5174',
   'https://cbc-education-system-a478.vercel.app',
+  'https://cbc-education-system-1.onrender.com',
   // GitHub Codespaces patterns
   'https://*.app.github.dev',
-  'https://*.preview.app.github.dev'
+  'https://*.preview.app.github.dev',
+  'https://*.vercel.app',
+  'https://*.render.com'
 ];
 
-// Function to check if origin matches GitHub Codespaces pattern
-const isGitHubCodespacesOrigin = (origin) => {
+// Function to check if origin matches dynamic host patterns (Codespaces / Vercel / Render)
+const isAllowedDynamicOrigin = (origin) => {
   if (!origin) return false;
-  // Check for GitHub Codespaces URLs
   const patterns = [
     /^https:\/\/[a-zA-Z0-9\-]+\.app\.github\.dev$/,
     /^https:\/\/[a-zA-Z0-9\-]+\.preview\.app\.github\.dev$/,
     /^https:\/\/[a-zA-Z0-9\-]+-3001\.app\.github\.dev$/,
-    /^https:\/\/[a-zA-Z0-9\-]+-5173\.app\.github\.dev$/
+    /^https:\/\/[a-zA-Z0-9\-]+-5173\.app\.github\.dev$/,
+    /^https:\/\/[a-zA-Z0-9\-]+\.vercel\.app$/,
+    /^https:\/\/[a-zA-Z0-9\-]+\.onrender\.com$/,
+    /^https:\/\/[a-zA-Z0-9\-]+\.render\.com$/
   ];
   return patterns.some(pattern => pattern.test(origin));
 };
@@ -63,7 +68,7 @@ const allowedOrigins = [...new Set([...envOrigins, ...defaultOrigins])];
 // Log CORS configuration on startup
 console.log('[CORS] Configuration loaded');
 console.log('[CORS] Allowed origins:', allowedOrigins);
-console.log('[CORS] GitHub Codespaces pattern matching enabled');
+console.log('[CORS] Dynamic host pattern matching enabled (Codespaces / Vercel / Render)');
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -78,9 +83,9 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Check if origin matches GitHub Codespaces pattern
-    if (isGitHubCodespacesOrigin(origin)) {
-      console.log('[CORS] ✅ Allowed (Codespaces pattern):', origin);
+    // Check if origin matches dynamic host patterns (Codespaces, Vercel, Render)
+    if (isAllowedDynamicOrigin(origin)) {
+      console.log('[CORS] ✅ Allowed (dynamic host pattern):', origin);
       return callback(null, true);
     }
 
@@ -111,7 +116,7 @@ app.options('*', (req, res) => {
   const origin = req.headers.origin;
   console.log('[CORS] Handling preflight request from origin:', origin);
   
-  if (!origin || allowedOrigins.includes(origin) || isGitHubCodespacesOrigin(origin)) {
+  if (!origin || allowedOrigins.includes(origin) || isAllowedDynamicOrigin(origin)) {
     res.header('Access-Control-Allow-Origin', origin || '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
