@@ -38,6 +38,7 @@ const defaultOrigins = [
   'http://localhost:5174',
   'https://localhost:5173',
   'https://localhost:5174',
+  'https://cbc-education-system-a478.vercel.app',
   // GitHub Codespaces patterns
   'https://*.app.github.dev',
   'https://*.preview.app.github.dev'
@@ -61,7 +62,7 @@ const allowedOrigins = [...new Set([...envOrigins, ...defaultOrigins])];
 
 // Log CORS configuration on startup
 console.log('[CORS] Configuration loaded');
-console.log('[CORS] Explicit allowed origins:', allowedOrigins.length);
+console.log('[CORS] Allowed origins:', allowedOrigins);
 console.log('[CORS] GitHub Codespaces pattern matching enabled');
 
 app.use(cors({
@@ -85,13 +86,7 @@ app.use(cors({
 
     // Log blocked requests for debugging
     console.warn('[CORS] ❌ Blocked request from origin:', origin);
-    console.warn('[CORS] Expected patterns: localhost:* or *.app.github.dev');
-    
-    // In development, you might want to allow all origins temporarily
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[CORS] ⚠️ Development mode: allowing all origins temporarily');
-      return callback(null, true);
-    }
+    console.warn('[CORS] Allowed origins are:', allowedOrigins);
     
     return callback(new Error(`CORS policy: Origin ${origin} not allowed`));
   },
