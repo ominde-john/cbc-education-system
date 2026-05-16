@@ -169,11 +169,14 @@ app.use((req, res, next) => {
 app.use('/api/v1/learners', require('./routes/learner.routes'));
 
 // API Versioning
-app.use('/api/v1/auth', require('./routes/auth.routes'));
+// NOTE: auth.routes already includes both legacy and v1 prefixes (e.g. /v1/login).
+// Mounting it at '/api/v1/auth' caused the frontend to hit '/api/v1/login'
+// while the backend effectively served '/api/v1/auth/v1/login' (404).
+app.use('/api', require('./routes/auth.routes'));
 app.use('/api/v1/classes', require('./routes/class.routes'));
 
-app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/v1/register', require('./routes/register.routes'));
+
 
 // Users (includes profile endpoints)
 app.use('/api/v1/users', require('./routes/users.routes'));
