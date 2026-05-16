@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://cbc-education-backend-render.onrender.com/api/:path*"
+    },
+    {
+      "source": "/:path((?!api).*)*",
+      "destination": "/index.html"
+    }
+  ]
+}
