@@ -3,13 +3,11 @@
  * Handles all HTTP requests to the curriculum backend API
  */
 
-// API URL - uses relative path in production (proxied by Vercel) to avoid CORS
+// API URL - normalize VITE_API_URL to avoid duplicate '/api' segments
 const getApiUrl = (): string => {
-  // Production: always use relative path → proxied by Vercel, no CORS
   if (import.meta.env.PROD) return '';
-  // Development: use VITE_API_URL if set, otherwise fall back to Vite proxy
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  return '';
+  const raw = import.meta.env.VITE_API_URL || '';
+  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 };
 
 const API_URL = getApiUrl();

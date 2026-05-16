@@ -6,11 +6,11 @@
 import type { StaffMember, StaffType } from '../../pages/teacher/StaffManagement/types';
 import { backendToStaffMember, staffMemberToBackend } from '../../pages/teacher/StaffManagement/utils';
 
-// API URL - same pattern as curriculumApi
+// API URL - normalize VITE_API_URL to avoid duplicate '/api' segments
 const getApiUrl = (): string => {
   if (import.meta.env.PROD) return '';
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  return '';
+  const raw = import.meta.env.VITE_API_URL || '';
+  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 };
 
 const API_URL = getApiUrl();

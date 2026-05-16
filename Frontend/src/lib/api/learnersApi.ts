@@ -5,8 +5,9 @@
  */
 
 const getApiUrl = (): string => {
-  // Use empty string for vite proxy setup
-  return '';
+  if (import.meta.env.PROD) return '';
+  const raw = import.meta.env.VITE_API_URL || '';
+  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 };
 
 export const API_URL = getApiUrl();

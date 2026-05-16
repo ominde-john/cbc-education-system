@@ -1,173 +1,40 @@
 const express = require('express');
-const { authenticate, authorize } = require('../middleware/auth');
-const db = require('../config/database');
-
 const router = express.Router();
+const schoolController = require('../controllers/school.controller');
+const { authenticate, authorize } = require('../middleware/auth');
 
-// GET /api/schools - Get all schools
-router.get('/',
-  authenticate,
-  async (req, res) => {
-    try {
-      if (!db || !db.query) {
-        return res.json({
-          success: true,
-          data: [],
-          message: 'No database connection - using demo mode'
-        });
-      }
+// ============================================================================
+// IMPORTANT: Public routes MUST come BEFORE routes with parameters
+// ============================================================================
 
-      const queryText = `
-        SELECT 
-          id, 
-          name, 
-          code,
-          email, 
-          phone_number, 
-          physical_address,
-          county,
-          sub_county,
-          ward,
-          level,
-          school_type,
-          is_active,
-          created_at
-        FROM schools
-        WHERE deleted_at IS NULL
-        ORDER BY name ASC
-      `;
+// Public routes (no authentication required)
+router.get('/plans', schoolController.getPlans);
 
-      const result = await db.query(queryText);
+// Protected routes - require authentication
+router.use(authenticate);
 
-      return res.json({
-        success: true,
-        data: result.rows
-      });
-    } catch (error) {
-      console.error('Error fetching schools:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch schools',
-        error: error.message
-      });
-    }
-  }
-);
+// School management (Super Admin only)
+router.post('/', authorize('super_admin'), schoolController.createSchool);
+router.get('/', authorize('super_admin'), schoolController.getSchools);
+router.get('/:id', authorize('super_admin', 'school_admin'), schoolController.getSchoolById);
+router.put('/:id', authorize('super_admin'), schoolController.updateSchool);
+router.delete('/:id', authorize('super_admin'), schoolController.deleteSchool);
 
-// GET /api/schools/:id - Get single school by ID
-router.get('/:id',
-  authenticate,
-  async (req, res) => {
-    try {
-      if (!db || !db.query) {
-        return res.status(500).json({
-          success: false,
-          message: 'Database not configured'
-        });
-      }
+// Subscription management
+router.post('/:id/subscription', authorize('super_admin'), schoolController.createSubscription);
+router.get('/:id/subscription', authorize('super_admin', 'school_admin'), schoolController.getCurrentSubscription);
+router.get('/:id/payments', authorize('super_admin', 'school_admin'), schoolController.getPaymentHistory);
 
-      const { id } = req.params;
+// Status management
+router.patch('/:id/status', authorize('super_admin'), schoolController.updateSchoolStatus);
 
-      const queryText = `
-        SELECT 
-          id, 
-          name, 
-          code,
-          email, 
-          phone_number, 
-          physical_address,
-          county,
-          sub_county,
-          ward,
-          level,
-          school_type,
-          is_active,
-          created_at
-        FROM schools
-        WHERE id = $1 AND deleted_at IS NULL
-      `;
+// Cron job endpoint (secured with secret)
+router.post('/check-expiry', schoolController.checkExpiry);
 
-      const result = await db.query(queryText, [id]);
+// Branch management
+router.get('/:schoolId/branches', authorize('super_admin', 'school_admin'), schoolController.getBranches);
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: 'School not found'
-        });
-      }
-
-      return res.json({
-        success: true,
-        data: result.rows[0]
-      });
-    } catch (error) {
-      console.error('Error fetching school:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch school',
-        error: error.message
-      });
-    }
-  }
-);
-
-// GET /api/schools/:schoolId/branches - Get branches for a school
-router.get('/:schoolId/branches',
-  authenticate,
-  async (req, res) => {
-    try {
-      const { schoolId } = req.params;
-      const { school_id: userSchoolId, role } = req.user;
-
-      // Check permissions - super_admin can access any school, others only their own
-      if (role !== 'super_admin' && schoolId !== userSchoolId) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied'
-        });
-      }
-
-      if (!db || !db.query) {
-        // Demo mode - return empty array
-        return res.json({
-          success: true,
-          data: []
-        });
-      }
-
-      const queryText = `
-        SELECT
-          id,
-          school_id,
-          name,
-          code,
-          physical_address,
-          phone_number,
-          email,
-          is_main_campus,
-          is_active,
-          created_at,
-          updated_at
-        FROM branches
-        WHERE school_id = $1 AND (deleted_at IS NULL OR deleted_at > NOW())
-        ORDER BY is_main_campus DESC, name ASC
-      `;
-
-      const result = await db.query(queryText, [schoolId]);
-
-      return res.json({
-        success: true,
-        data: result.rows
-      });
-    } catch (error) {
-      console.error('Error fetching branches:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to fetch branches',
-        error: error.message
-      });
-    }
-  }
-);
+// Learners for a specific school (School Management UI)
+router.get('/:id/learners', authorize('super_admin', 'school_admin'), schoolController.getLearnersForSchool);
 
 module.exports = router;

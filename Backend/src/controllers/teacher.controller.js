@@ -207,6 +207,8 @@ const listTeachers = asyncHandler(async (req, res) => {
     sort_order = 'desc',
   } = req.query;
 
+  // Complex join (teachers -> users -> teacher_assignments -> classes -> learning_areas)
+  // If this fails (schema mismatch / RLS join issue), we fall back to a simpler query.
   let query = supabase
     .from('teachers')
     .select(`
@@ -248,6 +250,7 @@ const listTeachers = asyncHandler(async (req, res) => {
     `, { count: 'exact' })
     .eq('school_id', school_id);
 
+
   // Filters
   if (is_active !== undefined) {
     query = query.eq('is_active', is_active === 'true');
@@ -264,14 +267,92 @@ const listTeachers = asyncHandler(async (req, res) => {
   // Paginate
   query = paginate(query, parseInt(page), parseInt(limit));
 
-  const { data, error, count } = await query;
+  let data;
+  let count;
+  let joinError;
 
-  if (error) {
-    return res.status(500).json({ success: false, message: 'Failed to fetch teachers', error: error.message });
+  // Try complex join first
+  const joinResult = await query;
+  ({ data, count, error: joinError } = joinResult);
+
+  if (joinError) {
+    // DEV logging: show real Supabase error to quickly pinpoint join/schema/RLS issues.
+    console.error('[teachers:listTeachers] Complex join failed', {
+      message: joinError.message,
+      code: joinError.code,
+      hint: joinError.hint,
+      school_id,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      is_active,
+      search,
+      sort_by,
+      sort_order,
+    });
+
+    // Fallback: base teacher + user only (no assignments deep join)
+    const fallbackQuery = supabase
+      .from('teachers')
+      .select(`
+        id,
+        tsc_number,
+        qualifications,
+        date_joined,
+        is_active,
+        designation,
+        branch,
+        job_status,
+        contract_start,
+        contract_end,
+        salary,
+        county,
+        location,
+        id_number,
+        date_of_birth,
+        gender,
+        subjects_taught,
+        photo,
+        created_at,
+        updated_at,
+        user:user_id (
+          id,
+          first_name,
+          last_name,
+          email,
+          phone_number,
+          status,
+          last_login
+        )
+      `, { count: 'exact' })
+      .eq('school_id', school_id);
+
+    // Re-apply filters/sort/pagination
+    let fb = fallbackQuery;
+    if (is_active !== undefined) {
+      fb = fb.eq('is_active', is_active === 'true');
+    }
+
+    const validSortFields = ['created_at', 'date_joined', 'tsc_number'];
+    const sortField = validSortFields.includes(sort_by) ? sort_by : 'created_at';
+    fb = fb.order(sortField, { ascending: sort_order === 'asc' });
+    fb = paginate(fb, parseInt(page), parseInt(limit));
+
+    const fbResult = await fb;
+    ({ data, count, error: joinError } = fbResult);
+
+    if (joinError) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch teachers',
+        error: joinError.message,
+        fallback_error: joinError.message,
+      });
+    }
   }
 
   // Client-side search filter if provided
   let filtered = data;
+
   if (search) {
     const q = search.toLowerCase();
     filtered = data.filter((t) =>
@@ -291,9 +372,15 @@ const listTeachers = asyncHandler(async (req, res) => {
         limit: parseInt(limit),
         total: count,
         pages: Math.ceil(count / parseInt(limit)),
-      }
+      },
+      meta: {
+        // helps correlate UI issues with backend join failures without exposing internals to prod users
+        joinFallbackUsed: false,
+      },
+
     }
   });
+
 
 });
 

@@ -183,15 +183,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       console.log('[AuthContext] Login attempt for:', email, 'with role:', role);
-      console.log('[AuthContext] Full API URL:', `${API_URL}/api/auth/login`);
+      const loginUrl = (() => {
+        // Normalize API_URL: remove any trailing '/api' and trailing slashes
+        const normalized = API_URL ? API_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '') : '';
+        // backend app mounts routes under /api (common pattern), so use /api/v1/login.
+        return `${normalized}/api/auth/login`;
+      })();
+
+      console.log('[AuthContext] Full API URL:', loginUrl);
 
       const requestBody = { email, password };
+
       // Add role if provided (for future backend support)
       if (role) {
         (requestBody as any).role = role;
       }
 
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await fetch(loginUrl, {
+
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

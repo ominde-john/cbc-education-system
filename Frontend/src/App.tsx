@@ -50,6 +50,7 @@ import TeacherPortal from "./pages/Teacher-Portal/Teacher-Portal";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // School Admin Pages
+import SchoolManagement from "./pages/SchoolManagement/schoolmanagement";
 import DashboardWidgets from "./pages/school-admin/learners/DashboardWidgets";
 import TeachersListPage from "@/pages/auth/school-admin/teachers/TeachersList";
 import AddTeacherPage from "@/pages/auth/school-admin/teachers/AddTeacher";
@@ -286,6 +287,7 @@ function AppRoutes() {
                 <Route path="staff-attendance" element={<AdminAttendance />} />
                 <Route path="parents" element={<ParentManagement />} />
                 <Route path="calendar" element={<Calendar />} />
+                <Route path="schoolmanagement" element={<SchoolManagement/>} />
 
                 {/* ── Fallback ── */}
                 <Route path="*" element={<Navigate to="dashboard" replace />} />

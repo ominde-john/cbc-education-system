@@ -7,8 +7,8 @@ import { toast } from '@/components/ui/sonner';
 
 const getApiUrl = (): string => {
   if (import.meta.env.PROD) return '';
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  return 'http://localhost:3000'; // Backend default
+  const raw = import.meta.env.VITE_API_URL || '';
+  return raw.replace(/\/api\/?$/, '').replace(/\/+$/, '');
 };
 
 const API_URL = getApiUrl();

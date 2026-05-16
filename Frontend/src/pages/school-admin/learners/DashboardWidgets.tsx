@@ -97,10 +97,17 @@ const DashboardWidgets = () => {
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
   const fetchDashboardData = useCallback(async () => {
+    if (!supabase) {
+      setLoading(false);
+      setError('Supabase is not configured. Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.');
+      return;
+    }
+
     if (!user?.schoolId) {
       setLoading(false);
       return;
     }
+
 
     try {
       setLoading(true);
