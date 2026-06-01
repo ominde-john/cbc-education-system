@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useMemo, useState } from "react";
+import { cloneElement, isValidElement, useId, useMemo, useState } from "react";
 
 type FormData = {
   schoolName: string;
@@ -171,6 +171,7 @@ const NoneaaPlatformPage = () => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitState, setSubmitState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [submitError, setSubmitError] = useState("");
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
 
   const minDate = useMemo(() => new Date().toISOString().split("T")[0], []);
@@ -212,7 +213,8 @@ const NoneaaPlatformPage = () => {
       nextErrors.email = "Enter a valid email address.";
     }
 
-    if (formData.phone && !/^[+]?[0-9\s\-()]{10,}$/.test(formData.phone)) {
+    const kenyanPhonePattern = /^(\+254|254|0)(1|7)\d{8}$/;
+    if (formData.phone && !kenyanPhonePattern.test(formData.phone.replace(/\s+/g, ""))) {
       nextErrors.phone = "Enter a valid phone number.";
     }
 
@@ -226,19 +228,26 @@ const NoneaaPlatformPage = () => {
     if (!validateForm()) return;
 
     setSubmitState("loading");
+    setSubmitError("");
 
     try {
+      // TODO: Replace with real booking API integration when endpoint is available.
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       if (typeof navigator !== "undefined" && !navigator.onLine) {
-        throw new Error("offline");
+        throw new Error("You appear to be offline. Please check your internet connection and try again.");
       }
 
       setSubmitState("success");
       setFormData(initialFormData);
       setErrors({});
-    } catch {
+    } catch (error) {
       setSubmitState("error");
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Unable to submit your demo request. Please try again or contact support.",
+      );
     }
   };
 
@@ -384,12 +393,15 @@ const NoneaaPlatformPage = () => {
 
                   <FieldGroup title="Areas of Interest">
                     <div className="grid md:grid-cols-2 gap-3">
-                      {interestAreas.map((interest) => (
-                        <label key={interest} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 transition-colors cursor-pointer">
-                          <input type="checkbox" checked={formData.interests.includes(interest)} onChange={() => toggleInterest(interest)} />
-                          <span className="text-sm text-slate-700">{interest}</span>
-                        </label>
-                      ))}
+                      {interestAreas.map((interest, index) => {
+                        const checkboxId = `interest-${index}`;
+                        return (
+                          <label key={interest} htmlFor={checkboxId} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 transition-colors cursor-pointer">
+                            <input id={checkboxId} type="checkbox" checked={formData.interests.includes(interest)} onChange={() => toggleInterest(interest)} />
+                            <span className="text-sm text-slate-700">{interest}</span>
+                          </label>
+                        );
+                      })}
                     </div>
                     {errors.interests ? <p className="text-sm text-rose-600 mt-2">{errors.interests}</p> : null}
                   </FieldGroup>
@@ -434,7 +446,7 @@ const NoneaaPlatformPage = () => {
                     {submitState === "loading" ? (
                       <>
                         <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                        Scheduling My Demo...
+                        Scheduling Your Demo...
                       </>
                     ) : (
                       <>
@@ -446,7 +458,7 @@ const NoneaaPlatformPage = () => {
 
                   {submitState === "error" ? (
                     <p className="text-center text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">
-                      Something went wrong. Please try again.
+                      {submitError || "Unable to submit your demo request. Please check your connection and try again."}
                     </p>
                   ) : null}
                 </form>
@@ -537,15 +549,26 @@ function InputField({
   children: React.ReactNode;
   icon?: React.ReactNode;
 }) {
+  const fieldId = useId();
+  const controlClassName =
+    "w-full rounded-xl border border-slate-300 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-400/30 focus:border-blue-500";
+  const enhancedChild = isValidElement(children)
+    ? cloneElement(children, {
+        id: fieldId,
+        "aria-invalid": Boolean(error),
+        className: `${controlClassName} ${children.props.className ?? ""}`.trim(),
+      })
+    : children;
+
   return (
-    <label className="block">
+    <label className="block" htmlFor={fieldId}>
       <span className="text-sm font-medium text-slate-700 block mb-2">
         {label}
         {required ? " *" : ""}
       </span>
-      <div className="relative [&>input]:w-full [&>input]:rounded-xl [&>input]:border [&>input]:border-slate-300 [&>input]:px-3 [&>input]:py-3 [&>input]:text-sm [&>input]:focus:ring-2 [&>input]:focus:ring-blue-400/30 [&>input]:focus:border-blue-500 [&>select]:w-full [&>select]:rounded-xl [&>select]:border [&>select]:border-slate-300 [&>select]:px-3 [&>select]:py-3 [&>select]:text-sm [&>select]:focus:ring-2 [&>select]:focus:ring-blue-400/30 [&>select]:focus:border-blue-500 [&>textarea]:w-full [&>textarea]:rounded-xl [&>textarea]:border [&>textarea]:border-slate-300 [&>textarea]:px-3 [&>textarea]:py-3 [&>textarea]:text-sm [&>textarea]:focus:ring-2 [&>textarea]:focus:ring-blue-400/30 [&>textarea]:focus:border-blue-500">
+      <div className="relative">
         {icon ? <span className="absolute right-3 top-3 text-slate-400">{icon}</span> : null}
-        {children}
+        {enhancedChild}
       </div>
       {error ? <span className="text-xs text-rose-600 mt-1 block">{error}</span> : null}
     </label>
