@@ -1,835 +1,578 @@
-import { motion } from 'framer-motion';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { useTypewriter } from '@/hooks/use-typewriter';
-import { 
-  Check, 
-  MessageCircle,
-  Play,
+import { motion } from "framer-motion";
+import {
   ArrowRight,
-  Award,
-  Shield,
-  Zap,
-  BrainCircuit,
-  GraduationCap,
-  LineChart,
-  BookMarked,
-  Star,
-  DollarSign,
-  Users,
-  Clock,
-  TrendingUp,
-  FileText,
-  Calendar,
-  Bell,
   BarChart3,
-  Video,
-  Headphones
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+  Calendar,
+  CheckCircle,
+  ClipboardList,
+  Clock,
+  GraduationCap,
+  Mail,
+  MessageSquare,
+  Phone,
+  Shield,
+  Star,
+  User,
+  Users,
+} from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { cloneElement, isValidElement, useId, useMemo, useState } from "react";
 
-// Constants & Data
-const FEATURES = [
-  { icon: BookMarked, text: 'CBE Curriculum Tools', color: 'text-blue-600', bg: 'bg-blue-50' },
-  { icon: BrainCircuit, text: 'Mastery Tracking', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { icon: Users, text: 'Multi-Portal Access', color: 'text-purple-600', bg: 'bg-purple-50' },
-  { icon: LineChart, text: 'Real-time Analytics', color: 'text-orange-600', bg: 'bg-orange-50' },
-];
+type FormData = {
+  schoolName: string;
+  schoolType: string;
+  county: string;
+  students: string;
+  teachers: string;
+  fullName: string;
+  role: string;
+  email: string;
+  phone: string;
+  interests: string[];
+  preferredDate: string;
+  preferredTime: string;
+  demoType: string;
+  notes: string;
+};
 
-const BENEFITS = [
-  { icon: Check, text: 'CBE competency tracking' },
-  { icon: Check, text: 'Automated progress reports' },
-  { icon: Check, text: 'Parent-teacher communication portal' },
-  { icon: Check, text: 'Student mastery analytics' },
-  { icon: Check, text: 'Digital portfolio management' },
-  { icon: Check, text: 'Strand and sub-strand monitoring' },
-];
-
-const CORE_CAPABILITIES = [
+const benefits = [
   {
-    icon: Calendar,
-    title: 'Smart Timetabling',
-    description: 'AI-powered automated timetable generation that respects teacher availability and resource constraints.'
-  },
-  {
-    icon: FileText,
-    title: 'Assessment Management',
-    description: 'Create, distribute, and grade assessments aligned with CBE competency framework.'
-  },
-  {
-    icon: BarChart3,
-    title: 'Performance Analytics',
-    description: 'Deep insights into student performance with strand-level analytics and predictive insights.'
-  },
-  {
-    icon: Bell,
-    title: 'Communication Hub',
-    description: 'Bulk SMS, email notifications, and in-app messaging to keep all stakeholders connected.'
+    icon: ClipboardList,
+    title: "Live CBC Assessment Walkthrough",
+    description:
+      "See how NONEAA handles assessment planning, grading, and competency tracking for CBC schools.",
   },
   {
     icon: Users,
-    title: 'Multi-Role Portals',
-    description: 'Dedicated dashboards for teachers, students, parents, and administrators with role-based access.'
+    title: "Student & Teacher Management",
+    description:
+      "Explore admissions, class structures, teacher records, and day-to-day school operations.",
   },
   {
-    icon: TrendingUp,
-    title: 'Learning Progress Tracking',
-    description: 'Monitor individual and class-wide progress on learning outcomes and competencies in real-time.'
-  }
+    icon: BarChart3,
+    title: "Real Time Reports & Analytics",
+    description:
+      "Review dashboards and leadership reports for attendance, academics, and school performance.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Parent Communication Tools",
+    description:
+      "Experience parent portal updates, messaging, and notifications that improve engagement.",
+  },
 ];
 
-const PRICING_PLANS = {
-  starter: {
-    name: 'Starter Plan',
-    subtitle: 'Perfect for small to medium schools',
-    features: [
-      'Up to 500 students',
-      'CBE Assessment Analysis',
-      'Smart Timetable Generation',
-      'Bulk SMS (500 messages/month)',
-      'Parent Portal Access',
-      'Mobile App Access',
-      'Email Support'
-    ]
+const schoolTypes = [
+  "Primary School",
+  "Junior School",
+  "Secondary School",
+  "TVET Institution",
+  "College",
+];
+
+const counties = [
+  "Nairobi",
+  "Mombasa",
+  "Kisumu",
+  "Nakuru",
+  "Kiambu",
+  "Machakos",
+  "Uasin Gishu",
+  "Kakamega",
+  "Nyeri",
+  "Meru",
+];
+
+const interestAreas = [
+  "CBC Assessment",
+  "Student Management",
+  "Fee Management",
+  "Attendance Tracking",
+  "Parent Portal",
+  "Teacher Portal",
+  "Analytics & Reports",
+  "SMS Communication",
+];
+
+const demoTypes = ["Online Demo", "Physical Visit", "Phone Consultation"];
+
+const timelineSteps = [
+  "CBC Assessment Workflow",
+  "Student Enrollment Process",
+  "Report Generation",
+  "Parent Portal Features",
+  "Financial Management",
+  "Questions & Answers Session",
+];
+
+const testimonials = [
+  {
+    school: "Karura Junior School, Nairobi",
+    position: "Deputy Principal",
+    text: "The demo was practical and tailored to our school. We quickly understood how NONEAA would support CBC reporting and communication.",
+    rating: 5,
   },
-  growth: {
-    name: 'Growth Plan',
-    subtitle: 'For growing schools and institutions',
-    popular: true,
-    features: [
-      'Up to 2000 students',
-      'Advanced CBE Analytics',
-      'AI-Powered Timetabling',
-      'Unlimited Bulk SMS',
-      'Advanced Parent Portal',
-      'Priority Mobile App Features',
-      '24/7 Phone Support',
-      'Custom Integrations',
-      'Data Export & Backup'
-    ]
+  {
+    school: "Mwangaza Girls Secondary, Nakuru",
+    position: "ICT Officer",
+    text: "Excellent walkthrough with clear examples. The analytics and parent engagement features matched exactly what we were evaluating.",
+    rating: 5,
   },
-  enterprise: {
-    name: 'Enterprise Plan',
-    subtitle: 'For large schools and education networks',
-    features: [
-      'Unlimited students',
-      'Advanced CBE Analytics',
-      'AI-Powered Timetabling',
-      'Unlimited Bulk SMS',
-      'Advanced Parent Portal',
-      'Priority Mobile App Features',
-      '24/7 Dedicated Support',
-      'Custom Integrations',
-      'Data Export & Backup',
-      'Multi-school Management',
-      'API Access'
-    ]
-  }
+  {
+    school: "Lakeview TVET Centre, Kisumu",
+    position: "Registrar",
+    text: "Professional and focused demo session. Our team got clear next steps and confidence in implementation support.",
+    rating: 5,
+  },
+];
+
+const faqs = [
+  {
+    question: "How long is the demo?",
+    answer: "Most demos take 45–60 minutes, depending on the modules your team wants to focus on.",
+  },
+  {
+    question: "Is the demo free?",
+    answer: "Yes. The demo is completely free with no obligation.",
+  },
+  {
+    question: "Can multiple staff members attend?",
+    answer: "Absolutely. We encourage principals, ICT officers, bursars, and academic leads to join.",
+  },
+  {
+    question: "Do you offer implementation support?",
+    answer: "Yes. We support onboarding, setup, training, and post-launch assistance.",
+  },
+  {
+    question: "How soon can we get started after the demo?",
+    answer: "Most schools begin onboarding within 1–2 weeks depending on readiness and timelines.",
+  },
+];
+
+const initialFormData: FormData = {
+  schoolName: "",
+  schoolType: "",
+  county: "",
+  students: "",
+  teachers: "",
+  fullName: "",
+  role: "",
+  email: "",
+  phone: "",
+  interests: [],
+  preferredDate: "",
+  preferredTime: "",
+  demoType: "",
+  notes: "",
 };
 
-const PARTNER_SCHOOLS = [
-  { name: "Shema School", logo: "https://images.unsplash.com/photo-1562774053-701939374585?w=200&h=200&fit=crop" },
-  { name: "Darnen House", logo: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=200&h=200&fit=crop" },
-  { name: "Royal Academy", logo: "https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=200&h=200&fit=crop" },
-  { name: "Ridges Academy", logo: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=200&h=200&fit=crop" },
-  { name: "Mwiki High School", logo: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=200&h=200&fit=crop" },
-  { name: "Shimba Hills School", logo: "https://images.unsplash.com/photo-1519452635265-7b1fbfd1e4e0?w=200&h=200&fit=crop" },
-  { name: "Hope Academy", logo: "https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?w=200&h=200&fit=crop" },
-  { name: "Heri School", logo: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&h=200&fit=crop" },
-  { name: "Nexa International", logo: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&h=200&fit=crop" },
-  { name: "Green Valley School", logo: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=200&h=200&fit=crop" },
-  { name: "St. Mary's Academy", logo: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=200&h=200&fit=crop" },
-  { name: "Brighten Academy", logo: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=200&h=200&fit=crop" },
-];
+const NoneaaPlatformPage = () => {
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitState, setSubmitState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [submitError, setSubmitError] = useState("");
+  const [activeFaq, setActiveFaq] = useState<number | null>(0);
 
-const STATS = {
-  hero: [
-    { number: '250+', label: 'Schools' },
-    { number: '45K+', label: 'Students' },
-    { number: '98%', label: 'Satisfaction' },
-  ],
-  trust: [
-    { number: '250+', label: 'Partner Schools', gradient: 'from-blue-600 to-blue-700' },
-    { number: '47+', label: 'Counties', gradient: 'from-teal-600 to-teal-700' },
-    { number: '45K+', label: 'Active Students', gradient: 'from-emerald-600 to-emerald-700' },
-    { number: '5+', label: 'Years Experience', gradient: 'from-blue-600 to-teal-600' },
-  ]
-};
+  const minDate = useMemo(() => new Date().toISOString().split("T")[0], []);
 
-const TESTIMONIALS = [
-  {
-    quote: "Noneaa has transformed how we track CBE competencies. The platform is intuitive and saves us countless hours.",
-    author: "Mrs. Jane Kamau",
-    role: "Headteacher, Green Valley Academy",
-    rating: 5
-  },
-  {
-    quote: "Parent engagement has increased by 70% since we started using Noneaa's communication features.",
-    author: "Mr. David Otieno",
-    role: "Principal, Hope International School",
-    rating: 5
-  },
-  {
-    quote: "The analytics dashboard gives us insights we never had before. We can now intervene early when students struggle.",
-    author: "Dr. Sarah Mwangi",
-    role: "Academic Director, Royal Academy",
-    rating: 5
-  }
-];
-
-// Reusable Components
-const PlatformHeroContent = () => {
-  const headingText = "Kenya's Leading CBE Management Platform";
-  const typedHeading = useTypewriter({
-    text: headingText,
-    speed: 30,
-    delay: 300,
-    repeat: false,
-  });
-
-  const descriptionText = "Noneaa is an all-in-one Competency-Based Curriculum platform designed to streamline CBE implementation, enhance learning outcomes, and simplify competency tracking for Kenyan schools.";
-  const typedDescription = useTypewriter({
-    text: descriptionText,
-    speed: 15,
-    delay: 1600,
-    repeat: true,
-  });
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
-      },
-    },
+  const handleInput = (field: keyof FormData, value: string | string[]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8 },
-    },
+  const toggleInterest = (interest: string) => {
+    const nextInterests = formData.interests.includes(interest)
+      ? formData.interests.filter((item) => item !== interest)
+      : [...formData.interests, interest];
+
+    handleInput("interests", nextInterests);
+  };
+
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!formData.schoolName.trim()) nextErrors.schoolName = "School name is required.";
+    if (!formData.schoolType) nextErrors.schoolType = "School type is required.";
+    if (!formData.county) nextErrors.county = "County is required.";
+    if (!formData.students) nextErrors.students = "Number of students is required.";
+    if (!formData.teachers) nextErrors.teachers = "Number of teachers is required.";
+    if (!formData.fullName.trim()) nextErrors.fullName = "Full name is required.";
+    if (!formData.role.trim()) nextErrors.role = "Position / Role is required.";
+    if (!formData.email.trim()) nextErrors.email = "Email address is required.";
+    if (!formData.phone.trim()) nextErrors.phone = "Phone number is required.";
+    if (formData.interests.length === 0)
+      nextErrors.interests = "Select at least one area of interest.";
+    if (!formData.preferredDate) nextErrors.preferredDate = "Preferred date is required.";
+    if (!formData.preferredTime) nextErrors.preferredTime = "Preferred time is required.";
+    if (!formData.demoType) nextErrors.demoType = "Demo type is required.";
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      nextErrors.email = "Enter a valid email address.";
+    }
+
+    const kenyanPhonePattern = /^(\+254|254|0)(1|7)\d{8}$/;
+    if (formData.phone && !kenyanPhonePattern.test(formData.phone.replace(/\s+/g, ""))) {
+      nextErrors.phone = "Enter a valid phone number.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!validateForm()) return;
+
+    setSubmitState("loading");
+    setSubmitError("");
+
+    try {
+      // TODO: Replace with real booking API integration when endpoint is available.
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error("You appear to be offline. Please check your internet connection and try again.");
+      }
+
+      setSubmitState("success");
+      setFormData(initialFormData);
+      setErrors({});
+    } catch (error) {
+      setSubmitState("error");
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Unable to submit your demo request. Please try again or contact support.",
+      );
+    }
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="relative z-10"
-    >
-      {/* Badge */}
-      <motion.div
-        variants={itemVariants}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white shadow-lg mb-6"
-      >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <Zap className="w-4 h-4" />
-        </motion.div>
-        <span className="text-sm font-bold">Why Choose Noneaa</span>
-      </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-teal-50/30">
+      <Header />
 
-      {/* Animated Heading with Typewriter Effect */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
-          <motion.span
-            className="inline-block"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            {typedHeading}
-          </motion.span>
-          <motion.span
-            className="inline-block"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            <span className="animate-pulse text-emerald-400 ml-1">|</span>
-          </motion.span>
-        </h1>
-      </motion.div>
-
-      {/* Description with typing effect */}
-      <motion.div variants={itemVariants} className="mb-8">
-        <p className="text-lg text-slate-200 leading-relaxed">
-          {typedDescription}
-          <motion.span
-            className="inline-block"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <span className="animate-pulse text-cyan-400 ml-1">|</span>
-          </motion.span>
-        </p>
-      </motion.div>
-
-      {/* Animated Buttons */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-wrap gap-4"
-      >
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Button 
-            size="lg" 
-            className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:shadow-blue-500/50 transition-all"
-          >
-            Get Started Free
-            <motion.div
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="ml-2"
-            >
-              <ArrowRight className="w-4 h-4" />
-            </motion.div>
-          </Button>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="border-2 border-white text-white hover:bg-white/10 hover:border-cyan-400 transition-all"
-          >
-            <Play className="w-4 h-4 mr-2" />
-            Watch Demo
-          </Button>
-        </motion.div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const SchoolNode = ({ logo, name, delay = 0 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  return (
-    <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      whileInView={{ scale: 1, opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ delay, type: "spring", stiffness: 150 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="relative group cursor-pointer"
-    >
-      <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full bg-white dark:bg-slate-800 shadow-xl border-4 border-white dark:border-slate-700 flex items-center justify-center transform transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:-translate-y-1 overflow-hidden">
-        {logo ? (
-          <img src={logo} alt={name || "School badge"} className="w-full h-full object-contain p-2" />
-        ) : (
-          <GraduationCap className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-blue-600 dark:text-blue-400" />
-        )}
-      </div>
-      
-      <div className="absolute inset-0 rounded-full bg-blue-400/30 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
-      
-      {name && (
-        <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 transition-all duration-200 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-          <div className="bg-slate-900 dark:bg-slate-700 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
-            <div className="font-semibold">{name}</div>
-          </div>
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 dark:bg-slate-700 rotate-45"></div>
-        </div>
-      )}
-    </motion.div>
-  );
-};
-
-const FeatureCard = ({ icon: Icon, text, color, bg, index }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay: 0.6 + index * 0.1 }}
-    className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-slate-800 shadow-md hover:shadow-xl transition-all group cursor-pointer border border-border/50"
-  >
-    <div className={`p-2 rounded-lg ${bg} group-hover:scale-110 transition-transform`}>
-      <Icon className={`w-5 h-5 ${color}`} />
-    </div>
-    <span className="font-semibold text-slate-900 dark:text-white text-sm">{text}</span>
-  </motion.div>
-);
-
-const StatCard = ({ stat, index, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ delay: delay + index * 0.1 }}
-    whileHover={{ y: -5, transition: { duration: 0.2 } }}
-    className="group"
-  >
-    <div className="relative p-6 md:p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border-2 border-slate-100 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300 overflow-hidden">
-      <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-      <div className="relative">
-        <div className={`text-4xl md:text-5xl font-extrabold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent mb-2`}>
-          {stat.number}
-        </div>
-        <div className="text-sm md:text-base text-slate-600 dark:text-slate-400 font-medium">
-          {stat.label}
-        </div>
-      </div>
-    </div>
-  </motion.div>
-);
-
-const PricingCard = ({ plan, planKey, hoveredCard, setHoveredCard, delay }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ delay }}
-    className={`bg-white dark:bg-slate-800 rounded-2xl shadow-lg ${plan.popular ? 'border-3 border-orange-400' : 'border-2 border-slate-200 dark:border-slate-700'} p-8 relative transition-all duration-300 transform ${
-      hoveredCard === planKey ? 'scale-105 shadow-2xl' : ''
-    }`}
-    onMouseEnter={() => setHoveredCard(planKey)}
-    onMouseLeave={() => setHoveredCard(null)}
-  >
-    {plan.popular && (
-      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-        <span className="bg-gradient-to-r from-orange-400 to-red-400 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center gap-2">
-          <Star className="w-4 h-4 fill-white" />
-          Most Popular
-        </span>
-      </div>
-    )}
-
-    <div className={`mb-6 ${plan.popular ? 'mt-2' : ''}`}>
-      <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{plan.name}</h3>
-      <p className="text-slate-600 dark:text-slate-400">{plan.subtitle}</p>
-    </div>
-
-    <div className="mb-8">
-      <div className="text-5xl font-bold text-emerald-500 mb-1">Get A Quote</div>
-      <p className="text-slate-500 dark:text-slate-400">per term</p>
-    </div>
-
-    <ul className="space-y-4 mb-8">
-      {plan.features.map((feature, index) => (
-        <motion.li 
-          key={index} 
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: delay + 0.1 + index * 0.05 }}
-          className="flex items-start gap-3"
-        >
-          <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-          <span className="text-slate-700 dark:text-slate-300">{feature}</span>
-        </motion.li>
-      ))}
-    </ul>
-
-    <Button className={`w-full ${plan.popular ? 'bg-gradient-to-r from-orange-400 to-red-400 hover:from-orange-500 hover:to-red-500' : 'bg-emerald-500 hover:bg-emerald-600'} text-white font-semibold py-6 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg text-lg`}>
-      Get a Quote
-    </Button>
-  </motion.div>
-);
-
-// Main Component
-export default function NoneaaPlatformPage() {
-  const [hoveredCard, setHoveredCard] = useState(null);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-secondary/20 to-background">
-      <Header/>
-      
-      {/* Hero Section */}
-<section className="relative pt-60 pb-32 overflow-hidden">
-
-  {/* Background Image */}
-  <div
-    className="absolute inset-0 bg-cover bg-center"
-    style={{
-      backgroundImage: "url('/Gemini_Generated_Image_jrstonjrstonjrst.png')"
-    }}
-  />
-
-  {/* Animated gradient overlay */}
-  <motion.div
-    className="absolute inset-0 bg-slate-900/75"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ duration: 1 }}
-  />
-
-  {/* Animated Decorative elements */}
-  <motion.div
-    className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"
-    animate={{
-      scale: [1, 1.2, 1],
-      opacity: [0.3, 0.6, 0.3],
-    }}
-    transition={{ duration: 8, repeat: Infinity }}
-  />
-  <motion.div
-    className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"
-    animate={{
-      scale: [1.2, 1, 1.2],
-      opacity: [0.4, 0.2, 0.4],
-    }}
-    transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-  />
-
-  {/* Main Content */}
-  <div className="container mx-auto px-6 lg:px-16 relative z-10">
-    <div className="grid lg:grid-cols-2 gap-12 items-center">
-      
-      {/* LEFT SIDE CONTENT */}
-      <PlatformHeroContent />
-
-      {/* RIGHT SIDE IMAGE */}
-      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="relative">
-        <img src="/anoter.png" alt="Dashboard Preview" className="rounded-xl shadow-2xl" />
-      </motion.div>
-
-    </div>
-  </div>
-</section>
-
-
-      {/* Core Capabilities Section - NEW */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
-              Comprehensive{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
-                School Management Tools
+      <main>
+        <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-teal-900 text-white py-24">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.28),transparent_45%),radial-gradient(circle_at_80%_80%,rgba(20,184,166,0.2),transparent_55%)]" />
+          <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-10 items-center">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 text-sm font-medium mb-6">
+                <Shield className="w-4 h-4" />
+                Ministry Approved
               </span>
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-              Everything you need to run a modern, efficient school in one integrated platform
-            </p>
-          </motion.div>
+              <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
+                Book Your Personalized Demo
+              </h1>
+              <p className="text-xl text-blue-100 max-w-2xl mb-8">
+                Schedule a live demonstration of NONEAA and explore exactly how your school can improve CBC workflows, reporting, and parent engagement.
+              </p>
+              <a
+                href="#book-demo-form"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-300"
+              >
+                Book a Demo
+                <ArrowRight className="w-5 h-5" />
+              </a>
+            </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {CORE_CAPABILITIES.map((capability, index) => {
-              const Icon = capability.icon;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
+            <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.1 }} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-2xl">
+              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-400/10 border border-white/20 p-6 flex flex-col justify-between">
+                <div className="flex items-center gap-2 text-cyan-200">
+                  <GraduationCap className="w-5 h-5" />
+                  <span className="text-sm font-medium">Professional education-focused walkthrough</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-white/10 border border-white/20 p-3">
+                    <p className="text-xs text-blue-100">Demo length</p>
+                    <p className="font-semibold">45 - 60 mins</p>
+                  </div>
+                  <div className="rounded-xl bg-white/10 border border-white/20 p-3">
+                    <p className="text-xs text-blue-100">Audience</p>
+                    <p className="font-semibold">School leadership</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        <section className="py-20">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {benefits.map((benefit, index) => (
+                <motion.article
+                  key={benefit.title}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="group p-6 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-700 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-slate-200 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500"
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  className="rounded-2xl bg-white/80 backdrop-blur-sm border border-white/60 p-6 shadow-lg hover:shadow-xl transition-all"
                 >
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Icon className="w-7 h-7 text-white" />
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 flex items-center justify-center text-white mb-4">
+                    <benefit.icon className="w-5 h-5" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{capability.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{capability.description}</p>
-                </motion.div>
-              );
-            })}
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">{benefit.title}</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">{benefit.description}</p>
+                </motion.article>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Ministry Approved CTA Section */}
-      <section className="relative overflow-hidden">
-        <div className="grid lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-br from-blue-400 to-emerald-500 dark:from-blue-600 dark:to-emerald-700 p-12 lg:p-20 flex flex-col justify-center relative overflow-hidden"
-          >
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 -translate-y-32 blur-3xl"></div>
-              <div className="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full translate-x-32 translate-y-32 blur-3xl"></div>
-            </div>
+        <section className="pb-20">
+          <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-[1.25fr_0.75fr] gap-8">
+            <div id="book-demo-form" className="bg-white/85 backdrop-blur-md border border-white rounded-3xl p-8 shadow-2xl">
+              <h2 className="text-3xl font-bold text-slate-900 mb-6">Schedule My Demo</h2>
 
-            <div className="relative z-10">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30 mb-6"
-              >
-                <Award className="w-4 h-4" />
-                <span className="text-sm font-bold">Ministry Approved</span>
-              </motion.div>
+              {submitState === "success" ? (
+                <div className="py-10 text-center">
+                  <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Thank you!</h3>
+                  <p className="text-slate-600">Your request has been received successfully.</p>
+                  <p className="text-blue-700 font-medium mt-1">Our team will contact you within 24 hours.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+                  <FieldGroup title="School Information">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <InputField label="School Name" required error={errors.schoolName}>
+                        <input value={formData.schoolName} onChange={(e) => handleInput("schoolName", e.target.value)} />
+                      </InputField>
 
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight"
-              >
-                Designed for Kenya's CBE Implementation
-              </motion.h2>
+                      <InputField label="School Type" required error={errors.schoolType}>
+                        <select value={formData.schoolType} onChange={(e) => handleInput("schoolType", e.target.value)}>
+                          <option value="">Select school type</option>
+                          {schoolTypes.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                      </InputField>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-                className="text-lg text-white/90 mb-8 leading-relaxed"
-              >
-                Rated as the top CBE management system in Kenya, we've earned our reputation through successful implementation in schools nationwide and positive feedback from educators, parents, and education officials.
-              </motion.p>
+                      <InputField label="County" required error={errors.county}>
+                        <select value={formData.county} onChange={(e) => handleInput("county", e.target.value)}>
+                          <option value="">Select county</option>
+                          {counties.map((county) => (
+                            <option key={county} value={county}>{county}</option>
+                          ))}
+                        </select>
+                      </InputField>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.5 }}
-              >
-                <Button size="lg" variant="outline" className="bg-white text-blue-600 hover:bg-blue-50 border-2 border-white shadow-xl hover:shadow-2xl transition-all text-lg px-8 py-6 group">
-                  Book A Demo
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </motion.div>
+                      <InputField label="Number of Students" required error={errors.students}>
+                        <input type="number" min="1" value={formData.students} onChange={(e) => handleInput("students", e.target.value)} />
+                      </InputField>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.6 }}
-                className="grid grid-cols-3 gap-6 mt-12 pt-12 border-t border-white/20"
-              >
-                {STATS.hero.map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-3xl font-extrabold text-white mb-1">{stat.number}</div>
-                    <div className="text-sm text-white/80">{stat.label}</div>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="relative h-[600px] lg:h-auto"
-          >
-            <img src="/Gemini_Generated_Image_jrstonjrstonjrst.png" alt="Kenyan students learning" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-transparent"></div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="relative overflow-hidden">
-        <div className="grid lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="relative h-[600px] lg:h-auto"
-          >
-            <img src="/Gemini_Generated_Image_2iv0jt2iv0jt2iv0.png" alt="African students in classroom" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-l from-emerald-500/20 to-transparent"></div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-br from-emerald-500 to-teal-500 dark:from-emerald-600 dark:to-teal-600 p-12 lg:p-20 flex flex-col justify-center relative overflow-hidden"
-          >
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full translate-x-32 -translate-y-32 blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 translate-y-32 blur-3xl"></div>
-            </div>
-
-            <div className="relative z-10">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white border border-white/30 mb-6"
-              >
-                <Shield className="w-4 h-4" />
-                <span className="text-sm font-bold">Trusted Platform</span>
-              </motion.div>
-
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight"
-              >
-                Complete CBE Management Solution
-              </motion.h2>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-                className="text-lg text-white/90 mb-8 leading-relaxed"
-              >
-                From competency tracking to portfolio management, handle every aspect of CBE implementation efficiently with our comprehensive suite of tools designed specifically for Kenyan schools.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.5 }}
-                className="space-y-4 mb-8"
-              >
-                {BENEFITS.map((benefit, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                    className="flex items-center gap-3 text-white"
-                  >
-                    <div className="p-1 bg-white/20 rounded-full">
-                      <Check className="w-5 h-5" />
+                      <InputField label="Number of Teachers" required error={errors.teachers}>
+                        <input type="number" min="1" value={formData.teachers} onChange={(e) => handleInput("teachers", e.target.value)} />
+                      </InputField>
                     </div>
-                    <span className="text-lg font-medium">{benefit.text}</span>
-                  </motion.div>
-                ))}
-              </motion.div>
+                  </FieldGroup>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 1.2 }}
-              >
-                <Button size="lg" className="bg-white text-emerald-600 hover:bg-emerald-50 shadow-xl hover:shadow-2xl transition-all text-lg px-8 py-6 group">
-                  Start Free Trial
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </motion.div>
+                  <FieldGroup title="Contact Information">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <InputField label="Full Name" required error={errors.fullName} icon={<User className="w-4 h-4" />}>
+                        <input value={formData.fullName} onChange={(e) => handleInput("fullName", e.target.value)} />
+                      </InputField>
+
+                      <InputField label="Position / Role" required error={errors.role}>
+                        <input value={formData.role} onChange={(e) => handleInput("role", e.target.value)} />
+                      </InputField>
+
+                      <InputField label="Email Address" required error={errors.email} icon={<Mail className="w-4 h-4" />}>
+                        <input type="email" value={formData.email} onChange={(e) => handleInput("email", e.target.value)} />
+                      </InputField>
+
+                      <InputField label="Phone Number" required error={errors.phone} icon={<Phone className="w-4 h-4" />}>
+                        <input value={formData.phone} onChange={(e) => handleInput("phone", e.target.value)} />
+                      </InputField>
+                    </div>
+                  </FieldGroup>
+
+                  <FieldGroup title="Areas of Interest">
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {interestAreas.map((interest, index) => {
+                        const checkboxId = `interest-${index}`;
+                        return (
+                          <label key={interest} htmlFor={checkboxId} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 transition-colors cursor-pointer">
+                            <input id={checkboxId} type="checkbox" checked={formData.interests.includes(interest)} onChange={() => toggleInterest(interest)} />
+                            <span className="text-sm text-slate-700">{interest}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {errors.interests ? <p className="text-sm text-rose-600 mt-2">{errors.interests}</p> : null}
+                  </FieldGroup>
+
+                  <FieldGroup title="Scheduling">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <InputField label="Preferred Date" required error={errors.preferredDate}>
+                        <input type="date" min={minDate} value={formData.preferredDate} onChange={(e) => handleInput("preferredDate", e.target.value)} />
+                      </InputField>
+
+                      <InputField label="Preferred Time" required error={errors.preferredTime}>
+                        <input type="time" value={formData.preferredTime} onChange={(e) => handleInput("preferredTime", e.target.value)} />
+                      </InputField>
+
+                      <InputField label="Demo Type" required error={errors.demoType}>
+                        <select value={formData.demoType} onChange={(e) => handleInput("demoType", e.target.value)}>
+                          <option value="">Select demo type</option>
+                          {demoTypes.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                      </InputField>
+                    </div>
+                  </FieldGroup>
+
+                  <FieldGroup title="Additional Notes">
+                    <InputField label="School specific requirements">
+                      <textarea
+                        rows={5}
+                        value={formData.notes}
+                        onChange={(e) => handleInput("notes", e.target.value)}
+                        placeholder="Tell us your school priorities and any requirements."
+                      />
+                    </InputField>
+                  </FieldGroup>
+
+                  <button
+                    type="submit"
+                    disabled={submitState === "loading"}
+                    className="w-full bg-gradient-to-r from-blue-600 to-teal-600 text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-teal-700 transition disabled:opacity-60"
+                  >
+                    {submitState === "loading" ? (
+                      <>
+                        <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        Scheduling Your Demo...
+                      </>
+                    ) : (
+                      <>
+                        Schedule My Demo
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
+
+                  {submitState === "error" ? (
+                    <p className="text-center text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">
+                      {submitError || "Unable to submit your demo request. Please check your connection and try again."}
+                    </p>
+                  ) : null}
+                </form>
+              )}
             </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Testimonials Section - NEW */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Loved by{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
-                Educators Nationwide
-              </span>
-            </h2>
-            <p className="text-lg text-slate-300 max-w-3xl mx-auto">
-              See what school leaders have to say about their experience with Noneaa
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:border-white/40 transition-all duration-300"
-              >
-                <div className="flex gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+            <div className="space-y-6">
+              <div className="bg-white/80 backdrop-blur-sm border border-white rounded-2xl p-6 shadow-lg">
+                <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  What You&apos;ll See During The Demo
+                </h3>
+                <div className="space-y-3">
+                  {timelineSteps.map((step, index) => (
+                    <div key={step} className="flex items-start gap-3">
+                      <span className="w-7 h-7 rounded-full bg-gradient-to-r from-blue-600 to-teal-600 text-white text-xs font-bold inline-flex items-center justify-center mt-0.5">
+                        {index + 1}
+                      </span>
+                      <p className="text-slate-700 text-sm">{step}</p>
+                    </div>
                   ))}
                 </div>
-                <p className="text-white/90 mb-6 leading-relaxed italic">"{testimonial.quote}"</p>
-                <div className="border-t border-white/20 pt-4">
-                  <p className="text-white font-semibold">{testimonial.author}</p>
-                  <p className="text-slate-300 text-sm">{testimonial.role}</p>
+              </div>
+
+              {testimonials.map((testimonial) => (
+                <div key={testimonial.school} className="bg-white/80 backdrop-blur-sm border border-white rounded-2xl p-5 shadow-lg">
+                  <div className="flex gap-1 mb-3">
+                    {Array.from({ length: testimonial.rating }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-amber-500 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-slate-600 text-sm mb-3">“{testimonial.text}”</p>
+                  <p className="font-semibold text-slate-900 text-sm">{testimonial.school}</p>
+                  <p className="text-xs text-blue-700">{testimonial.position}</p>
                 </div>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Trusted By Schools Section */}
-
-
-      {/* Pricing Section - NOW WITH 3 TIERS */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white shadow-lg mb-6"
-            >
-              <DollarSign className="w-4 h-4" />
-              <span className="text-sm font-bold">Simple Pricing</span>
-            </motion.div>
-
-            <h2 className="text-5xl md:text-6xl font-bold text-slate-900 mb-4 tracking-tight">
-              Affordable Pricing for{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                Kenyan Schools
-              </span>
-            </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Choose the plan that works best for your school's needs and budget
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-12">
-            <PricingCard plan={PRICING_PLANS.starter} planKey="starter" hoveredCard={hoveredCard} setHoveredCard={setHoveredCard} delay={0.2} />
-            <PricingCard plan={PRICING_PLANS.growth} planKey="growth" hoveredCard={hoveredCard} setHoveredCard={setHoveredCard} delay={0.3} />
-            <PricingCard plan={PRICING_PLANS.enterprise} planKey="enterprise" hoveredCard={hoveredCard} setHoveredCard={setHoveredCard} delay={0.4} />
+        <section className="pb-24">
+          <div className="max-w-5xl mx-auto px-6">
+            <h2 className="text-4xl font-bold text-slate-900 text-center mb-10">Frequently Asked Questions</h2>
+            <div className="space-y-4">
+              {faqs.map((faq, index) => (
+                <div key={faq.question} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                  <button
+                    onClick={() => setActiveFaq(activeFaq === index ? null : index)}
+                    className="w-full flex items-center justify-between px-5 py-4 text-left"
+                  >
+                    <span className="font-semibold text-slate-900">{faq.question}</span>
+                    <ArrowRight className={`w-4 h-4 text-blue-600 transition-transform ${activeFaq === index ? "rotate-90" : ""}`} />
+                  </button>
+                  {activeFaq === index ? (
+                    <p className="px-5 pb-4 text-slate-600 text-sm leading-relaxed">{faq.answer}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
           </div>
+        </section>
+      </main>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
-            className="text-center"
-          >
-            <p className="text-slate-600 text-lg">
-              All plans include M-Pesa payment options and free setup assistance
-            </p>
-          </motion.div>
-        </div>
-      </section>
-      
-      <Footer/>
+      <Footer />
+    </div>
+  );
+};
+
+function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">{title}</h3>
+      {children}
     </div>
   );
 }
+
+function InputField({
+  label,
+  required,
+  error,
+  children,
+  icon,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}) {
+  const fieldId = useId();
+  const controlClassName =
+    "w-full rounded-xl border border-slate-300 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-400/30 focus:border-blue-500";
+  const enhancedChild = isValidElement(children)
+    ? cloneElement(children, {
+        id: fieldId,
+        "aria-invalid": Boolean(error),
+        className: `${controlClassName} ${children.props.className ?? ""}`.trim(),
+      })
+    : children;
+
+  return (
+    <label className="block" htmlFor={fieldId}>
+      <span className="text-sm font-medium text-slate-700 block mb-2">
+        {label}
+        {required ? " *" : ""}
+      </span>
+      <div className="relative">
+        {icon ? <span className="absolute right-3 top-3 text-slate-400">{icon}</span> : null}
+        {enhancedChild}
+      </div>
+      {error ? <span className="text-xs text-rose-600 mt-1 block">{error}</span> : null}
+    </label>
+  );
+}
+
+export default NoneaaPlatformPage;
