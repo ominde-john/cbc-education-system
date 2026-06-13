@@ -95,6 +95,7 @@
     @apply leading-normal;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
   }
 
   /* IMPORTANT: Don't apply leading-relaxed to ALL elements */

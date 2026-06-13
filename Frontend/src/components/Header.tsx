@@ -1,16 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, ArrowRight, Unlock, ChevronDown } from 'lucide-react';
+import {
+  Menu, X, ArrowRight, ChevronDown,
+  Monitor, CreditCard, Rocket, Users, UserCircle, Star
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+
+const platformLinks = [
+  { to: '/demo', label: 'Product Tour', description: 'See Noneaa in action', icon: Monitor },
+  { to: '/pricing', label: 'Pricing', description: 'Plans for every school', icon: CreditCard },
+  { to: '/getting-started', label: 'Getting Started', description: 'Set up in under an hour', icon: Rocket },
+];
+
+const companyLinks = [
+  { to: '/company/client', label: 'Clients', description: 'Schools using Noneaa', icon: Users },
+  { to: '/company/our-team', label: 'Our Team', description: 'Meet the people behind Noneaa', icon: UserCircle },
+  { to: '/testimonials', label: 'Testimonials', description: 'What schools say about us', icon: Star },
+];
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
   const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
+  const [mobilePlatformOpen, setMobilePlatformOpen] = useState(false);
   const [mobileCompanyOpen, setMobileCompanyOpen] = useState(false);
 
   useEffect(() => {
@@ -31,10 +48,11 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Utility to close all menus on navigation
   const closeMenus = () => {
     setMobileMenuOpen(false);
+    setPlatformDropdownOpen(false);
     setCompanyDropdownOpen(false);
+    setMobilePlatformOpen(false);
     setMobileCompanyOpen(false);
   };
 
@@ -48,71 +66,116 @@ export default function Header() {
         visible ? 'translate-y-0' : '-translate-y-full'
       )}
     >
-      <div className="container mx-auto px-4 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center" onClick={closeMenus}>
             <img
               src="/Noneea-logo.jpg"
-              alt="Noneea"
-              className="h-12 w-12 object-cover rounded-full"
+              alt="Noneaa"
+              className="h-10 w-10 object-cover rounded-full"
             />
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-6">
-            <Link
-              to="/explore"
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition"
-            >
-              Explore
-            </Link>
-
-            {/* Desktop Company Dropdown */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {/* Platform Dropdown */}
             <div
               className="relative"
-              onMouseEnter={() => setCompanyDropdownOpen(true)}
-              onMouseLeave={() => setCompanyDropdownOpen(false)}
+              onMouseEnter={() => setPlatformDropdownOpen(true)}
+              onMouseLeave={() => setPlatformDropdownOpen(false)}
             >
-              <button className="text-sm font-medium text-foreground/80 hover:text-primary transition flex items-center gap-1 py-4">
-                Company
-                <ChevronDown className={cn("w-4 h-4 transition-transform", companyDropdownOpen && "rotate-180")} />
+              <button className="text-sm font-medium text-foreground/80 hover:text-primary transition flex items-center gap-1 px-3 py-4">
+                Platform
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", platformDropdownOpen && "rotate-180")} />
               </button>
 
               <AnimatePresence>
-                {companyDropdownOpen && (
+                {platformDropdownOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 w-48 bg-white border border-border rounded-lg shadow-lg py-2"
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 w-64 bg-white border border-border rounded-xl shadow-xl py-2"
                   >
-                    <Link
-                      to="/company/client"
-                      className="block px-4 py-2 text-sm text-foreground/80 hover:bg-secondary/50 hover:text-primary transition"
-                      onClick={closeMenus}
-                    >
-                      Client
-                    </Link>
-                    <Link
-                      to="/company/our-team"
-                      className="block px-4 py-2 text-sm text-foreground/80 hover:bg-secondary/50 hover:text-primary transition"
-                      onClick={closeMenus}
-                    >
-                      Our Team
-                    </Link>
+                    {platformLinks.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition"
+                          onClick={closeMenus}
+                        >
+                          <Icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{item.label}</div>
+                            <div className="text-xs text-slate-500">{item.description}</div>
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {['Analytics', 'About','Features', 'Careers', 'Contact'].map((item) => (
+            {/* Company Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setCompanyDropdownOpen(true)}
+              onMouseLeave={() => setCompanyDropdownOpen(false)}
+            >
+              <button className="text-sm font-medium text-foreground/80 hover:text-primary transition flex items-center gap-1 px-3 py-4">
+                Company
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", companyDropdownOpen && "rotate-180")} />
+              </button>
+
+              <AnimatePresence>
+                {companyDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 w-64 bg-white border border-border rounded-xl shadow-xl py-2"
+                  >
+                    {companyLinks.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition"
+                          onClick={closeMenus}
+                        >
+                          <Icon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{item.label}</div>
+                            <div className="text-xs text-slate-500">{item.description}</div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Direct links */}
+            {[
+              { label: 'Features', to: '/features' },
+              { label: 'About', to: '/about' },
+              { label: 'Careers', to: '/careers' },
+              { label: 'Contact', to: '/contact' },
+            ].map((item) => (
               <Link
-                key={item}
-                to={`/${item.toLowerCase()}`}
-                className="text-sm font-medium text-foreground/80 hover:text-primary transition"
+                key={item.label}
+                to={item.to}
+                className="text-sm font-medium text-foreground/80 hover:text-primary transition px-3 py-4"
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </nav>
@@ -134,6 +197,7 @@ export default function Header() {
           <button
             className="lg:hidden p-2 rounded-lg hover:bg-secondary/50 transition"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -149,11 +213,32 @@ export default function Header() {
               className="lg:hidden overflow-hidden border-t"
             >
               <nav className="flex flex-col py-4 gap-1">
-                <Link to="/explore" className="px-4 py-3 rounded-lg hover:bg-secondary/50" onClick={closeMenus}>
-                  Explore
-                </Link>
+                {/* Mobile Platform Accordion */}
+                <div className="flex flex-col">
+                  <button
+                    onClick={() => setMobilePlatformOpen(!mobilePlatformOpen)}
+                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-secondary/50"
+                  >
+                    <span className="text-sm font-medium">Platform</span>
+                    <ChevronDown className={cn("w-4 h-4 transition-transform", mobilePlatformOpen && "rotate-180")} />
+                  </button>
+                  {mobilePlatformOpen && (
+                    <div className="pl-4 flex flex-col bg-secondary/20 rounded-lg mx-2 overflow-hidden">
+                      {platformLinks.map((item) => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="py-3 px-4 text-sm text-foreground/70 hover:text-primary"
+                          onClick={closeMenus}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                {/* Mobile Dropdown (Accordion Style) */}
+                {/* Mobile Company Accordion */}
                 <div className="flex flex-col">
                   <button
                     onClick={() => setMobileCompanyOpen(!mobileCompanyOpen)}
@@ -163,28 +248,38 @@ export default function Header() {
                     <ChevronDown className={cn("w-4 h-4 transition-transform", mobileCompanyOpen && "rotate-180")} />
                   </button>
                   {mobileCompanyOpen && (
-                    <div className="pl-8 flex flex-col bg-secondary/20 rounded-lg mx-2">
-                      <Link to="/company/client" className="py-3 text-sm text-foreground/70" onClick={closeMenus}>
-                        Client
-                      </Link>
-                      <Link to="/company/our-team" className="py-3 text-sm text-foreground/70" onClick={closeMenus}>
-                        Our Team
-                      </Link>
+                    <div className="pl-4 flex flex-col bg-secondary/20 rounded-lg mx-2 overflow-hidden">
+                      {companyLinks.map((item) => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="py-3 px-4 text-sm text-foreground/70 hover:text-primary"
+                          onClick={closeMenus}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {['Analytics', 'About', 'Features', 'Careers', 'Contact'].map((item) => (
+                {/* Direct mobile links */}
+                {[
+                  { label: 'Features', to: '/features' },
+                  { label: 'About', to: '/about' },
+                  { label: 'Careers', to: '/careers' },
+                  { label: 'Contact', to: '/contact' },
+                ].map((item) => (
                   <Link
-                    key={item}
-                    to={`/${item.toLowerCase()}`}
-                    className="px-4 py-3 rounded-lg hover:bg-secondary/50"
+                    key={item.label}
+                    to={item.to}
+                    className="px-4 py-3 text-sm font-medium rounded-lg hover:bg-secondary/50"
                     onClick={closeMenus}
                   >
-                    {item}
+                    {item.label}
                   </Link>
                 ))}
-                
+
                 <div className="grid grid-cols-2 gap-3 p-4 mt-2">
                   <Button variant="outline" asChild onClick={closeMenus}>
                     <Link to="/login">Log in</Link>
