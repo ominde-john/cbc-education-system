@@ -30,6 +30,10 @@ import ClientsPage from '@/pages/website-pages/ClientsPage';
 import Feature from "@/pages/website-pages/Features";
 import TeamMembersPage from '@/pages/website-pages/TeamPage';
 import CareersPage from '@/pages/website-pages/CareersPage';
+import PricingPage from '@/pages/website-pages/PricingPage';
+import TestimonialsPage from '@/pages/website-pages/TestimonialsPage';
+import DemoPage from '@/pages/website-pages/DemoPage';
+import GettingStartedPage from '@/pages/website-pages/GettingStartedPage';
 
 // Admin Registration
 import AdminRegistrationPage from "@/pages/admin-registration";
@@ -179,10 +183,13 @@ function AppRoutes() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/features" element={<Feature />} />
       <Route path="/careers" element={<CareersPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/testimonials" element={<TestimonialsPage />} />
+      <Route path="/demo" element={<DemoPage />} />
+      <Route path="/getting-started" element={<GettingStartedPage />} />
 
       {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
-      <Route path="/demo" element={<ModernDashboard />} />
 
       {/* ── Student Routes ── */}
       <Route
