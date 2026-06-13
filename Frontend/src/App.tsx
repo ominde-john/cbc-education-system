@@ -34,6 +34,7 @@ import PricingPage from '@/pages/website-pages/PricingPage';
 import TestimonialsPage from '@/pages/website-pages/TestimonialsPage';
 import DemoPage from '@/pages/website-pages/DemoPage';
 import GettingStartedPage from '@/pages/website-pages/GettingStartedPage';
+import CurriculumPage from '@/pages/website-pages/CurriculumPage';
 
 // Admin Registration
 import AdminRegistrationPage from "@/pages/admin-registration";
@@ -187,6 +188,7 @@ function AppRoutes() {
       <Route path="/testimonials" element={<TestimonialsPage />} />
       <Route path="/demo" element={<DemoPage />} />
       <Route path="/getting-started" element={<GettingStartedPage />} />
+      <Route path="/curriculum" element={<CurriculumPage />} />
 
       {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
