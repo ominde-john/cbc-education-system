@@ -25,7 +25,6 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 const AUTH_API_URL = `${API_URL}/api/auth`;
 
-/* ─── Step config ─────────────────────────────────────── */
 const STEPS = [
   {
     number: 1,
@@ -34,7 +33,8 @@ const STEPS = [
     cardTitle: 'Tell us about your school',
     cardDesc: 'Enter your school information to get started with CBE Noneaa',
     icon: GraduationCap,
-    color: '#3b82f6',
+    color: '#6366f1',
+    bgGrad: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
   },
   {
     number: 2,
@@ -44,6 +44,7 @@ const STEPS = [
     cardDesc: 'Help parents and teachers locate and reach your school',
     icon: MapPin,
     color: '#10b981',
+    bgGrad: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
   },
   {
     number: 3,
@@ -52,7 +53,8 @@ const STEPS = [
     cardTitle: 'Create Administrator Account',
     cardDesc: 'Set up your secure admin credentials to access the portal',
     icon: UserCog,
-    color: '#8b5cf6',
+    color: '#f59e0b',
+    bgGrad: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
   },
 ];
 
@@ -154,582 +156,519 @@ export default function AdminRegistrationPage() {
     <>
       <PageLoader />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
-        .reg-root, .reg-root * { box-sizing: border-box; }
+        .lr-root, .lr-root * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; }
 
-        .reg-page {
+        /* ══════════ LANDSCAPE SPLIT LAYOUT ══════════ */
+        .lr-page {
           min-height: 100vh;
-          background: #f8fafc;
-          position: relative;
-          overflow-x: hidden;
+          display: flex;
+          flex-direction: row;
+          background: #f0f2f5;
         }
 
-        /* Subtle top gradient accent */
-        .reg-page::before {
-          content: '';
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          height: 400px;
-          background: linear-gradient(180deg, #eef2ff 0%, transparent 100%);
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        /* ── HEADER ── */
-        .reg-header {
+        /* ── LEFT PANEL (Branding / Decorative) ── */
+        .lr-left {
           position: sticky;
           top: 0;
-          z-index: 100;
-          background: rgba(255,255,255,0.85);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
-          border-bottom: 1px solid rgba(0,0,0,0.06);
-        }
-        .reg-header-inner {
-          max-width: 1100px;
-          margin: 0 auto;
-          padding: 0 24px;
-          height: 64px;
+          width: 420px;
+          min-width: 420px;
+          height: 100vh;
           display: flex;
-          align-items: center;
+          flex-direction: column;
           justify-content: space-between;
+          padding: 40px;
+          overflow: hidden;
+          transition: background 0.6s ease;
         }
-        .reg-logo {
+
+        /* Animated mesh background */
+        .lr-left::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0%, transparent 50%);
+          z-index: 1;
+        }
+
+        /* Floating decorative circles */
+        .lr-deco-circle {
+          position: absolute;
+          border-radius: 50%;
+          border: 1px solid rgba(255,255,255,0.15);
+          z-index: 1;
+          animation: floatCircle 15s ease-in-out infinite;
+        }
+        .lr-deco-1 { width: 300px; height: 300px; top: -80px; right: -60px; animation-delay: 0s; }
+        .lr-deco-2 { width: 200px; height: 200px; bottom: -40px; left: -40px; animation-delay: 5s; }
+        .lr-deco-3 { width: 120px; height: 120px; top: 50%; left: 50%; animation-delay: 2s; opacity: 0.5; }
+        @keyframes floatCircle {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(10px, -15px) scale(1.05); }
+          66% { transform: translate(-8px, 12px) scale(0.95); }
+        }
+
+        .lr-left-content {
+          position: relative;
+          z-index: 2;
+        }
+
+        /* Logo section */
+        .lr-brand {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
+          margin-bottom: 60px;
         }
-        .reg-logo-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        .lr-brand-icon {
+          width: 44px; height: 44px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.2);
+          backdrop-filter: blur(10px);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+          border: 1px solid rgba(255,255,255,0.3);
         }
-        .reg-logo-text {
-          font-size: 15px;
-          font-weight: 700;
-          color: #1e293b;
+        .lr-brand-name {
+          font-size: 18px;
+          font-weight: 800;
+          color: #fff;
           letter-spacing: -0.3px;
         }
-        .reg-logo-sub {
-          font-size: 11px;
-          color: #94a3b8;
-          font-weight: 400;
+        .lr-brand-sub {
+          font-size: 12px;
+          color: rgba(255,255,255,0.6);
+          margin-top: 2px;
         }
-        .reg-header-badge {
-          display: flex;
+
+        /* Step indicator on left panel */
+        .lr-step-indicator {
+          margin-bottom: 32px;
+        }
+        .lr-step-pill {
+          display: inline-flex;
           align-items: center;
           gap: 6px;
           padding: 6px 14px;
           border-radius: 20px;
-          background: #f0fdf4;
-          border: 1px solid #bbf7d0;
+          background: rgba(255,255,255,0.15);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.2);
           font-size: 12px;
           font-weight: 600;
-          color: #16a34a;
+          color: rgba(255,255,255,0.9);
+          letter-spacing: 0.3px;
         }
-        .reg-badge-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #22c55e;
-          animation: dotPulse 2s ease-in-out infinite;
-        }
-        @keyframes dotPulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
 
-        /* ── STEPPER ── */
-        .reg-stepper-wrap {
-          position: relative;
-          z-index: 1;
-          background: #fff;
-          border-bottom: 1px solid #f1f5f9;
+        .lr-left-title {
+          font-size: 32px;
+          font-weight: 800;
+          color: #fff;
+          line-height: 1.2;
+          letter-spacing: -0.8px;
+          margin-bottom: 12px;
         }
-        .reg-stepper {
-          max-width: 620px;
-          margin: 0 auto;
-          padding: 32px 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .lr-left-desc {
+          font-size: 15px;
+          color: rgba(255,255,255,0.7);
+          line-height: 1.6;
+          max-width: 320px;
         }
-        .reg-step-node {
+
+        /* Vertical stepper on left */
+        .lr-v-stepper {
+          margin-top: 48px;
           display: flex;
           flex-direction: column;
-          align-items: center;
-          gap: 10px;
+          gap: 0;
           position: relative;
-          z-index: 1;
+          z-index: 2;
         }
-        .reg-step-circle {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-          font-weight: 700;
-          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          position: relative;
-        }
-        .reg-step-circle.completed {
-          background: #10b981;
-          color: #fff;
-          box-shadow: 0 4px 12px rgba(16,185,129,0.3);
-        }
-        .reg-step-circle.active {
-          background: #4f46e5;
-          color: #fff;
-          box-shadow: 0 4px 16px rgba(79,70,229,0.35);
-          transform: scale(1.08);
-        }
-        .reg-step-circle.active::after {
-          content: '';
-          position: absolute;
-          inset: -4px;
-          border-radius: 50%;
-          border: 2px solid rgba(79,70,229,0.2);
-          animation: ringPulse 2.5s ease-in-out infinite;
-        }
-        @keyframes ringPulse { 0%,100%{opacity:0.6;transform:scale(1);}50%{opacity:0;transform:scale(1.2);} }
-        .reg-step-circle.pending {
-          background: #f1f5f9;
-          color: #94a3b8;
-          border: 2px solid #e2e8f0;
-        }
-        .reg-step-label {
-          text-align: center;
-        }
-        .reg-step-title {
-          font-size: 12px;
-          font-weight: 600;
-          color: #1e293b;
-          letter-spacing: -0.1px;
-        }
-        .reg-step-title.pending { color: #94a3b8; }
-        .reg-step-subtitle {
-          font-size: 10px;
-          color: #94a3b8;
-          margin-top: 1px;
-        }
-        .reg-step-connector {
-          flex: 0 0 80px;
-          height: 2px;
-          background: #e2e8f0;
-          margin: 0 8px;
-          margin-bottom: 32px;
-          border-radius: 2px;
-          position: relative;
-          overflow: hidden;
-        }
-        .reg-step-connector-fill {
-          position: absolute;
-          left: 0;
-          top: 0;
-          height: 100%;
-          background: #10b981;
-          border-radius: 2px;
-          transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-        }
-
-        /* ── CONTENT AREA ── */
-        .reg-content {
-          position: relative;
-          z-index: 1;
-          max-width: 680px;
-          margin: 0 auto;
-          padding: 40px 24px 80px;
-        }
-
-        /* Step header */
-        .reg-step-header {
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-          margin-bottom: 24px;
-        }
-        .reg-step-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-        .reg-step-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 3px 10px;
-          border-radius: 12px;
-          font-size: 11px;
-          font-weight: 600;
-          background: #eef2ff;
-          color: #4f46e5;
-          border: 1px solid #c7d2fe;
-          margin-bottom: 6px;
-        }
-        .reg-step-heading {
-          font-size: 22px;
-          font-weight: 800;
-          color: #0f172a;
-          letter-spacing: -0.5px;
-          line-height: 1.2;
-        }
-        .reg-step-desc {
-          font-size: 14px;
-          color: #64748b;
-          margin-top: 4px;
-          line-height: 1.5;
-        }
-
-        /* ── FORM CARD ── */
-        .reg-card {
-          background: #fff;
-          border-radius: 20px;
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-          box-shadow:
-            0 1px 3px rgba(0,0,0,0.04),
-            0 8px 32px rgba(0,0,0,0.06);
-        }
-
-        /* Thin accent bar at top of card */
-        .reg-card-accent {
-          height: 3px;
-          background: #e2e8f0;
-          position: relative;
-          overflow: hidden;
-        }
-        .reg-card-accent-fill {
-          position: absolute;
-          left: 0;
-          top: 0;
-          height: 100%;
-          border-radius: 0 3px 3px 0;
-          transition: width 0.5s ease;
-        }
-
-        .reg-card-header {
-          padding: 24px 28px 20px;
-          border-bottom: 1px solid #f1f5f9;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .reg-card-title {
-          font-size: 16px;
-          font-weight: 700;
-          color: #1e293b;
-          letter-spacing: -0.2px;
-        }
-        .reg-card-subtitle {
-          font-size: 13px;
-          color: #64748b;
-          margin-top: 2px;
-        }
-        .reg-card-counter {
-          padding: 6px 14px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 700;
-          flex-shrink: 0;
-          background: #f8fafc;
-          color: #64748b;
-          border: 1px solid #e2e8f0;
-        }
-
-        .reg-card-body {
-          padding: 28px 28px 32px;
-        }
-
-        /* ── HELP SECTION ── */
-        .reg-help {
-          margin-top: 20px;
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 16px;
-          padding: 16px 20px;
+        .lr-v-step {
           display: flex;
           align-items: center;
           gap: 14px;
+          padding: 14px 0;
+          position: relative;
         }
-        .reg-help-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 10px;
+        .lr-v-step:not(:last-child)::after {
+          content: '';
+          position: absolute;
+          left: 17px;
+          top: 48px;
+          width: 2px;
+          height: calc(100% - 20px);
+          background: rgba(255,255,255,0.15);
+        }
+        .lr-v-step.done:not(:last-child)::after {
+          background: rgba(255,255,255,0.4);
+        }
+        .lr-v-dot {
+          width: 36px; height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          font-size: 13px;
+          font-weight: 700;
+          transition: all 0.4s ease;
+          position: relative;
+          z-index: 1;
+        }
+        .lr-v-dot.done {
+          background: rgba(255,255,255,0.3);
+          color: #fff;
+        }
+        .lr-v-dot.active {
+          background: #fff;
+          color: #4f46e5;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+          transform: scale(1.1);
+        }
+        .lr-v-dot.pending {
+          background: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.4);
+          border: 1px solid rgba(255,255,255,0.2);
+        }
+        .lr-v-label { font-size: 14px; font-weight: 600; color: #fff; }
+        .lr-v-label.pending { color: rgba(255,255,255,0.4); }
+        .lr-v-sublabel { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+        /* Trust badges on left */
+        .lr-left-trust {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .lr-trust-tag {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 12px;
+          border-radius: 20px;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.15);
+          font-size: 11px;
+          color: rgba(255,255,255,0.8);
+          font-weight: 500;
+        }
+
+        /* ── RIGHT PANEL (Form) ── */
+        .lr-right {
+          flex: 1;
+          min-height: 100vh;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 40px 48px;
+          background: #fff;
+        }
+
+        .lr-form-wrap {
+          width: 100%;
+          max-width: 640px;
+        }
+
+        /* Right panel header */
+        .lr-form-header {
+          margin-bottom: 32px;
+        }
+        .lr-form-step-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #fff;
+          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .lr-form-title {
+          font-size: 28px;
+          font-weight: 800;
+          color: #111827;
+          letter-spacing: -0.6px;
+          margin-bottom: 8px;
+          line-height: 1.2;
+        }
+        .lr-form-desc {
+          font-size: 15px;
+          color: #6b7280;
+          line-height: 1.5;
+        }
+
+        /* Progress bar */
+        .lr-progress-bar {
+          width: 100%;
+          height: 4px;
+          background: #e5e7eb;
+          border-radius: 4px;
+          margin-bottom: 32px;
+          overflow: hidden;
+        }
+        .lr-progress-fill {
+          height: 100%;
+          border-radius: 4px;
+          transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Help footer */
+        .lr-help {
+          margin-top: 32px;
+          padding: 16px 20px;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: #fafafa;
+        }
+        .lr-help-icon {
+          width: 36px; height: 36px;
+          border-radius: 8px;
           background: #eef2ff;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
         }
-        .reg-help-title {
-          font-size: 13px;
-          font-weight: 600;
-          color: #1e293b;
-        }
-        .reg-help-sub {
-          font-size: 12px;
-          color: #64748b;
-          margin-top: 1px;
-        }
-        .reg-help-btn {
+        .lr-help-title { font-size: 13px; font-weight: 600; color: #111827; }
+        .lr-help-sub { font-size: 12px; color: #6b7280; margin-top: 1px; }
+        .lr-help-btn {
           margin-left: auto;
           flex-shrink: 0;
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          padding: 8px 16px;
-          border-radius: 10px;
-          background: #f0f9ff;
-          border: 1px solid #bae6fd;
+          padding: 8px 14px;
+          border-radius: 8px;
+          background: #eef2ff;
+          border: 1px solid #c7d2fe;
           font-size: 12px;
           font-weight: 600;
-          color: #0284c7;
+          color: #4f46e5;
           text-decoration: none;
           transition: all 0.15s;
           font-family: inherit;
           cursor: pointer;
         }
-        .reg-help-btn:hover {
-          background: #e0f2fe;
-          border-color: #7dd3fc;
-        }
-
-        /* ── TRUST BADGES ── */
-        .reg-trust {
-          margin-top: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .reg-trust-item {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          padding: 5px 12px;
-          border-radius: 20px;
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          font-size: 11px;
-          color: #64748b;
-          font-weight: 500;
-        }
+        .lr-help-btn:hover { background: #e0e7ff; }
 
         /* ── RESPONSIVE ── */
-        @media (max-width: 640px) {
-          .reg-step-connector { flex: 0 0 24px; }
-          .reg-step-label { display: none; }
-          .reg-step-connector { margin-bottom: 0; }
-          .reg-card-header, .reg-card-body { padding-left: 20px; padding-right: 20px; }
-          .reg-step-heading { font-size: 18px; }
-          .reg-content { padding: 24px 16px 60px; }
-          .reg-help { display: none; }
+        @media (max-width: 900px) {
+          .lr-page { flex-direction: column; }
+          .lr-left {
+            position: relative;
+            width: 100%;
+            min-width: unset;
+            height: auto;
+            min-height: unset;
+            padding: 28px 24px;
+          }
+          .lr-brand { margin-bottom: 20px; }
+          .lr-left-title { font-size: 22px; }
+          .lr-v-stepper { display: none; }
+          .lr-deco-circle { display: none; }
+          .lr-right { padding: 28px 20px; }
+          .lr-form-title { font-size: 22px; }
+          .lr-help { display: none; }
         }
       `}</style>
 
-      <div className="reg-root">
-        <div className="reg-page">
+      <div className="lr-root">
+        <div className="lr-page">
 
-          {/* ═══ HEADER ═══ */}
-          <header className="reg-header">
-            <div className="reg-header-inner">
-              <div className="reg-logo">
-                <div className="reg-logo-icon">
-                  <GraduationCap size={18} color="#fff" />
+          {/* ═══════════ LEFT PANEL ═══════════ */}
+          <motion.div
+            className="lr-left"
+            style={{ background: active.bgGrad }}
+            key={`left-${currentStep}`}
+            initial={false}
+            animate={{ background: active.bgGrad }}
+            transition={{ duration: 0.6 }}
+          >
+            {/* Decorative circles */}
+            <div className="lr-deco-circle lr-deco-1" />
+            <div className="lr-deco-circle lr-deco-2" />
+            <div className="lr-deco-circle lr-deco-3" />
+
+            <div className="lr-left-content">
+              {/* Brand */}
+              <div className="lr-brand">
+                <div className="lr-brand-icon">
+                  <GraduationCap size={22} color="#fff" />
                 </div>
                 <div>
-                  <div className="reg-logo-text">CBE Noneaa</div>
-                  <div className="reg-logo-sub">School Registration</div>
+                  <div className="lr-brand-name">CBE Noneaa</div>
+                  <div className="lr-brand-sub">Education Platform</div>
                 </div>
               </div>
-              <div className="reg-header-badge">
-                <span className="reg-badge-dot" />
-                Secure Registration
+
+              {/* Step indicator pill */}
+              <div className="lr-step-indicator">
+                <div className="lr-step-pill">
+                  <Sparkles size={12} />
+                  Step {currentStep} of {STEPS.length}
+                </div>
               </div>
-            </div>
-          </header>
 
-          {/* ═══ STEPPER ═══ */}
-          <div className="reg-stepper-wrap">
-            <div className="reg-stepper">
-              {STEPS.map((step, i) => {
-                const Icon = step.icon;
-                const status = currentStep > step.number ? 'completed'
-                  : currentStep === step.number ? 'active' : 'pending';
+              {/* Title */}
+              <motion.div
+                key={`title-${currentStep}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <h1 className="lr-left-title">{active.cardTitle}</h1>
+                <p className="lr-left-desc">{active.cardDesc}</p>
+              </motion.div>
 
-                return (
-                  <React.Fragment key={step.number}>
-                    <div className="reg-step-node">
-                      <div className={`reg-step-circle ${status}`}>
-                        {status === 'completed'
-                          ? <Check size={18} strokeWidth={2.5} />
+              {/* Vertical stepper */}
+              <div className="lr-v-stepper">
+                {STEPS.map((step) => {
+                  const Icon = step.icon;
+                  const status = currentStep > step.number ? 'done'
+                    : currentStep === step.number ? 'active' : 'pending';
+
+                  return (
+                    <div className={`lr-v-step ${status}`} key={step.number}>
+                      <div className={`lr-v-dot ${status}`}>
+                        {status === 'done'
+                          ? <Check size={16} strokeWidth={2.5} />
                           : status === 'active'
-                            ? <Icon size={18} />
+                            ? <Icon size={16} />
                             : <span>{step.number}</span>
                         }
                       </div>
-                      <div className="reg-step-label">
-                        <div className={`reg-step-title${status === 'pending' ? ' pending' : ''}`}>
+                      <div>
+                        <div className={`lr-v-label${status === 'pending' ? ' pending' : ''}`}>
                           {step.title}
                         </div>
-                        <div className="reg-step-subtitle">{step.subtitle}</div>
+                        <div className="lr-v-sublabel">{step.subtitle}</div>
                       </div>
                     </div>
-
-                    {i < STEPS.length - 1 && (
-                      <div className="reg-step-connector">
-                        <div
-                          className="reg-step-connector-fill"
-                          style={{ width: currentStep > step.number ? '100%' : '0%' }}
-                        />
-                      </div>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ═══ MAIN CONTENT ═══ */}
-          <main className="reg-content">
-
-            {/* Step header */}
-            <motion.div
-              className="reg-step-header"
-              key={`header-${currentStep}`}
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div
-                className="reg-step-icon"
-                style={{ background: `linear-gradient(135deg, ${active.color}, ${active.color}dd)` }}
-              >
-                <active.icon size={22} color="#fff" />
+                  );
+                })}
               </div>
-              <div>
-                <div className="reg-step-badge">
-                  <Sparkles size={10} />
-                  Step {currentStep} of {STEPS.length}
-                </div>
-                <div className="reg-step-heading">{active.cardTitle}</div>
-                <div className="reg-step-desc">{active.cardDesc}</div>
-              </div>
-            </motion.div>
-
-            {/* Form card */}
-            <motion.div
-              className="reg-card"
-              key={`card-${currentStep}`}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-            >
-              {/* Accent bar */}
-              <div className="reg-card-accent">
-                <div
-                  className="reg-card-accent-fill"
-                  style={{
-                    width: `${(currentStep / STEPS.length) * 100}%`,
-                    background: `linear-gradient(90deg, ${active.color}, ${active.color}aa)`,
-                  }}
-                />
-              </div>
-
-              {/* Card header */}
-              <div className="reg-card-header">
-                <div>
-                  <div className="reg-card-title">{active.cardTitle}</div>
-                  <div className="reg-card-subtitle">{active.cardDesc}</div>
-                </div>
-                <div className="reg-card-counter">
-                  {currentStep}/{STEPS.length}
-                </div>
-              </div>
-
-              {/* Form body */}
-              <div className="reg-card-body">
-                <AnimatePresence mode="wait">
-                  {currentStep === 1 && (
-                    <motion.div key="s1"
-                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <SchoolBasicInfoStep
-                        initialData={step1Data}
-                        onSubmit={handleStep1Submit}
-                        onBack={() => navigate('/')}
-                      />
-                    </motion.div>
-                  )}
-                  {currentStep === 2 && (
-                    <motion.div key="s2"
-                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <SchoolDetailsStep
-                        initialData={step2Data}
-                        onSubmit={handleStep2Submit}
-                        onBack={() => setCurrentStep(1)}
-                      />
-                    </motion.div>
-                  )}
-                  {currentStep === 3 && (
-                    <motion.div key="s3"
-                      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <AdminDetailsStep
-                        initialData={step3Data}
-                        onSubmit={handleStep3Submit}
-                        onBack={() => setCurrentStep(2)}
-                        isLoading={isLoading}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-
-            {/* Help section */}
-            <div className="reg-help">
-              <div className="reg-help-icon">
-                <Mail size={16} style={{ color: '#4f46e5' }} />
-              </div>
-              <div>
-                <div className="reg-help-title">Need assistance?</div>
-                <div className="reg-help-sub">Our team is available Mon-Fri, 8am-6pm EAT</div>
-              </div>
-              <a href="mailto:support@cbenoneaa.ac.ke" className="reg-help-btn">
-                Contact support <ChevronRight size={12} />
-              </a>
             </div>
 
             {/* Trust badges */}
-            <div className="reg-trust">
+            <div className="lr-left-trust">
               {TRUST_ITEMS.map(item => {
                 const Icon = item.icon;
                 return (
-                  <div className="reg-trust-item" key={item.label}>
-                    <Icon size={11} style={{ color: '#10b981' }} />
+                  <div className="lr-trust-tag" key={item.label}>
+                    <Icon size={11} />
                     {item.label}
                   </div>
                 );
               })}
             </div>
+          </motion.div>
 
-          </main>
+          {/* ═══════════ RIGHT PANEL ═══════════ */}
+          <div className="lr-right">
+            <div className="lr-form-wrap">
+
+              {/* Header */}
+              <motion.div
+                className="lr-form-header"
+                key={`fh-${currentStep}`}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+              >
+                <div
+                  className="lr-form-step-badge"
+                  style={{ background: active.color }}
+                >
+                  <active.icon size={12} />
+                  Step {currentStep}
+                </div>
+                <h2 className="lr-form-title">{active.cardTitle}</h2>
+                <p className="lr-form-desc">{active.cardDesc}</p>
+              </motion.div>
+
+              {/* Progress bar */}
+              <div className="lr-progress-bar">
+                <div
+                  className="lr-progress-fill"
+                  style={{
+                    width: `${(currentStep / STEPS.length) * 100}%`,
+                    background: active.color,
+                  }}
+                />
+              </div>
+
+              {/* Form steps */}
+              <AnimatePresence mode="wait">
+                {currentStep === 1 && (
+                  <motion.div key="s1"
+                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <SchoolBasicInfoStep
+                      initialData={step1Data}
+                      onSubmit={handleStep1Submit}
+                      onBack={() => navigate('/')}
+                    />
+                  </motion.div>
+                )}
+                {currentStep === 2 && (
+                  <motion.div key="s2"
+                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <SchoolDetailsStep
+                      initialData={step2Data}
+                      onSubmit={handleStep2Submit}
+                      onBack={() => setCurrentStep(1)}
+                    />
+                  </motion.div>
+                )}
+                {currentStep === 3 && (
+                  <motion.div key="s3"
+                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <AdminDetailsStep
+                      initialData={step3Data}
+                      onSubmit={handleStep3Submit}
+                      onBack={() => setCurrentStep(2)}
+                      isLoading={isLoading}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Help */}
+              <div className="lr-help">
+                <div className="lr-help-icon">
+                  <Mail size={16} style={{ color: '#4f46e5' }} />
+                </div>
+                <div>
+                  <div className="lr-help-title">Need assistance?</div>
+                  <div className="lr-help-sub">Mon-Fri, 8am-6pm EAT</div>
+                </div>
+                <a href="mailto:support@cbenoneaa.ac.ke" className="lr-help-btn">
+                  Contact <ChevronRight size={12} />
+                </a>
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </div>
     </>
