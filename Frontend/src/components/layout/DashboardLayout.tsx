@@ -438,18 +438,18 @@ const Header = ({
               </p>
               <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
                 <a
-                  href="mailto:communityteksoft@gmail.com"
+                  href="mailto:support@noneaa.com"
                   className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   <Mail className="w-4 h-4" />
-                  communityteksoft@gmail.com
+                  support@noneaa.com
                 </a>
                 <a
-                  href="tel:+254700000000"
+                  href="tel:+254111276271"
                   className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   <Phone className="w-4 h-4" />
-                  +254 700 000 000
+                  +254 111 276 271
                 </a>
               </div>
             </div>
