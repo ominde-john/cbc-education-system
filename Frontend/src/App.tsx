@@ -35,6 +35,11 @@ import TestimonialsPage from '@/pages/website-pages/TestimonialsPage';
 import DemoPage from '@/pages/website-pages/DemoPage';
 import GettingStartedPage from '@/pages/website-pages/GettingStartedPage';
 import CurriculumPage from '@/pages/website-pages/CurriculumPage';
+import ProgressTrackingPage from '@/pages/website-pages/ProgressTrackingPage';
+import AssessmentToolsPage from '@/pages/website-pages/AssessmentToolsPage';
+import CBEMethodologyPage from '@/pages/website-pages/CBEMethodologyPage';
+import TeacherResourcesPage from '@/pages/website-pages/TeacherResourcesPage';
+import GlobalStandardsPage from '@/pages/website-pages/GlobalStandardsPage';
 
 // Admin Registration
 import AdminRegistrationPage from "@/pages/admin-registration";
@@ -189,6 +194,11 @@ function AppRoutes() {
       <Route path="/demo" element={<DemoPage />} />
       <Route path="/getting-started" element={<GettingStartedPage />} />
       <Route path="/curriculum" element={<CurriculumPage />} />
+      <Route path="/progress" element={<ProgressTrackingPage />} />
+      <Route path="/assessments" element={<AssessmentToolsPage />} />
+      <Route path="/methodology" element={<CBEMethodologyPage />} />
+      <Route path="/teacher/resources" element={<TeacherResourcesPage />} />
+      <Route path="/standards" element={<GlobalStandardsPage />} />
 
       {/* ── Demo Routes ── */}
       <Route path="/dashboard-demo" element={<ModernDashboard />} />
