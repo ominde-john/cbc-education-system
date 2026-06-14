@@ -426,13 +426,13 @@ export default function DepartmentsPage() {
                       <TableCell>
                         <div className="flex items-center gap-1.5">
                           <span className="font-medium">{dept.teacherCount}</span>
-                          <span className="text-muted-foreground text-xs">teachers</span>
+                          <span className="text-muted-foreground text-xs">{dept.teacherCount === 1 ? 'teacher' : 'teachers'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
                           <span className="font-medium">{dept.subjectCount}</span>
-                          <span className="text-muted-foreground text-xs">subjects</span>
+                          <span className="text-muted-foreground text-xs">{dept.subjectCount === 1 ? 'subject' : 'subjects'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
