@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, ArrowLeft, Building2, Shield, GraduationCap, Users, Check, CheckCircle2, Clock, Sparkles } from 'lucide-react';
+import loginBg from '@/assets/hero-bg.png';
 import PageLoader from '@/components/PageLoader';
 import { cn } from '@/lib/utils';
 
@@ -136,8 +137,13 @@ export default function LoginPage() {
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <PageLoader />
 
-      {/* Background — dark gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950" />
+      {/* Background photo */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${loginBg})` }}
+      />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
 
       {/* Animated orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
