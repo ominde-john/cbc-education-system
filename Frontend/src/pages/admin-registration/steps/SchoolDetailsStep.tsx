@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SchoolRegistrationStep2 } from '@/types/school';
-import { ArrowRight, ArrowLeft, MapPin, Building, Mail, Phone, Globe, MapPinned } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface Props {
   initialData: SchoolRegistrationStep2;
@@ -34,113 +34,113 @@ export default function SchoolDetailsStep({ initialData, onSubmit, onBack }: Pro
     formData.email;
 
   const fadeUp = (delay: number) => ({
-    initial: { opacity: 0, y: 12 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.3, delay, ease: [0.22, 1, 0.36, 1] },
+    initial: { opacity: 0, y: 16 } as const,
+    animate: { opacity: 1, y: 0 } as const,
+    transition: { duration: 0.35, delay },
   });
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* Section: Location */}
-      <motion.div {...fadeUp(0.05)}>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Location</p>
+      <motion.div {...fadeUp(0.02)}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-px flex-1 bg-gradient-to-r from-emerald-200 to-transparent" />
+          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Location</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-emerald-200 to-transparent" />
+        </div>
       </motion.div>
 
-      {/* Row: County + Sub-County */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <motion.div className="space-y-2" {...fadeUp(0.08)}>
-          <Label htmlFor="county" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-            County <span className="text-red-400">*</span>
+      {/* County + Sub-County */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <motion.div className="space-y-1.5" {...fadeUp(0.05)}>
+          <Label htmlFor="county" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+            County <span className="text-red-500">*</span>
           </Label>
           <Input
             id="county"
             value={formData.county}
             onChange={(e) => handleChange('county', e.target.value)}
             placeholder="e.g., Nairobi"
-            className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+            className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
             required
           />
         </motion.div>
 
-        <motion.div className="space-y-2" {...fadeUp(0.12)}>
-          <Label htmlFor="subCounty" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-            Sub-County <span className="text-red-400">*</span>
+        <motion.div className="space-y-1.5" {...fadeUp(0.1)}>
+          <Label htmlFor="subCounty" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+            Sub-County <span className="text-red-500">*</span>
           </Label>
           <Input
             id="subCounty"
             value={formData.subCounty}
             onChange={(e) => handleChange('subCounty', e.target.value)}
             placeholder="e.g., Westlands"
-            className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+            className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
             required
           />
         </motion.div>
       </div>
 
-      {/* Row: Ward + Physical Address */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <motion.div className="space-y-2" {...fadeUp(0.16)}>
-          <Label htmlFor="ward" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-            <MapPinned className="w-3.5 h-3.5 text-slate-400" />
-            Ward <span className="text-red-400">*</span>
+      {/* Ward + Physical Address */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <motion.div className="space-y-1.5" {...fadeUp(0.15)}>
+          <Label htmlFor="ward" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+            Ward <span className="text-red-500">*</span>
           </Label>
           <Input
             id="ward"
             value={formData.ward}
             onChange={(e) => handleChange('ward', e.target.value)}
             placeholder="e.g., Parklands"
-            className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+            className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
             required
           />
         </motion.div>
 
-        <motion.div className="space-y-2" {...fadeUp(0.2)}>
-          <Label htmlFor="physicalAddress" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-            <Building className="w-3.5 h-3.5 text-slate-400" />
-            Physical Address <span className="text-red-400">*</span>
+        <motion.div className="space-y-1.5" {...fadeUp(0.2)}>
+          <Label htmlFor="physicalAddress" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+            Physical Address <span className="text-red-500">*</span>
           </Label>
           <Input
             id="physicalAddress"
             value={formData.physicalAddress}
             onChange={(e) => handleChange('physicalAddress', e.target.value)}
-            placeholder="e.g., Waiyaki Way, Westlands"
-            className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+            placeholder="e.g., Waiyaki Way"
+            className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
             required
           />
         </motion.div>
       </div>
 
-      {/* Postal Address - full width */}
-      <motion.div className="space-y-2" {...fadeUp(0.24)}>
-        <Label htmlFor="postalAddress" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-          <Mail className="w-3.5 h-3.5 text-slate-400" />
-          Postal Address <span className="text-red-400">*</span>
+      {/* Postal Address */}
+      <motion.div className="space-y-1.5" {...fadeUp(0.25)}>
+        <Label htmlFor="postalAddress" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+          Postal Address <span className="text-red-500">*</span>
         </Label>
         <Input
           id="postalAddress"
           value={formData.postalAddress}
           onChange={(e) => handleChange('postalAddress', e.target.value)}
           placeholder="e.g., P.O. Box 123-00100, Nairobi"
-          className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+          className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
           required
         />
       </motion.div>
 
-      {/* Divider + Section: Contact */}
+      {/* Section: Contact */}
       <motion.div {...fadeUp(0.28)}>
-        <div className="border-t border-slate-100 pt-5 mt-1">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Contact Information</p>
+        <div className="flex items-center gap-2 mb-4 mt-2">
+          <div className="h-px flex-1 bg-gradient-to-r from-emerald-200 to-transparent" />
+          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Contact</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-emerald-200 to-transparent" />
         </div>
       </motion.div>
 
-      {/* Row: Phone + Email */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <motion.div className="space-y-2" {...fadeUp(0.32)}>
-          <Label htmlFor="phoneNumber" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-            <Phone className="w-3.5 h-3.5 text-slate-400" />
-            Phone Number <span className="text-red-400">*</span>
+      {/* Phone + Email */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <motion.div className="space-y-1.5" {...fadeUp(0.3)}>
+          <Label htmlFor="phoneNumber" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+            Phone Number <span className="text-red-500">*</span>
           </Label>
           <Input
             id="phoneNumber"
@@ -148,15 +148,14 @@ export default function SchoolDetailsStep({ initialData, onSubmit, onBack }: Pro
             value={formData.phoneNumber}
             onChange={(e) => handleChange('phoneNumber', e.target.value)}
             placeholder="e.g., +254 712 345 678"
-            className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+            className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
             required
           />
         </motion.div>
 
-        <motion.div className="space-y-2" {...fadeUp(0.36)}>
-          <Label htmlFor="email" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-            <Mail className="w-3.5 h-3.5 text-slate-400" />
-            Official Email <span className="text-red-400">*</span>
+        <motion.div className="space-y-1.5" {...fadeUp(0.35)}>
+          <Label htmlFor="email" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+            Official Email <span className="text-red-500">*</span>
           </Label>
           <Input
             id="email"
@@ -164,17 +163,16 @@ export default function SchoolDetailsStep({ initialData, onSubmit, onBack }: Pro
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             placeholder="e.g., info@school.ac.ke"
-            className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+            className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
             required
           />
         </motion.div>
       </div>
 
-      {/* Website - full width */}
-      <motion.div className="space-y-2" {...fadeUp(0.4)}>
-        <Label htmlFor="website" className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-          <Globe className="w-3.5 h-3.5 text-slate-400" />
-          Website <span className="text-slate-300 text-xs font-normal">(Optional)</span>
+      {/* Website */}
+      <motion.div className="space-y-1.5" {...fadeUp(0.4)}>
+        <Label htmlFor="website" className="text-[13px] font-semibold text-gray-800 tracking-wide uppercase">
+          Website <span className="text-gray-300 text-[10px] normal-case tracking-normal">(Optional)</span>
         </Label>
         <Input
           id="website"
@@ -182,13 +180,13 @@ export default function SchoolDetailsStep({ initialData, onSubmit, onBack }: Pro
           value={formData.website}
           onChange={(e) => handleChange('website', e.target.value)}
           placeholder="e.g., https://www.school.ac.ke"
-          className="h-11 border-slate-200 focus:border-emerald-400 focus:ring-emerald-100 transition-colors"
+          className="h-12 text-base bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-gray-300"
         />
       </motion.div>
 
       {/* Actions */}
       <motion.div
-        className="flex items-center justify-between pt-6 border-t border-slate-100"
+        className="flex items-center justify-between pt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, delay: 0.45 }}
@@ -197,17 +195,17 @@ export default function SchoolDetailsStep({ initialData, onSubmit, onBack }: Pro
           type="button"
           variant="ghost"
           onClick={onBack}
-          className="text-slate-500 hover:text-slate-700 hover:bg-slate-50 h-11 px-5"
+          className="text-gray-400 hover:text-gray-600 h-12 px-5 rounded-xl"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Previous Step
+          Back
         </Button>
         <Button
           type="submit"
           disabled={!isValid}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white h-11 px-6 rounded-xl shadow-sm shadow-emerald-200 transition-all duration-200 disabled:opacity-40"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white h-12 px-8 rounded-xl text-base font-semibold shadow-lg shadow-emerald-200 hover:shadow-emerald-300 transition-all duration-200 disabled:opacity-40 disabled:shadow-none"
         >
-          Next: Administrator Details
+          Continue
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </motion.div>
