@@ -40,7 +40,7 @@ const cbeTimeline = [
   { year: '2019', event: 'PP1 and PP2 roll-out begins', desc: 'Pre-primary levels begin implementing CBC nationwide across all public and private schools.' },
   { year: '2021', event: 'Grade 4 implementation', desc: 'CBC extends to upper primary. Assessment moves from exams to continuous competency evaluation.' },
   { year: '2023', event: 'Junior Secondary begins', desc: 'Grade 7-9 (Junior Secondary) starts under the new 2-6-3-3-3 education structure.' },
-  { year: '2025', event: 'Full CBC integration', desc: 'Digital platforms like CBETrack enable schools to fully manage CBC assessments, reporting, and competency tracking.' },
+  { year: '2025', event: 'Full CBC integration', desc: 'Digital platforms like NONEAA enable schools to fully manage CBC assessments, reporting, and competency tracking.' },
 ];
 
 function AnimatedSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -253,14 +253,14 @@ export default function CBEMethodologyPage() {
         </div>
       </AnimatedSection>
 
-      {/* How CBETrack Supports CBE */}
+      {/* How NONEAA Supports CBE */}
       <AnimatedSection className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">Our Platform</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How CBETrack Brings CBE to Life</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How NONEAA Brings CBE to Life</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              We didn&apos;t just adapt an old system. CBETrack was built from scratch for competency-based education.
+              We didn&apos;t just adapt an old system. NONEAA was built from scratch for competency-based education.
             </p>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -293,7 +293,7 @@ export default function CBEMethodologyPage() {
               Embrace the CBE Methodology Today
             </h2>
             <p className="text-lg text-emerald-100 mb-8 max-w-2xl mx-auto">
-              Join the movement toward competency-based education. CBETrack makes the transition seamless for your school.
+              Join the movement toward competency-based education. NONEAA makes the transition seamless for your school.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50" asChild>

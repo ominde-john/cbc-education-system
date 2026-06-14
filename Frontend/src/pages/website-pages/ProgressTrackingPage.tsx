@@ -299,7 +299,7 @@ export default function ProgressTrackingPage() {
               Ready to See Every Learner&apos;s Progress?
             </h2>
             <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
-              Join hundreds of Kenyan schools using CBETrack to monitor, analyze, and improve student outcomes.
+              Join hundreds of Kenyan schools using NONEAA to monitor, analyze, and improve student outcomes.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50" asChild>

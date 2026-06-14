@@ -112,7 +112,7 @@ export default function GlobalStandardsPage() {
                 Built to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">World-Class</span> Standards
               </motion.h1>
               <motion.p variants={fadeUp} custom={2} className="text-lg text-blue-100 mb-8 max-w-xl">
-                CBETrack meets international education, data protection, and accessibility standards. Your school&apos;s data is secure, your processes are compliant, and your learners get world-class tools.
+                NONEAA meets international education, data protection, and accessibility standards. Your school&apos;s data is secure, your processes are compliant, and your learners get world-class tools.
               </motion.p>
               <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
                 <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50" asChild>
@@ -207,7 +207,7 @@ export default function GlobalStandardsPage() {
                 Trust Built on Transparency
               </motion.h2>
               <motion.p variants={fadeUp} custom={2} className="text-lg text-gray-600 mb-8">
-                When you choose CBETrack, you choose a platform that holds itself to the highest standards — not because it&apos;s required, but because your learners deserve it.
+                When you choose NONEAA, you choose a platform that holds itself to the highest standards — not because it&apos;s required, but because your learners deserve it.
               </motion.p>
               <div className="space-y-4">
                 {[
@@ -231,7 +231,7 @@ export default function GlobalStandardsPage() {
                 <Globe className="w-16 h-16 text-blue-600 mx-auto" />
                 <h3 className="text-2xl font-bold text-gray-900">Trusted by 250+ Schools</h3>
                 <p className="text-gray-600">
-                  Schools across Kenya trust CBETrack to manage their academic data securely and in compliance with national and international standards.
+                  Schools across Kenya trust NONEAA to manage their academic data securely and in compliance with national and international standards.
                 </p>
                 <div className="grid grid-cols-3 gap-4 pt-4">
                   {[
