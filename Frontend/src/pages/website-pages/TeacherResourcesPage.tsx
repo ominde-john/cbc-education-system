@@ -115,7 +115,7 @@ export default function TeacherResourcesPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { label: 'Resource Downloads', value: '25,000+', icon: Download },
-              { label: 'Teachers Using CBETrack', value: '3,500+', icon: Users },
+              { label: 'Teachers Using NONEAA', value: '3,500+', icon: Users },
               { label: 'Training Videos', value: '120+', icon: Video },
               { label: 'Template Categories', value: '50+', icon: FileText },
             ].map((stat, i) => (

@@ -31,7 +31,7 @@ const sections = [
     title: '1. Acceptance of Terms',
     color: 'border-l-blue-500',
     content: [
-      'By accessing and using the Noneaa Africa / CBETrack platform ("Service"), you accept and agree to be bound by the terms and provisions of this agreement.',
+      'By accessing and using the NONEAA platform ("Service"), you accept and agree to be bound by the terms and provisions of this agreement.',
       'These Terms of Service apply to all users of the Service, including school administrators, teachers, parents, students, and any other visitors or contributors.',
       'If you do not agree to these terms, please do not use this Service. Continued use constitutes acceptance of any updates to these terms.',
     ],
