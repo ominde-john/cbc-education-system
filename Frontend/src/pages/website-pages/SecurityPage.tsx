@@ -73,7 +73,7 @@ export default function SecurityPage() {
               </div>
             </motion.div>
             <motion.h1 variants={fadeUp} custom={1} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
-              Security at CBETrack
+              Security at NONEAA
             </motion.h1>
             <motion.p variants={fadeUp} custom={2} className="text-lg text-emerald-200 mb-6 max-w-2xl mx-auto">
               We handle sensitive educational data — student records, assessments, and personal information. Security isn&apos;t a feature; it&apos;s the foundation everything is built on.

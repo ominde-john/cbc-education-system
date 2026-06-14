@@ -254,7 +254,7 @@ export default function CurriculumPage() {
             <p className="text-sm font-semibold text-purple-600 uppercase tracking-wide mb-3">KICD Aligned</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Learning Areas & Strands</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Every learning area is organized into strands and sub-strands. CBETrack tracks competency at every level of the curriculum hierarchy.
+              Every learning area is organized into strands and sub-strands. NONEAA tracks competency at every level of the curriculum hierarchy.
             </p>
           </motion.div>
 
@@ -380,7 +380,7 @@ export default function CurriculumPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Platform Capabilities</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What You Can Do with CBETrack</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What You Can Do with NONEAA</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Practical tools for teachers and administrators to manage the CBC curriculum day-to-day.
             </p>
@@ -411,12 +411,12 @@ export default function CurriculumPage() {
         </div>
       </AnimatedSection>
 
-      {/* ── Why Schools Choose CBETrack ──────────────────────── */}
+      {/* ── Why Schools Choose NONEAA ──────────────────────── */}
       <AnimatedSection className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} custom={0} className="text-center mb-16">
             <p className="text-sm font-semibold text-emerald-600 uppercase tracking-wide mb-3">The Difference</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Why Schools Choose CBETrack for Curriculum</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Why Schools Choose NONEAA for Curriculum</h2>
           </motion.div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -446,7 +446,7 @@ export default function CurriculumPage() {
               Start Managing Your Curriculum Today
             </h2>
             <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
-              Whether you&apos;re a single school or a school group, CBETrack scales to your needs. Set up learning areas, assign teachers, and begin tracking competencies in under an hour.
+              Whether you&apos;re a single school or a school group, NONEAA scales to your needs. Set up learning areas, assign teachers, and begin tracking competencies in under an hour.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50" asChild>

@@ -140,7 +140,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </motion.h1>
             <motion.p variants={fadeUp} custom={2} className="text-lg text-blue-200 mb-6 max-w-2xl mx-auto">
-              Your privacy is important to us. This policy explains how we collect, use, and protect your information when using the CBETrack platform.
+              Your privacy is important to us. This policy explains how we collect, use, and protect your information when using the NONEAA platform.
             </motion.p>
             <motion.p variants={fadeUp} custom={3} className="text-sm text-blue-300/70">
               Last updated: June 2026
