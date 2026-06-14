@@ -92,7 +92,73 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { motion, useAnimation, useInView } from 'framer-motion';
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, RadarChart,
+  Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line,
+  Legend,
+} from 'recharts';
 import { cn } from '@/lib/utils';
+
+/* ── Chart Data ─────────────────────────────────────────── */
+const enrollmentData = [
+  { grade: 'PP1', students: 420, color: '#3b82f6' },
+  { grade: 'PP2', students: 390, color: '#6366f1' },
+  { grade: 'G1', students: 510, color: '#8b5cf6' },
+  { grade: 'G2', students: 480, color: '#a855f7' },
+  { grade: 'G3', students: 530, color: '#d946ef' },
+  { grade: 'G4', students: 500, color: '#ec4899' },
+  { grade: 'G5', students: 470, color: '#f43f5e' },
+  { grade: 'G6', students: 450, color: '#f97316' },
+  { grade: 'G7', students: 520, color: '#eab308' },
+  { grade: 'G8', students: 490, color: '#22c55e' },
+  { grade: 'G9', students: 460, color: '#14b8a6' },
+];
+
+const competencyData = [
+  { subject: 'Communication', score: 92 },
+  { subject: 'Critical Thinking', score: 85 },
+  { subject: 'Creativity', score: 78 },
+  { subject: 'Digital Literacy', score: 88 },
+  { subject: 'Citizenship', score: 91 },
+  { subject: 'Self-Efficacy', score: 83 },
+  { subject: 'Learning to Learn', score: 80 },
+];
+
+const progressData = [
+  { month: 'Jan', exceeding: 18, meeting: 42, approaching: 28, below: 12 },
+  { month: 'Feb', exceeding: 20, meeting: 44, approaching: 26, below: 10 },
+  { month: 'Mar', exceeding: 22, meeting: 45, approaching: 24, below: 9 },
+  { month: 'Apr', exceeding: 25, meeting: 46, approaching: 22, below: 7 },
+  { month: 'May', exceeding: 28, meeting: 47, approaching: 19, below: 6 },
+  { month: 'Jun', exceeding: 30, meeting: 48, approaching: 17, below: 5 },
+];
+
+const subjectPerformance = [
+  { subject: 'Mathematics', avg: 78, top: 95 },
+  { subject: 'English', avg: 82, top: 97 },
+  { subject: 'Science', avg: 75, top: 93 },
+  { subject: 'Kiswahili', avg: 80, top: 94 },
+  { subject: 'Social Studies', avg: 77, top: 92 },
+  { subject: 'CRE', avg: 84, top: 96 },
+  { subject: 'Creative Arts', avg: 86, top: 98 },
+];
+
+const assessmentDistribution = [
+  { name: 'Exceeding', value: 28, color: '#22c55e' },
+  { name: 'Meeting', value: 45, color: '#3b82f6' },
+  { name: 'Approaching', value: 20, color: '#f59e0b' },
+  { name: 'Below', value: 7, color: '#ef4444' },
+];
+
+const growthTrend = [
+  { term: 'T1 2024', schools: 45, students: 12000, teachers: 850 },
+  { term: 'T2 2024', schools: 68, students: 22000, teachers: 1200 },
+  { term: 'T3 2024', schools: 92, students: 34000, teachers: 1600 },
+  { term: 'T1 2025', schools: 115, students: 42000, teachers: 2100 },
+  { term: 'T2 2025', schools: 138, students: 48000, teachers: 2500 },
+  { term: 'T3 2025', schools: 155, students: 52000, teachers: 2900 },
+];
 
 const roles = ['Student', 'Teacher', 'Parent', 'Admin'] as const;
 type Role = typeof roles[number];
@@ -674,6 +740,241 @@ export default function HomePage() {
                         </div>
                       </div>
                     </section>
+
+      {/* ── Enrollment & Performance Charts ──────────────────── */}
+      <section className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent" />
+        <div className="container mx-auto px-4 lg:px-8 relative">
+          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 mb-4">
+              <BarChart3 className="w-4 h-4 text-blue-500" />
+              <span className="text-sm font-medium text-primary">Live Analytics</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Data-Driven{' '}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Education Insights</span>
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              See how schools on NONEAA track enrollment, competencies, and student outcomes across every grade and learning area.
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+            {/* Enrollment by Grade */}
+            <motion.div initial={{ x: -40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Student Enrollment by Grade</h3>
+                  <p className="text-sm text-muted-foreground">PP1 through Grade 9 &bull; All schools combined</p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={enrollmentData} barSize={28}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="grade" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+                  <Bar dataKey="students" radius={[6, 6, 0, 0]}>
+                    {enrollmentData.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Competency Radar */}
+            <motion.div initial={{ x: 40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">7 Core Competency Coverage</h3>
+                  <p className="text-sm text-muted-foreground">CBC competency framework scores</p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart data={competencyData} outerRadius={100}>
+                  <PolarGrid stroke="hsl(var(--border))" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <PolarRadiusAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} domain={[0, 100]} />
+                  <Radar name="Score" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Competency Progress Over Time ──────────────────── */}
+      <section className="py-24 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 relative overflow-hidden">
+        <motion.div className="absolute top-10 right-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 6, repeat: Infinity }} />
+        <motion.div className="absolute bottom-10 left-10 w-56 h-56 bg-purple-500/10 rounded-full blur-3xl" animate={{ scale: [1, 1.15, 1], opacity: [0.1, 0.2, 0.1] }} transition={{ duration: 5, repeat: Infinity, delay: 1.5 }} />
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+            <p className="text-sm font-semibold text-blue-400 uppercase tracking-wide mb-3">Progress Over Time</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Students Are <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Improving Every Term</span>
+            </h2>
+            <p className="text-lg text-blue-200 max-w-2xl mx-auto">
+              Watch competency levels shift upward as schools use NONEAA to identify gaps and target interventions.
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Stacked Area Chart */}
+            <motion.div initial={{ y: 40, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="lg:col-span-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
+              <h3 className="text-lg font-semibold text-white mb-1">Competency Level Distribution</h3>
+              <p className="text-sm text-blue-300/70 mb-6">Percentage of students at each level over 6 months</p>
+              <ResponsiveContainer width="100%" height={320}>
+                <AreaChart data={progressData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="month" tick={{ fill: '#93c5fd', fontSize: 12 }} />
+                  <YAxis tick={{ fill: '#93c5fd', fontSize: 12 }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff' }} />
+                  <Area type="monotone" dataKey="exceeding" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.7} name="Exceeding" />
+                  <Area type="monotone" dataKey="meeting" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} name="Meeting" />
+                  <Area type="monotone" dataKey="approaching" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.5} name="Approaching" />
+                  <Area type="monotone" dataKey="below" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.4} name="Below" />
+                  <Legend wrapperStyle={{ color: '#93c5fd', fontSize: 12 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Assessment Donut */}
+            <motion.div initial={{ y: 40, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.15 }}
+              className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
+              <h3 className="text-lg font-semibold text-white mb-1">Current Assessment Split</h3>
+              <p className="text-sm text-blue-300/70 mb-4">Overall competency distribution</p>
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie data={assessmentDistribution} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={4} dataKey="value">
+                    {assessmentDistribution.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#fff' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {assessmentDistribution.map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs text-blue-200">{item.name}: {item.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Subject Performance & Platform Growth ──────────── */}
+      <section className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent" />
+        <div className="container mx-auto px-4 lg:px-8 relative">
+          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 mb-4">
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm font-medium text-primary">Performance & Growth</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Measurable{' '}
+              <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">Results That Matter</span>
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Real performance data from schools using NONEAA &mdash; subject averages, top scores, and platform adoption trends.
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+            {/* Subject Performance */}
+            <motion.div initial={{ x: -40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                  <Award className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Subject Performance</h3>
+                  <p className="text-sm text-muted-foreground">Average vs top-performing scores per subject</p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={subjectPerformance} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="subject" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} angle={-20} textAnchor="end" height={50} />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} domain={[0, 100]} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+                  <Bar dataKey="avg" name="Class Average" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Bar dataKey="top" name="Top Score" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Platform Growth Line Chart */}
+            <motion.div initial={{ x: 40, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="bg-card rounded-2xl border border-border/50 shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                  <Rocket className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">NONEAA Platform Growth</h3>
+                  <p className="text-sm text-muted-foreground">Schools, students &amp; teachers over time</p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={growthTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="term" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <YAxis yAxisId="left" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+                  <Line yAxisId="left" type="monotone" dataKey="schools" name="Schools" stroke="#f97316" strokeWidth={3} dot={{ r: 5 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="students" name="Students" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line yAxisId="left" type="monotone" dataKey="teachers" name="Teachers" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Impact Numbers ────────────────────────────────── */}
+      <section className="py-20 bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0djJoLTJ2LTJoMnptMCAydjJoLTJ2LTJoMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          <motion.div initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">The Impact of Data-Driven Education</h2>
+            <p className="text-lg text-white/80 max-w-2xl mx-auto">Schools using NONEAA report measurable improvements within the first term.</p>
+          </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+            {[
+              { value: '32%', label: 'Improvement in student outcomes', icon: TrendingUp },
+              { value: '4.5hrs', label: 'Saved per teacher weekly on admin', icon: Clock },
+              { value: '98%', label: 'Parent satisfaction rate', icon: Heart },
+              { value: '3x', label: 'Faster report generation', icon: Zap },
+            ].map((item, i) => (
+              <motion.div key={item.label} initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="text-center group">
+                <item.icon className="w-8 h-8 text-white/80 mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                <p className="text-4xl md:text-5xl font-bold text-white mb-2">{item.value}</p>
+                <p className="text-sm text-white/80">{item.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Foundation Section with Interactive Cards */}
       <section className="py-24 relative">
