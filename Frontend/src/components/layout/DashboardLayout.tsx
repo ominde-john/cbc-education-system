@@ -378,7 +378,7 @@ const Header = ({
       className={cn(
         'flex-shrink-0 h-16 border-b border-gray-200 dark:border-gray-800',
         'flex items-center px-4 md:px-6 sticky top-0 z-40 w-full',
-        'bg-white dark:bg-gray-950 transition-colors duration-300'
+        'bg-white dark:bg-slate-900 dark:bg-gray-950 transition-colors duration-300'
       )}
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -436,7 +436,7 @@ const Header = ({
           {isDarkMode ? (
             <Sun className="w-5 h-5 text-amber-500" />
           ) : (
-            <Moon className="w-5 h-5 text-slate-600" />
+            <Moon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           )}
         </button>
 

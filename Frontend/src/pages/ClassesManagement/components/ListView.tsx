@@ -54,7 +54,7 @@ export const ListView: React.FC<ListViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white">
+      <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900">
         <CardContent className="p-6">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
@@ -123,7 +123,7 @@ export const ListView: React.FC<ListViewProps> = ({
           return (
             <Card
               key={cls.id}
-              className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer bg-white transition-all group"
+              className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer bg-white dark:bg-slate-900 transition-all group"
               onClick={() => onViewClick(cls)}
             >
               <CardContent className="p-6 space-y-4">
@@ -233,7 +233,7 @@ export const ListView: React.FC<ListViewProps> = ({
 
       {/* Empty State */}
       {filtered.length === 0 && (
-        <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white">
+        <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900">
           <CardContent className="p-12 text-center">
             <div className="bg-gray-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <School className="h-8 w-8 text-gray-400" />

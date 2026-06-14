@@ -204,7 +204,7 @@ const StudentClasses: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Classes
           </Button>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
             {selectedClass.grade_level}
             {selectedClass.stream_name ? ` ${selectedClass.stream_name}` : ''} – Class Details
           </h1>
@@ -212,19 +212,19 @@ const StudentClasses: React.FC = () => {
 
         {/* Summary Cards - IMPROVED DESIGN, SAME DATA */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className={`border-2 ${colors.border} ${colors.bg} bg-white shadow-sm hover:shadow-md transition-shadow`}>
+          <Card className={`border-2 ${colors.border} ${colors.bg} bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow`}>
             <CardContent className="p-6 flex items-center gap-4">
               <div className={`w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0 ${colors.icon}`}>
                 <Users className="h-7 w-7" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-slate-600 mb-1">Total Students</p>
-                <p className="text-3xl font-bold text-slate-900">{selectedClass.totalStudents}</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{selectedClass.totalStudents}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`border-2 ${colors.border} ${colors.bg} bg-white shadow-sm hover:shadow-md transition-shadow`}>
+          <Card className={`border-2 ${colors.border} ${colors.bg} bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow`}>
             <CardContent className="p-6 flex items-center gap-4">
               <div className={`w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0 ${colors.icon}`}>
                 <User className="h-7 w-7" />
@@ -236,14 +236,14 @@ const StudentClasses: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className={`border-2 ${colors.border} ${colors.bg} bg-white shadow-sm hover:shadow-md transition-shadow`}>
+          <Card className={`border-2 ${colors.border} ${colors.bg} bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow`}>
             <CardContent className="p-6 flex items-center gap-4">
               <div className={`w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0 ${colors.icon}`}>
                 <GraduationCap className="h-7 w-7" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-slate-600 mb-1">Capacity</p>
-                <p className="font-semibold text-slate-900">
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {selectedClass.capacity ? `${selectedClass.totalStudents}/${selectedClass.capacity}` : 'Unlimited'}
                 </p>
               </div>
@@ -252,12 +252,12 @@ const StudentClasses: React.FC = () => {
         </div>
 
         {/* Performance Per Term - IMPROVED DESIGN, EXACT SAME LOGIC */}
-        <Card className="border-slate-200 bg-white shadow-sm">
-          <CardHeader className="flex flex-row items-center gap-3 pb-4 border-b border-slate-200">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 shadow-sm">
+          <CardHeader className="flex flex-row items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
             <div className={`w-10 h-10 rounded-lg ${colors.icon} flex items-center justify-center`}>
               <TrendingUp className="h-5 w-5" />
             </div>
-            <CardTitle className="text-lg text-slate-900">Performance Per Term</CardTitle>
+            <CardTitle className="text-lg text-slate-900 dark:text-slate-100">Performance Per Term</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <Tabs defaultValue={selectedClass.performance[0].term}>
@@ -266,7 +266,7 @@ const StudentClasses: React.FC = () => {
                   <TabsTrigger
                     key={p.term}
                     value={p.term}
-                    className="rounded-md data-[state=active]:bg-white data-[state=active]:border data-[state=active]:border-blue-300 data-[state=active]:shadow-sm"
+                    className="rounded-md data-[state=active]:bg-white dark:bg-slate-900 data-[state=active]:border data-[state=active]:border-blue-300 data-[state=active]:shadow-sm"
                   >
                     {p.term}
                   </TabsTrigger>
@@ -322,12 +322,12 @@ const StudentClasses: React.FC = () => {
                       ].map((item) => (
                         <div key={item.label} className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                            <span className="text-sm font-bold text-slate-900">
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                               {item.value} ({pct(item.value)}%)
                             </span>
                           </div>
-                          <div className={`h-3 ${item.lightBg} rounded-full overflow-hidden border border-slate-200`}>
+                          <div className={`h-3 ${item.lightBg} rounded-full overflow-hidden border border-slate-200 dark:border-slate-700`}>
                             <div
                               className={`h-full rounded-full transition-all duration-500 ${item.color}`}
                               style={{ width: `${item.total > 0 ? (item.value / item.total) * 100 : 0}%` }}
@@ -357,19 +357,19 @@ const StudentClasses: React.FC = () => {
               <BookOpen className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Student Classes</h1>
-              <p className="text-slate-600">Select a class to view details</p>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Student Classes</h1>
+              <p className="text-slate-600 dark:text-slate-400">Select a class to view details</p>
             </div>
           </div>
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex gap-2 border border-slate-200 rounded-lg p-1 bg-white">
+        <div className="flex gap-2 border border-slate-200 rounded-lg p-1 bg-white dark:bg-slate-900">
           <Button
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('grid')}
-            className={`gap-2 ${viewMode === 'grid' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-slate-600 hover:text-slate-900'}`}
+            className={`gap-2 ${viewMode === 'grid' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-100'}`}
           >
             <Grid3x3 className="h-4 w-4" />
             <span className="hidden sm:inline">Grid</span>
@@ -378,7 +378,7 @@ const StudentClasses: React.FC = () => {
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('list')}
-            className={`gap-2 ${viewMode === 'list' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-slate-600 hover:text-slate-900'}`}
+            className={`gap-2 ${viewMode === 'list' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-100'}`}
           >
             <List className="h-4 w-4" />
             <span className="hidden sm:inline">List</span>
@@ -396,11 +396,11 @@ const StudentClasses: React.FC = () => {
         </div>
       ) : classes.length === 0 ? (
         // Empty State - IMPROVED DESIGN
-        <Card className="border-slate-200 bg-white">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900">
           <CardContent className="text-center py-16">
             <BookOpen className="h-16 w-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-slate-900 mb-2">No classes found</h3>
-            <p className="text-slate-600">No classes are available at the moment.</p>
+            <p className="text-slate-600 dark:text-slate-400">No classes are available at the moment.</p>
           </CardContent>
         </Card>
       ) : (
@@ -429,7 +429,7 @@ const StudentClasses: React.FC = () => {
                             {cls.totalStudents} students
                           </Badge>
                           {!cls.is_active && (
-                            <Badge variant="secondary" className="text-xs bg-slate-200 text-slate-700">
+                            <Badge variant="secondary" className="text-xs bg-slate-200 text-slate-700 dark:text-slate-300">
                               Inactive
                             </Badge>
                           )}
@@ -439,7 +439,7 @@ const StudentClasses: React.FC = () => {
                       {/* Class Name */}
                       <div>
                         <h3 className={`font-bold text-lg ${colors.accent} mb-1`}>{displayName}</h3>
-                        <p className="text-xs text-slate-600">
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
                           <span className="font-semibold">Teacher:</span> {cls.classTeacher}
                         </p>
                       </div>
@@ -459,7 +459,7 @@ const StudentClasses: React.FC = () => {
                       </div>
 
                       {/* Action Button */}
-                      <div className="pt-2 border-t border-slate-200">
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                         <Button
                           size="sm"
                           className={`w-full gap-2 text-white font-semibold ${colors.accent === 'text-blue-600' ? 'bg-blue-600 hover:bg-blue-700' : colors.accent === 'text-emerald-600' ? 'bg-emerald-600 hover:bg-emerald-700' : colors.accent === 'text-purple-600' ? 'bg-purple-600 hover:bg-purple-700' : colors.accent === 'text-orange-600' ? 'bg-orange-600 hover:bg-orange-700' : colors.accent === 'text-pink-600' ? 'bg-pink-600 hover:bg-pink-700' : colors.accent === 'text-teal-600' ? 'bg-teal-600 hover:bg-teal-700' : colors.accent === 'text-indigo-600' ? 'bg-indigo-600 hover:bg-indigo-700' : colors.accent === 'text-red-600' ? 'bg-red-600 hover:bg-red-700' : colors.accent === 'text-amber-600' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-cyan-600 hover:bg-cyan-700'}`}
@@ -501,14 +501,14 @@ const StudentClasses: React.FC = () => {
                           </div>
                           <div className="min-w-0 flex-1">
                             <h3 className={`font-bold text-lg ${colors.accent}`}>{displayName}</h3>
-                            <p className="text-sm text-slate-600">
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
                               <span className="font-semibold">Teacher:</span> {cls.classTeacher}
                             </p>
                           </div>
                         </div>
 
                         {/* Center Section */}
-                        <div className="flex items-center gap-6 text-sm text-slate-600">
+                        <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
                           <div>
                             <p>
                               <span className="font-semibold">{cls.totalStudents}</span> Students
@@ -533,7 +533,7 @@ const StudentClasses: React.FC = () => {
                         {/* Right Section */}
                         <div className="flex items-center gap-3">
                           {!cls.is_active && (
-                            <Badge variant="secondary" className="text-xs bg-slate-200 text-slate-700">
+                            <Badge variant="secondary" className="text-xs bg-slate-200 text-slate-700 dark:text-slate-300">
                               Inactive
                             </Badge>
                           )}

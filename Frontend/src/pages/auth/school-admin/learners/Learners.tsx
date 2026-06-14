@@ -706,8 +706,8 @@ const StudentManagement = () => {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 animate-spin mx-auto text-blue-600" />
-          <p className="text-lg font-medium text-slate-900">Loading students...</p>
-          <p className="text-sm text-slate-500">This may take a moment...</p>
+          <p className="text-lg font-medium text-slate-900 dark:text-slate-100">Loading students...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">This may take a moment...</p>
         </div>
       </div>
     );
@@ -762,11 +762,11 @@ const StudentManagement = () => {
             </div>
             All Students
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-slate-400">
             View and manage every enrolled learner across all grades and classes
           </p>
           {lastUpdated && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Last updated: {lastUpdated.toLocaleTimeString('en-KE')}
             </p>
           )}
@@ -837,11 +837,11 @@ const StudentManagement = () => {
 
       {/* Summary Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Total Students</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Students</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">{totalStudents}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -851,11 +851,11 @@ const StudentManagement = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Active</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Active</p>
                 <p className="text-3xl font-bold text-green-600 mt-2">{activeStudents}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
@@ -865,11 +865,11 @@ const StudentManagement = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Boys</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Boys</p>
                 <p className="text-3xl font-bold text-blue-600 mt-2">{maleStudents}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -879,11 +879,11 @@ const StudentManagement = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Girls</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Girls</p>
                 <p className="text-3xl font-bold text-pink-600 mt-2">{femaleStudents}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-pink-100 flex items-center justify-center">
@@ -898,7 +898,7 @@ const StudentManagement = () => {
       {totalStudents > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* Gender Distribution - Donut */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-blue-100 flex items-center justify-center">
@@ -926,15 +926,15 @@ const StudentManagement = () => {
                       <div key={entry.name} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
-                          <span className="text-xs text-slate-600">{entry.name}</span>
+                          <span className="text-xs text-slate-600 dark:text-slate-400">{entry.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{entry.value}</span>
                       </div>
                     ))}
                     <div className="pt-1 border-t border-slate-100">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-500">Ratio</span>
-                        <span className="text-xs font-bold text-slate-700">{maleStudents}:{femaleStudents}</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Ratio</span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{maleStudents}:{femaleStudents}</span>
                       </div>
                     </div>
                   </div>
@@ -946,7 +946,7 @@ const StudentManagement = () => {
           </Card>
 
           {/* Status Distribution - Donut */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-emerald-100 flex items-center justify-center">
@@ -974,14 +974,14 @@ const StudentManagement = () => {
                       <div key={entry.name} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
-                          <span className="text-xs text-slate-600">{entry.name}</span>
+                          <span className="text-xs text-slate-600 dark:text-slate-400">{entry.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{entry.value}</span>
                       </div>
                     ))}
                     <div className="pt-1 border-t border-slate-100">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-500">Active Rate</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Active Rate</span>
                         <span className="text-xs font-bold text-emerald-600">{Math.round((activeStudents / Math.max(totalStudents, 1)) * 100)}%</span>
                       </div>
                     </div>
@@ -994,7 +994,7 @@ const StudentManagement = () => {
           </Card>
 
           {/* Students per Grade - Bar Chart */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow md:col-span-2">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow md:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-purple-100 flex items-center justify-center">
@@ -1027,7 +1027,7 @@ const StudentManagement = () => {
 
       {/* Boys vs Girls per Grade - Grouped Bar */}
       {genderPerGradeData.length > 1 && (
-        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <div className="h-6 w-6 rounded-md bg-indigo-100 flex items-center justify-center">
@@ -1059,7 +1059,7 @@ const StudentManagement = () => {
       {totalStudents > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Per School */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-blue-100 flex items-center justify-center">
@@ -1095,7 +1095,7 @@ const StudentManagement = () => {
           </Card>
 
           {/* Per Class (Grade) */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-purple-100 flex items-center justify-center">
@@ -1111,10 +1111,10 @@ const StudentManagement = () => {
                   {gradeGenderPercent.map((g) => (
                     <div key={g.grade} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-700">{g.grade}</span>
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{g.grade}</span>
                         <span className="text-[10px] text-slate-400">{g.total} students</span>
                       </div>
-                      <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100">
+                      <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700">
                         <div className="h-full bg-blue-500 transition-all" style={{ width: `${g.boysPercent}%` }} title={`Boys: ${g.boysPercent}%`} />
                         <div className="h-full bg-pink-500 transition-all" style={{ width: `${g.girlsPercent}%` }} title={`Girls: ${g.girlsPercent}%`} />
                       </div>
@@ -1132,7 +1132,7 @@ const StudentManagement = () => {
           </Card>
 
           {/* Per Stream */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-emerald-100 flex items-center justify-center">
@@ -1148,10 +1148,10 @@ const StudentManagement = () => {
                   {streamGenderPercent.map((s) => (
                     <div key={s.stream} className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-700">{s.stream}</span>
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{s.stream}</span>
                         <span className="text-[10px] text-slate-400">{s.total} students</span>
                       </div>
-                      <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100">
+                      <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700">
                         <div className="h-full bg-blue-500 transition-all" style={{ width: `${s.boysPercent}%` }} title={`Boys: ${s.boysPercent}%`} />
                         <div className="h-full bg-pink-500 transition-all" style={{ width: `${s.girlsPercent}%` }} title={`Girls: ${s.girlsPercent}%`} />
                       </div>
@@ -1175,7 +1175,7 @@ const StudentManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* Age Distribution */}
           {ageDistributionData.length > 0 && (
-            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <div className="h-6 w-6 rounded-md bg-orange-100 flex items-center justify-center">
@@ -1202,7 +1202,7 @@ const StudentManagement = () => {
           )}
 
           {/* Special Needs Overview */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-amber-100 flex items-center justify-center">
@@ -1230,14 +1230,14 @@ const StudentManagement = () => {
                       <div key={entry.name} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
-                          <span className="text-xs text-slate-600">{entry.name}</span>
+                          <span className="text-xs text-slate-600 dark:text-slate-400">{entry.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{entry.value}</span>
                       </div>
                     ))}
                     <div className="pt-1 border-t border-slate-100">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-500">SN Rate</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">SN Rate</span>
                         <span className="text-xs font-bold text-amber-600">{Math.round((specialNeedsData.withNeeds / Math.max(totalStudents, 1)) * 100)}%</span>
                       </div>
                     </div>
@@ -1250,7 +1250,7 @@ const StudentManagement = () => {
           </Card>
 
           {/* Guardian Coverage */}
-          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <div className="h-6 w-6 rounded-md bg-teal-100 flex items-center justify-center">
@@ -1278,14 +1278,14 @@ const StudentManagement = () => {
                       <div key={entry.name} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
-                          <span className="text-xs text-slate-600">{entry.name}</span>
+                          <span className="text-xs text-slate-600 dark:text-slate-400">{entry.name}</span>
                         </div>
-                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{entry.value}</span>
                       </div>
                     ))}
                     <div className="pt-1 border-t border-slate-100">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-500">Coverage</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Coverage</span>
                         <span className="text-xs font-bold text-teal-600">{guardianCoverageData.percent}%</span>
                       </div>
                     </div>
@@ -1304,7 +1304,7 @@ const StudentManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {/* Enrollment Trend */}
           {enrollmentTrendData.length > 1 && (
-            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <div className="h-6 w-6 rounded-md bg-sky-100 flex items-center justify-center">
@@ -1332,7 +1332,7 @@ const StudentManagement = () => {
 
           {/* Class Size Comparison */}
           {classSizeData.length > 0 && (
-            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <div className="h-6 w-6 rounded-md bg-rose-100 flex items-center justify-center">
@@ -1348,7 +1348,7 @@ const StudentManagement = () => {
                     <div key={c.name} className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-slate-700 truncate max-w-[60%]">{c.name}</span>
-                        <span className="text-xs font-bold text-slate-900">{c.count}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{c.count}</span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                         <div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: `${Math.round((c.count / Math.max(classSizeData[0]?.count || 1, 1)) * 100)}%` }} />
@@ -1362,7 +1362,7 @@ const StudentManagement = () => {
 
           {/* Average Age per Grade */}
           {avgAgePerGrade.length > 0 && (
-            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <div className="h-6 w-6 rounded-md bg-violet-100 flex items-center justify-center">
@@ -1392,7 +1392,7 @@ const StudentManagement = () => {
 
       {/* Special Needs per Grade */}
       {specialNeedsPerGrade.some((g) => g.special > 0) && (
-        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+        <Card className="border-slate-200 bg-white dark:bg-slate-900 hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <div className="h-6 w-6 rounded-md bg-amber-100 flex items-center justify-center">
@@ -1421,7 +1421,7 @@ const StudentManagement = () => {
       )}
 
       {/* Search and Filters Card */}
-      <Card className="border-slate-200 bg-white">
+      <Card className="border-slate-200 bg-white dark:bg-slate-900">
         <CardContent className="pt-6 pb-6 space-y-4">
           {/* Search Bar */}
           <div className="relative">
@@ -1436,7 +1436,7 @@ const StudentManagement = () => {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-400"
                 aria-label="Clear search"
               >
                 <X className="h-4 w-4" />
@@ -1450,7 +1450,7 @@ const StudentManagement = () => {
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
-                'gap-2 border-slate-200 text-slate-700 hover:bg-slate-100',
+                'gap-2 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-slate-700',
                 hasActiveFilters && 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100'
               )}
               disabled={loading}
@@ -1467,9 +1467,9 @@ const StudentManagement = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Status Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Status</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Status</label>
                   <Select value={selectedStatus} onValueChange={setSelectedStatus} disabled={loading}>
-                    <SelectTrigger className="h-10 bg-white border-slate-200">
+                    <SelectTrigger className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1482,9 +1482,9 @@ const StudentManagement = () => {
 
                 {/* Grade Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Grade</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Grade</label>
                   <Select value={selectedGrade} onValueChange={setSelectedGrade} disabled={loading}>
-                    <SelectTrigger className="h-10 bg-white border-slate-200">
+                    <SelectTrigger className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
                       <SelectValue placeholder="All Grades" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1500,9 +1500,9 @@ const StudentManagement = () => {
 
                 {/* Gender Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Gender</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Gender</label>
                   <Select value={selectedGender} onValueChange={setSelectedGender} disabled={loading}>
-                    <SelectTrigger className="h-10 bg-white border-slate-200">
+                    <SelectTrigger className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
                       <SelectValue placeholder="All Genders" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1533,8 +1533,8 @@ const StudentManagement = () => {
       </Card>
 
       {/* Students Table Card */}
-      <Card className="border-slate-200 bg-white overflow-hidden">
-        <CardHeader className="pb-3 border-b border-slate-200 bg-slate-50">
+      <Card className="border-slate-200 bg-white dark:bg-slate-900 overflow-hidden">
+        <CardHeader className="pb-3 border-b border-slate-200 bg-slate-50 dark:bg-slate-800">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -1543,8 +1543,8 @@ const StudentManagement = () => {
               </CardTitle>
               <CardDescription className="mt-1">
                 Showing{' '}
-                <span className="font-semibold text-slate-900">{filteredStudents.length}</span> of{' '}
-                <span className="font-semibold text-slate-900">{totalStudents}</span> students
+                <span className="font-semibold text-slate-900 dark:text-slate-100">{filteredStudents.length}</span> of{' '}
+                <span className="font-semibold text-slate-900 dark:text-slate-100">{totalStudents}</span> students
                 {hasActiveFilters && (
                   <span className="ml-2 text-blue-600">
                     ({((filteredStudents.length / totalStudents) * 100).toFixed(0)}% filtered)
@@ -1555,13 +1555,13 @@ const StudentManagement = () => {
 
             {/* Page Size Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600">Per page:</span>
+              <span className="text-sm text-slate-600 dark:text-slate-400">Per page:</span>
               <Select
                 value={String(pageSize)}
                 onValueChange={(v) => setPageSize(Number(v))}
                 disabled={loading}
               >
-                <SelectTrigger className="w-24 h-9 border-slate-200">
+                <SelectTrigger className="w-24 h-9 border-slate-200 dark:border-slate-700">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1578,7 +1578,7 @@ const StudentManagement = () => {
 
         <CardContent className="p-0 relative">
           {loading && students.length > 0 && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg z-10">
+            <div className="absolute inset-0 bg-white dark:bg-slate-900/50 flex items-center justify-center rounded-lg z-10">
               <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
             </div>
           )}
@@ -1586,7 +1586,7 @@ const StudentManagement = () => {
           {pagedStudents.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-50 border-b border-slate-200">
+                <TableHeader className="bg-slate-50 border-b border-slate-200 dark:border-slate-700">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="font-semibold text-slate-700 h-12">#</TableHead>
                     <TableHead className="font-semibold text-slate-700 h-12">Student</TableHead>
@@ -1607,8 +1607,8 @@ const StudentManagement = () => {
                         key={student.id}
                         className={cn(
                           'border-b border-slate-100 hover:bg-blue-50/50 transition-colors',
-                          idx % 2 === 0 && 'bg-white',
-                          idx % 2 === 1 && 'bg-slate-50'
+                          idx % 2 === 0 && 'bg-white dark:bg-slate-900',
+                          idx % 2 === 1 && 'bg-slate-50 dark:bg-slate-800'
                         )}
                       >
                         {/* Row Number */}
@@ -1633,7 +1633,7 @@ const StudentManagement = () => {
                                 {student.middle_name ? ` ${student.middle_name}` : ''} {student.last_name}
                               </p>
                               {student.date_of_birth && (
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                   {formatDateOfBirth(student.date_of_birth)}
                                 </p>
                               )}
@@ -1642,16 +1642,16 @@ const StudentManagement = () => {
                         </TableCell>
 
                         {/* Admission Number */}
-                        <TableCell className="py-4 font-mono text-sm font-medium text-slate-700">
+                        <TableCell className="py-4 font-mono text-sm font-medium text-slate-700 dark:text-slate-300">
                           {student.admission_number}
                         </TableCell>
 
                         {/* Grade / Stream */}
                         <TableCell className="py-4">
                           <div>
-                            <p className="font-medium text-slate-900">{student.grade_level}</p>
+                            <p className="font-medium text-slate-900 dark:text-slate-100">{student.grade_level}</p>
                             {student.stream_name && (
-                              <p className="text-xs text-slate-500">{student.stream_name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{student.stream_name}</p>
                             )}
                           </div>
                         </TableCell>
@@ -1694,7 +1694,7 @@ const StudentManagement = () => {
                               'font-medium',
                               student.is_active
                                 ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-100'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-100 dark:bg-slate-700'
                             )}
                           >
                             {student.is_active ? 'Active' : 'Inactive'}
@@ -1798,7 +1798,7 @@ const StudentManagement = () => {
                   <Button
                     variant="outline"
                     onClick={clearFilters}
-                    className="mt-4 border-slate-300 text-slate-700"
+                    className="mt-4 border-slate-300 text-slate-700 dark:text-slate-300"
                   >
                     Clear Filters
                   </Button>
@@ -1811,17 +1811,17 @@ const StudentManagement = () => {
 
       {/* Pagination */}
       {filteredStudents.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600 bg-white rounded-lg p-4 border border-slate-200">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600 bg-white dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
           <p>
             Showing{' '}
-            <span className="font-semibold text-slate-900">
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
               {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredStudents.length)}
             </span>{' '}
             of{' '}
-            <span className="font-semibold text-slate-900">{filteredStudents.length}</span> student
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{filteredStudents.length}</span> student
             {filteredStudents.length !== 1 ? 's' : ''}
             {inactiveStudents > 0 && (
-              <span className="ml-2 text-slate-500">({inactiveStudents} inactive)</span>
+              <span className="ml-2 text-slate-500 dark:text-slate-400">({inactiveStudents} inactive)</span>
             )}
           </p>
 
@@ -1840,7 +1840,7 @@ const StudentManagement = () => {
             <div className="flex items-center gap-1">
               {getPaginationPages(currentPage, totalPages).map((item, idx) =>
                 item === '…' ? (
-                  <span key={`ellipsis-${idx}`} className="px-2 text-slate-500">
+                  <span key={`ellipsis-${idx}`} className="px-2 text-slate-500 dark:text-slate-400">
                     …
                   </span>
                 ) : (
