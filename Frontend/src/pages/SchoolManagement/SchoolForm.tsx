@@ -73,7 +73,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.name}
               onChange={(e) => upd("name", e.target.value)}
               placeholder="e.g. Greenfield Academy"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="School Code" id="code" required icon={Hash}>
@@ -82,12 +82,12 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.code}
               onChange={(e) => upd("code", e.target.value)}
               placeholder="e.g. GFA001"
-              className="bg-white font-mono text-sm"
+              className="bg-white dark:bg-slate-900 font-mono text-sm"
             />
           </FormField>
           <FormField label="Education Level" id="level" icon={GraduationCap}>
             <Select value={form.level} onValueChange={(v) => upd("level", v)}>
-              <SelectTrigger id="level" className="bg-white">
+              <SelectTrigger id="level" className="bg-white dark:bg-slate-900">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -101,7 +101,7 @@ export const SchoolForm = ({ form, setForm }) => {
           </FormField>
           <FormField label="School Type" id="school_type" icon={Building2}>
             <Select value={form.school_type} onValueChange={(v) => upd("school_type", v)}>
-              <SelectTrigger id="school_type" className="bg-white">
+              <SelectTrigger id="school_type" className="bg-white dark:bg-slate-900">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -125,7 +125,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.county}
               onChange={(e) => upd("county", e.target.value)}
               placeholder="e.g. Nairobi"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="Sub County" id="sub_county">
@@ -134,7 +134,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.sub_county}
               onChange={(e) => upd("sub_county", e.target.value)}
               placeholder="e.g. Westlands"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="Ward" id="ward">
@@ -143,7 +143,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.ward}
               onChange={(e) => upd("ward", e.target.value)}
               placeholder="e.g. Parklands"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
         </div>
@@ -154,7 +154,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.physical_address}
               onChange={(e) => upd("physical_address", e.target.value)}
               placeholder="Street name, building number"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="Postal Address" id="postal_address">
@@ -163,7 +163,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.postal_address}
               onChange={(e) => upd("postal_address", e.target.value)}
               placeholder="P.O. Box XXXX"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
         </div>
@@ -178,7 +178,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.phone_number}
               onChange={(e) => upd("phone_number", e.target.value)}
               placeholder="+254 XXX XXX XXX"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="Contact Email" id="email" required icon={Mail}>
@@ -188,7 +188,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.email}
               onChange={(e) => upd("email", e.target.value)}
               placeholder="info@school.ac.ke"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="Admin Email" id="admin_email" icon={Mail}>
@@ -198,7 +198,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.admin_email}
               onChange={(e) => upd("admin_email", e.target.value)}
               placeholder="admin@school.ac.ke"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="Website" id="website" icon={Globe}>
@@ -207,7 +207,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.website}
               onChange={(e) => upd("website", e.target.value)}
               placeholder="https://school.ac.ke"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
         </div>
@@ -223,7 +223,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.year_established}
               onChange={(e) => upd("year_established", e.target.value)}
               placeholder="e.g. 2000"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="Student Capacity" id="student_capacity" icon={Users}>
@@ -233,7 +233,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.student_capacity}
               onChange={(e) => upd("student_capacity", e.target.value)}
               placeholder="Max number of students"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
           <FormField label="School Motto" id="motto">
@@ -242,7 +242,7 @@ export const SchoolForm = ({ form, setForm }) => {
               value={form.motto}
               onChange={(e) => upd("motto", e.target.value)}
               placeholder="Your school motto"
-              className="bg-white"
+              className="bg-white dark:bg-slate-900"
             />
           </FormField>
         </div>

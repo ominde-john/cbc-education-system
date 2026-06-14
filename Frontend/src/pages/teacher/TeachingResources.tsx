@@ -18,7 +18,7 @@ export default function TeachingResources() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-white dark:bg-slate-900/80 backdrop-blur supports-[backdrop-filter]:bg-white dark:bg-slate-900/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
             <Button

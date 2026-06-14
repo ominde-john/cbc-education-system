@@ -179,28 +179,28 @@ const StatsCard = ({ title, value, type }: { title: string; value: number | stri
       icon: School, 
       bgColor: "bg-blue-500", 
       textColor: "text-white",
-      iconBg: "bg-white/20",
+      iconBg: "bg-white dark:bg-slate-900/20",
       iconColor: "text-white"
     },
     active: { 
       icon: CheckCircle2, 
       bgColor: "bg-green-500", 
       textColor: "text-white",
-      iconBg: "bg-white/20",
+      iconBg: "bg-white dark:bg-slate-900/20",
       iconColor: "text-white"
     },
     nosub: { 
       icon: AlertCircle, 
       bgColor: "bg-amber-500", 
       textColor: "text-white",
-      iconBg: "bg-white/20",
+      iconBg: "bg-white dark:bg-slate-900/20",
       iconColor: "text-white"
     },
     students: { 
       icon: GraduationCap, 
       bgColor: "bg-purple-500", 
       textColor: "text-white",
-      iconBg: "bg-white/20",
+      iconBg: "bg-white dark:bg-slate-900/20",
       iconColor: "text-white"
     },
   }
@@ -618,7 +618,7 @@ const SchoolManagement = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="w-full space-y-6 p-2 bg-white">
+    <div className="w-full space-y-6 p-2 bg-white dark:bg-slate-900">
       {/* Stats Cards with Solid Colors */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatsCard title="Total Schools" value={stats.total} type="total" />
@@ -641,7 +641,7 @@ const SchoolManagement = () => {
           </div>
 
           <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger className="w-[160px] flex-shrink-0 bg-white">
+            <SelectTrigger className="w-[160px] flex-shrink-0 bg-white dark:bg-slate-900">
               <SelectValue placeholder="Level" />
             </SelectTrigger>
             <SelectContent>
@@ -655,7 +655,7 @@ const SchoolManagement = () => {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px] flex-shrink-0 bg-white">
+            <SelectTrigger className="w-[160px] flex-shrink-0 bg-white dark:bg-slate-900">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>

@@ -62,7 +62,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white border border-gray-200 shadow-sm">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-gray-200 shadow-sm">
         <div className={cn("absolute inset-0 opacity-5 bg-gradient-to-br", GRADIENTS.primary)} />
         <div className="relative p-4 sm:p-8 md:p-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-8">
@@ -143,7 +143,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             gradient: GRADIENTS.danger,
           },
         ].map((stat) => (
-          <Card key={stat.label} className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white">
+          <Card key={stat.label} className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white dark:bg-slate-900">
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
@@ -164,7 +164,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Capacity & Branch */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Capacity */}
-        <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white">
+        <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900">
           <CardHeader className="pb-4 border-b border-gray-200">
             <CardTitle className="text-lg font-bold flex items-center gap-3 text-gray-900">
               <div className={cn("p-2 rounded-lg bg-gradient-to-br text-white", GRADIENTS.primary)}>
@@ -201,7 +201,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </Card>
 
         {/* Branch Distribution */}
-        <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white">
+        <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900">
           <CardHeader className="pb-4 border-b border-gray-200">
             <CardTitle className="text-lg font-bold flex items-center gap-3 text-gray-900">
               <div className={cn("p-2 rounded-lg bg-gradient-to-br text-white", GRADIENTS.primary)}>
@@ -254,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Grade Levels */}
-      <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white">
+      <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900">
         <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-gray-200">
           <CardTitle className="text-lg font-bold flex items-center gap-3 text-gray-900">
             <div className={cn("p-2 rounded-lg bg-gradient-to-br text-white", GRADIENTS.primary)}>
@@ -319,7 +319,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         ].map((action) => (
           <Card
             key={action.label}
-            className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer bg-white transition-all group"
+            className="rounded-2xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer bg-white dark:bg-slate-900 transition-all group"
             onClick={action.action}
           >
             <CardContent className="p-6">

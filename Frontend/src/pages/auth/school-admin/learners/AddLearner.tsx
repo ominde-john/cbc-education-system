@@ -587,8 +587,8 @@ export default function AddLearnerPage() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 animate-spin mx-auto text-blue-600" />
-          <p className="text-lg font-medium text-slate-900">Loading learner details...</p>
-          <p className="text-sm text-slate-500">Please wait while we fetch the information...</p>
+          <p className="text-lg font-medium text-slate-900 dark:text-slate-100">Loading learner details...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Please wait while we fetch the information...</p>
         </div>
       </div>
     );
@@ -603,14 +603,14 @@ export default function AddLearnerPage() {
           variant="outline"
           size="icon"
           asChild
-          className="mt-0.5 border-slate-200 hover:bg-slate-100"
+          className="mt-0.5 border-slate-200 hover:bg-slate-100 dark:bg-slate-700"
         >
           <Link to="/school-admin/learners">
             <ArrowLeft className="w-5 h-5" />
           </Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
             {isEditMode ? 'Edit Student Details' : 'New Admission Application'}
           </h1>
           <p className="text-slate-600 mt-2">
@@ -622,7 +622,7 @@ export default function AddLearnerPage() {
       </div>
 
       {/* Tab Navigation */}
-      <Card className="border-0 shadow-sm bg-white">
+      <Card className="border-0 shadow-sm bg-white dark:bg-slate-900">
         <CardContent className="p-0">
           <Tabs
             value={activeTab}
@@ -636,7 +636,7 @@ export default function AddLearnerPage() {
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'student'
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
                 )}
               >
                 <User className="w-4 h-4 mr-2" />
@@ -649,7 +649,7 @@ export default function AddLearnerPage() {
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'academic'
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
                 )}
               >
                 <BookOpen className="w-4 h-4 mr-2" />
@@ -662,7 +662,7 @@ export default function AddLearnerPage() {
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'guardian'
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
                 )}
               >
                 <User className="w-4 h-4 mr-2" />
@@ -675,7 +675,7 @@ export default function AddLearnerPage() {
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'health'
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
                 )}
               >
                 <Heart className="w-4 h-4 mr-2" />
@@ -688,7 +688,7 @@ export default function AddLearnerPage() {
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'documents'
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
                 )}
               >
                 <FileText className="w-4 h-4 mr-2" />
@@ -701,7 +701,7 @@ export default function AddLearnerPage() {
                   'rounded-none border-b-2 px-6 py-4 text-sm font-medium transition-colors',
                   activeTab === 'notes'
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-100'
                 )}
               >
                 <BarChart3 className="w-4 h-4 mr-2" />
@@ -711,9 +711,9 @@ export default function AddLearnerPage() {
 
             <form onSubmit={handleSubmit} noValidate className="w-full">
               {/* Student Tab */}
-              <TabsContent value="student" className="p-6 space-y-6 m-0 bg-white">
-                <Card className="border-2 border-slate-200 bg-slate-50">
-                  <CardHeader className="pb-4 border-b border-slate-200">
+              <TabsContent value="student" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
+                <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                  <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
                     <div
                       className="flex items-center justify-between cursor-pointer group"
                       onClick={() => toggleSection('student')}
@@ -723,13 +723,13 @@ export default function AddLearnerPage() {
                           <User className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-base text-slate-900">
+                          <CardTitle className="text-base text-slate-900 dark:text-slate-100">
                             Basic Information
                           </CardTitle>
                           <CardDescription>Student's personal details.</CardDescription>
                         </div>
                       </div>
-                      <div className="text-slate-400 group-hover:text-slate-600">
+                      <div className="text-slate-400 group-hover:text-slate-600 dark:text-slate-400">
                         {expandedSections['student'] ? (
                           <ChevronUp className="w-5 h-5" />
                         ) : (
@@ -740,7 +740,7 @@ export default function AddLearnerPage() {
                   </CardHeader>
 
                   {expandedSections['student'] && (
-                    <CardContent className="pt-6 space-y-6 bg-white">
+                    <CardContent className="pt-6 space-y-6 bg-white dark:bg-slate-900">
                       {/* Photo Upload */}
                       <div className="bg-slate-50 rounded-lg p-6 border-2 border-dashed border-slate-300 hover:border-blue-500 transition-colors">
                         <div className="flex flex-col items-center justify-center">
@@ -783,7 +783,7 @@ export default function AddLearnerPage() {
 
                       {/* Admission Number */}
                       <div className="space-y-2">
-                        <Label htmlFor="admissionNumber" className="font-semibold text-slate-900">
+                        <Label htmlFor="admissionNumber" className="font-semibold text-slate-900 dark:text-slate-100">
                           Admission Number <span className="text-red-500">*</span>
                         </Label>
                         <Input
@@ -807,14 +807,14 @@ export default function AddLearnerPage() {
                           </p>
                         )}
                         {isEditMode && (
-                          <p className="text-xs text-slate-500">Admission number cannot be changed</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Admission number cannot be changed</p>
                         )}
                       </div>
 
                       {/* Name Fields */}
                       <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="firstName" className="font-semibold text-slate-900">
+                          <Label htmlFor="firstName" className="font-semibold text-slate-900 dark:text-slate-100">
                             First Name <span className="text-red-500">*</span>
                           </Label>
                           <Input
@@ -837,7 +837,7 @@ export default function AddLearnerPage() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="middleName" className="font-semibold text-slate-900">
+                          <Label htmlFor="middleName" className="font-semibold text-slate-900 dark:text-slate-100">
                             Middle Name
                           </Label>
                           <Input
@@ -850,7 +850,7 @@ export default function AddLearnerPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="lastName" className="font-semibold text-slate-900">
+                          <Label htmlFor="lastName" className="font-semibold text-slate-900 dark:text-slate-100">
                             Last Name <span className="text-red-500">*</span>
                           </Label>
                           <Input
@@ -877,7 +877,7 @@ export default function AddLearnerPage() {
                       {/* Date of Birth & Gender */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="dateOfBirth" className="font-semibold text-slate-900">
+                          <Label htmlFor="dateOfBirth" className="font-semibold text-slate-900 dark:text-slate-100">
                             Date of Birth <span className="text-red-500">*</span>
                           </Label>
                           <Input
@@ -900,7 +900,7 @@ export default function AddLearnerPage() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-semibold text-slate-900">
+                          <Label className="font-semibold text-slate-900 dark:text-slate-100">
                             Gender <span className="text-red-500">*</span>
                           </Label>
                           <Select
@@ -944,7 +944,7 @@ export default function AddLearnerPage() {
                           <div className="space-y-2">
                             <Label
                               htmlFor="birthCertificateNumber"
-                              className="font-semibold text-sm text-slate-900"
+                              className="font-semibold text-sm text-slate-900 dark:text-slate-100"
                             >
                               Birth Certificate Number
                             </Label>
@@ -961,7 +961,7 @@ export default function AddLearnerPage() {
                           <div className="space-y-2">
                             <Label
                               htmlFor="nemisNumber"
-                              className="font-semibold text-sm text-slate-900"
+                              className="font-semibold text-sm text-slate-900 dark:text-slate-100"
                             >
                               NEMIS Number
                             </Label>
@@ -978,7 +978,7 @@ export default function AddLearnerPage() {
                           <div className="space-y-2">
                             <Label
                               htmlFor="nationality"
-                              className="font-semibold text-sm text-slate-900"
+                              className="font-semibold text-sm text-slate-900 dark:text-slate-100"
                             >
                               Nationality
                             </Label>
@@ -998,9 +998,9 @@ export default function AddLearnerPage() {
               </TabsContent>
 
               {/* Academic Tab */}
-              <TabsContent value="academic" className="p-6 space-y-6 m-0 bg-white">
-                <Card className="border-2 border-slate-200 bg-slate-50">
-                  <CardHeader className="pb-4 border-b border-slate-200">
+              <TabsContent value="academic" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
+                <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                  <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
                     <div
                       className="flex items-center justify-between cursor-pointer group"
                       onClick={() => toggleSection('academic')}
@@ -1010,13 +1010,13 @@ export default function AddLearnerPage() {
                           <BookOpen className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-base text-slate-900">
+                          <CardTitle className="text-base text-slate-900 dark:text-slate-100">
                             Academic Information
                           </CardTitle>
                           <CardDescription>Academic placement details.</CardDescription>
                         </div>
                       </div>
-                      <div className="text-slate-400 group-hover:text-slate-600">
+                      <div className="text-slate-400 group-hover:text-slate-600 dark:text-slate-400">
                         {expandedSections['academic'] ? (
                           <ChevronUp className="w-5 h-5" />
                         ) : (
@@ -1027,10 +1027,10 @@ export default function AddLearnerPage() {
                   </CardHeader>
 
                   {expandedSections['academic'] && (
-                    <CardContent className="pt-6 space-y-6 bg-white">
+                    <CardContent className="pt-6 space-y-6 bg-white dark:bg-slate-900">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="font-semibold text-slate-900">
+                          <Label className="font-semibold text-slate-900 dark:text-slate-100">
                             Grade/Class Applying For <span className="text-red-500">*</span>
                           </Label>
                           <Select value={selectedClassId} onValueChange={handleClassChange}>
@@ -1065,7 +1065,7 @@ export default function AddLearnerPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="academicYear" className="font-semibold text-slate-900">
+                          <Label htmlFor="academicYear" className="font-semibold text-slate-900 dark:text-slate-100">
                             Academic Year <span className="text-red-500">*</span>
                           </Label>
                           <Input
@@ -1082,7 +1082,7 @@ export default function AddLearnerPage() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="font-semibold text-slate-900">Term</Label>
+                          <Label className="font-semibold text-slate-900 dark:text-slate-100">Term</Label>
                           <Select
                             value={learnerData.term}
                             onValueChange={(value) =>
@@ -1104,7 +1104,7 @@ export default function AddLearnerPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="admissionDate" className="font-semibold text-slate-900">
+                          <Label htmlFor="admissionDate" className="font-semibold text-slate-900 dark:text-slate-100">
                             Admission Date
                           </Label>
                           <Input
@@ -1119,7 +1119,7 @@ export default function AddLearnerPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="previousSchool" className="font-semibold text-slate-900">
+                        <Label htmlFor="previousSchool" className="font-semibold text-slate-900 dark:text-slate-100">
                           Previous School
                         </Label>
                         <Input
@@ -1133,7 +1133,7 @@ export default function AddLearnerPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="streamName" className="font-semibold text-slate-900">
+                        <Label htmlFor="streamName" className="font-semibold text-slate-900 dark:text-slate-100">
                           Stream/Section
                         </Label>
                         <Input
@@ -1145,7 +1145,7 @@ export default function AddLearnerPage() {
                           className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
                           disabled
                         />
-                        <p className="text-xs text-slate-500">Auto-populated from selected class</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Auto-populated from selected class</p>
                       </div>
                     </CardContent>
                   )}
@@ -1153,9 +1153,9 @@ export default function AddLearnerPage() {
               </TabsContent>
 
               {/* Guardian Tab */}
-              <TabsContent value="guardian" className="p-6 space-y-6 m-0 bg-white">
-                <Card className="border-2 border-slate-200 bg-slate-50">
-                  <CardHeader className="pb-4 border-b border-slate-200">
+              <TabsContent value="guardian" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
+                <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                  <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
                     <div
                       className="flex items-center justify-between cursor-pointer group"
                       onClick={() => toggleSection('guardian')}
@@ -1165,13 +1165,13 @@ export default function AddLearnerPage() {
                           <User className="w-5 h-5 text-green-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-base text-slate-900">
+                          <CardTitle className="text-base text-slate-900 dark:text-slate-100">
                             Parent/Guardian Information
                           </CardTitle>
                           <CardDescription>Parent or guardian information.</CardDescription>
                         </div>
                       </div>
-                      <div className="text-slate-400 group-hover:text-slate-600">
+                      <div className="text-slate-400 group-hover:text-slate-600 dark:text-slate-400">
                         {expandedSections['guardian'] ? (
                           <ChevronUp className="w-5 h-5" />
                         ) : (
@@ -1182,10 +1182,10 @@ export default function AddLearnerPage() {
                   </CardHeader>
 
                   {expandedSections['guardian'] && (
-                    <CardContent className="pt-6 space-y-6 bg-white">
+                    <CardContent className="pt-6 space-y-6 bg-white dark:bg-slate-900">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="parentFirstName" className="font-semibold text-slate-900">
+                          <Label htmlFor="parentFirstName" className="font-semibold text-slate-900 dark:text-slate-100">
                             First Name <span className="text-red-500">*</span>
                           </Label>
                           <Input
@@ -1208,7 +1208,7 @@ export default function AddLearnerPage() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="parentLastName" className="font-semibold text-slate-900">
+                          <Label htmlFor="parentLastName" className="font-semibold text-slate-900 dark:text-slate-100">
                             Last Name <span className="text-red-500">*</span>
                           </Label>
                           <Input
@@ -1233,7 +1233,7 @@ export default function AddLearnerPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="parentEmail" className="font-semibold text-slate-900">
+                        <Label htmlFor="parentEmail" className="font-semibold text-slate-900 dark:text-slate-100">
                           Email Address <span className="text-red-500">*</span>
                         </Label>
                         <Input
@@ -1249,7 +1249,7 @@ export default function AddLearnerPage() {
                             validationErrors.parentEmail && 'border-red-500'
                           )}
                         />
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           Login credentials will be sent to this email
                         </p>
                         {validationErrors.parentEmail && (
@@ -1262,7 +1262,7 @@ export default function AddLearnerPage() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="parentPhone" className="font-semibold text-slate-900">
+                          <Label htmlFor="parentPhone" className="font-semibold text-slate-900 dark:text-slate-100">
                             Phone Number <span className="text-red-500">*</span>
                           </Label>
                           <Input
@@ -1286,7 +1286,7 @@ export default function AddLearnerPage() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="nationalId" className="font-semibold text-slate-900">
+                          <Label htmlFor="nationalId" className="font-semibold text-slate-900 dark:text-slate-100">
                             National ID
                           </Label>
                           <Input
@@ -1302,7 +1302,7 @@ export default function AddLearnerPage() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="font-semibold text-slate-900">
+                          <Label className="font-semibold text-slate-900 dark:text-slate-100">
                             Relationship <span className="text-red-500">*</span>
                           </Label>
                           <Select
@@ -1342,7 +1342,7 @@ export default function AddLearnerPage() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="occupation" className="font-semibold text-slate-900">
+                          <Label htmlFor="occupation" className="font-semibold text-slate-900 dark:text-slate-100">
                             Occupation
                           </Label>
                           <Input
@@ -1361,9 +1361,9 @@ export default function AddLearnerPage() {
               </TabsContent>
 
               {/* Health Tab */}
-              <TabsContent value="health" className="p-6 space-y-6 m-0 bg-white">
-                <Card className="border-2 border-slate-200 bg-slate-50">
-                  <CardHeader className="pb-4 border-b border-slate-200">
+              <TabsContent value="health" className="p-6 space-y-6 m-0 bg-white dark:bg-slate-900">
+                <Card className="border-2 border-slate-200 bg-slate-50 dark:bg-slate-800">
+                  <CardHeader className="pb-4 border-b border-slate-200 dark:border-slate-700">
                     <div
                       className="flex items-center justify-between cursor-pointer group"
                       onClick={() => toggleSection('health')}
@@ -1373,13 +1373,13 @@ export default function AddLearnerPage() {
                           <Heart className="w-5 h-5 text-red-600" />
                         </div>
                         <div>
-                          <CardTitle className="text-base text-slate-900">
+                          <CardTitle className="text-base text-slate-900 dark:text-slate-100">
                             Health & Special Needs
                           </CardTitle>
                           <CardDescription>Health information and special requirements.</CardDescription>
                         </div>
                       </div>
-                      <div className="text-slate-400 group-hover:text-slate-600">
+                      <div className="text-slate-400 group-hover:text-slate-600 dark:text-slate-400">
                         {expandedSections['health'] ? (
                           <ChevronUp className="w-5 h-5" />
                         ) : (
@@ -1390,9 +1390,9 @@ export default function AddLearnerPage() {
                   </CardHeader>
 
                   {expandedSections['health'] && (
-                    <CardContent className="pt-6 space-y-6 bg-white">
+                    <CardContent className="pt-6 space-y-6 bg-white dark:bg-slate-900">
                       <div className="space-y-2">
-                        <Label htmlFor="specialNeeds" className="font-semibold text-slate-900">
+                        <Label htmlFor="specialNeeds" className="font-semibold text-slate-900 dark:text-slate-100">
                           Special Needs (if any)
                         </Label>
                         <textarea
@@ -1407,7 +1407,7 @@ export default function AddLearnerPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="medicalConditions" className="font-semibold text-slate-900">
+                        <Label htmlFor="medicalConditions" className="font-semibold text-slate-900 dark:text-slate-100">
                           Medical Conditions
                         </Label>
                         <textarea
@@ -1422,7 +1422,7 @@ export default function AddLearnerPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="allergies" className="font-semibold text-slate-900">
+                        <Label htmlFor="allergies" className="font-semibold text-slate-900 dark:text-slate-100">
                           Allergies
                         </Label>
                         <textarea
@@ -1441,19 +1441,19 @@ export default function AddLearnerPage() {
               </TabsContent>
 
               {/* Documents Tab */}
-              <TabsContent value="documents" className="p-6 space-y-4 m-0 bg-white">
-                <div className="text-center py-12 text-slate-500">
+              <TabsContent value="documents" className="p-6 space-y-4 m-0 bg-white dark:bg-slate-900">
+                <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                   <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="font-semibold text-slate-700">Documents can be uploaded later</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">Documents can be uploaded later</p>
                   <p className="text-sm mt-1">Birth certificate, transfer letter, etc.</p>
                 </div>
               </TabsContent>
 
               {/* Notes Tab */}
-              <TabsContent value="notes" className="p-6 space-y-4 m-0 bg-white">
+              <TabsContent value="notes" className="p-6 space-y-4 m-0 bg-white dark:bg-slate-900">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="notes" className="font-semibold text-slate-900">
+                    <Label htmlFor="notes" className="font-semibold text-slate-900 dark:text-slate-100">
                       Additional Information
                     </Label>
                     <textarea
@@ -1478,7 +1478,7 @@ export default function AddLearnerPage() {
                   type="button"
                   variant="outline"
                   asChild
-                  className="border-slate-200 hover:bg-slate-100"
+                  className="border-slate-200 hover:bg-slate-100 dark:bg-slate-700"
                 >
                   <Link to="/school-admin/learners">Back</Link>
                 </Button>

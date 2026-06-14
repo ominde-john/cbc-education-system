@@ -136,7 +136,7 @@ export const PaymentComponent = ({ school, open, onClose, onPaymentComplete }) =
               <button
                 className={`flex-1 py-2 rounded-md text-sm font-medium transition ${
                   billingCycle === "monthly" 
-                    ? "bg-white shadow-sm text-blue-600" 
+                    ? "bg-white dark:bg-slate-900 shadow-sm text-blue-600" 
                     : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => setBillingCycle("monthly")}
@@ -146,7 +146,7 @@ export const PaymentComponent = ({ school, open, onClose, onPaymentComplete }) =
               <button
                 className={`flex-1 py-2 rounded-md text-sm font-medium transition ${
                   billingCycle === "yearly" 
-                    ? "bg-white shadow-sm text-blue-600" 
+                    ? "bg-white dark:bg-slate-900 shadow-sm text-blue-600" 
                     : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => setBillingCycle("yearly")}

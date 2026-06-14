@@ -232,7 +232,7 @@ export const PaymentModal = ({ school, open, onClose, onPaymentComplete }) => {
                     key={cycle.key}
                     className={`flex-1 py-2.5 rounded-md text-sm font-medium transition-all ${
                       billingCycle === cycle.key
-                        ? "bg-white shadow-md text-blue-600 border border-gray-200"
+                        ? "bg-white dark:bg-slate-900 shadow-md text-blue-600 border border-gray-200"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                     onClick={() => setBillingCycle(cycle.key)}

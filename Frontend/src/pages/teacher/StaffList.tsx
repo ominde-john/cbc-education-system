@@ -836,7 +836,7 @@ export default function AdminTeachers() {
                 </div>
 
                 {/* Pagination */}
-                <div className="border-t p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-900/30">
+                <div className="border-t p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-900/30">
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}

@@ -138,7 +138,7 @@ const SCHOOL_SETTINGS_TABS: SettingsTab[] = [
     label: 'School Profile',
     icon: Building,
     description: 'Basic school information',
-    accentColor: 'text-slate-600',
+    accentColor: 'text-slate-600 dark:text-slate-400',
   },
   {
     id: 'branding',

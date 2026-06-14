@@ -783,12 +783,12 @@ const BulkImportPage = () => {
           variant="outline"
           size="icon"
           onClick={() => navigate('/school-admin/learners')}
-          className="border-slate-200 hover:bg-slate-100"
+          className="border-slate-200 hover:bg-slate-100 dark:bg-slate-700"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900">Bulk Import Students</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">Bulk Import Students</h1>
           <p className="text-slate-600 mt-2">Import multiple students with automatic enrollment and duplicate detection</p>
         </div>
       </div>
@@ -812,7 +812,7 @@ const BulkImportPage = () => {
         {/* Left Column */}
         <div className="md:col-span-2 space-y-6">
           {/* Download Template */}
-          <Card className="border-slate-200 bg-white border-2 border-dashed border-blue-300 bg-blue-50">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900 border-2 border-dashed border-blue-300 bg-blue-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-blue-900">
                 <FileText className="h-5 w-5" />
@@ -837,7 +837,7 @@ const BulkImportPage = () => {
           </Card>
 
           {/* File Upload */}
-          <Card className="border-slate-200 bg-white">
+          <Card className="border-slate-200 bg-white dark:bg-slate-900">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
@@ -868,8 +868,8 @@ const BulkImportPage = () => {
                 {file ? (
                   <div className="space-y-2">
                     <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
-                    <p className="font-semibold text-slate-900">{file.name}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{file.name}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       {(file.size / 1024).toFixed(2)} KB
                     </p>
                     <Button
@@ -890,8 +890,8 @@ const BulkImportPage = () => {
                 ) : (
                   <div className="space-y-2">
                     <Upload className="h-12 w-12 mx-auto text-slate-400" />
-                    <p className="font-semibold text-slate-900">Click or drag file here</p>
-                    <p className="text-sm text-slate-500">Excel files (.xlsx, .xls) up to 10MB</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">Click or drag file here</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Excel files (.xlsx, .xls) up to 10MB</p>
                   </div>
                 )}
               </div>
@@ -920,7 +920,7 @@ const BulkImportPage = () => {
 
           {/* Validation Results */}
           {validationResults.length > 0 && (
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-slate-200 bg-white dark:bg-slate-900">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -954,7 +954,7 @@ const BulkImportPage = () => {
 
                 <div className="border border-slate-200 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-slate-50">
+                    <TableHeader className="sticky top-0 bg-slate-50 dark:bg-slate-800">
                       <TableRow>
                         <TableHead className="w-12">Status</TableHead>
                         <TableHead>Message</TableHead>
@@ -974,7 +974,7 @@ const BulkImportPage = () => {
                               <XCircle className="h-4 w-4 text-red-600" />
                             )}
                           </TableCell>
-                          <TableCell className="text-slate-700">{result.message}</TableCell>
+                          <TableCell className="text-slate-700 dark:text-slate-300">{result.message}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -1005,7 +1005,7 @@ const BulkImportPage = () => {
         {/* Right Column - Statistics */}
         <div className="space-y-6">
           {importingRecords.length > 0 && (
-            <Card className="border-slate-200 bg-white sticky top-6">
+            <Card className="border-slate-200 bg-white dark:bg-slate-900 sticky top-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -1024,28 +1024,28 @@ const BulkImportPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-slate-900">Distribution by Class</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Distribution by Class</p>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {classStats.map((stat, idx) => (
                       <div key={idx} className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
-                          <p className="font-medium text-slate-900">
+                          <p className="font-medium text-slate-900 dark:text-slate-100">
                             {stat.grade}
                             {stat.stream && ` - ${stat.stream}`}
                           </p>
-                          <Badge variant="outline" className="bg-slate-50">
+                          <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800">
                             {stat.count}
                           </Badge>
                         </div>
                         <Progress value={stat.percentage} className="h-1.5" />
-                        <p className="text-xs text-slate-500">{stat.percentage}%</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{stat.percentage}%</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-200 space-y-2">
-                  <p className="text-sm font-semibold text-slate-900">Gender Distribution</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Gender Distribution</p>
                   {(() => {
                     const maleCount = importingRecords.filter(
                       (r) => r.gender.toLowerCase() === 'male'
@@ -1054,12 +1054,12 @@ const BulkImportPage = () => {
                     return (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Boys</span>
-                          <span className="font-semibold text-slate-900">{maleCount}</span>
+                          <span className="text-slate-600 dark:text-slate-400">Boys</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{maleCount}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Girls</span>
-                          <span className="font-semibold text-slate-900">{femaleCount}</span>
+                          <span className="text-slate-600 dark:text-slate-400">Girls</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{femaleCount}</span>
                         </div>
                       </div>
                     );
@@ -1095,7 +1095,7 @@ const BulkImportPage = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Progress</span>
+                  <span className="text-slate-600 dark:text-slate-400">Progress</span>
                   <span className="font-semibold">{importProgress}%</span>
                 </div>
                 <Progress value={importProgress} className="h-2" />
@@ -1183,11 +1183,11 @@ const BulkImportPage = () => {
                               ? expandedFailures.filter(a => a !== record.admission)
                               : [...expandedFailures, record.admission]
                           )}
-                          className="w-full text-left bg-white p-2 rounded border border-red-200 hover:bg-red-50 transition-colors flex items-center justify-between text-sm"
+                          className="w-full text-left bg-white dark:bg-slate-900 p-2 rounded border border-red-200 hover:bg-red-50 transition-colors flex items-center justify-between text-sm"
                         >
                           <div>
-                            <p className="font-medium text-slate-900">{record.name}</p>
-                            <p className="text-xs text-slate-500">{record.admission}</p>
+                            <p className="font-medium text-slate-900 dark:text-slate-100">{record.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{record.admission}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge className={cn(
@@ -1205,7 +1205,7 @@ const BulkImportPage = () => {
                         </button>
 
                         {expandedFailures.includes(record.admission) && (
-                          <div className="bg-white border border-t-0 border-red-200 p-2 text-xs text-slate-600">
+                          <div className="bg-white dark:bg-slate-900 border border-t-0 border-red-200 p-2 text-xs text-slate-600 dark:text-slate-400">
                             <p className="font-medium text-slate-900 mb-1">Reason:</p>
                             <p>{record.reason}</p>
                             {record.details && (

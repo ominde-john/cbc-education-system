@@ -73,7 +73,7 @@ function StatsCard({
   trend?: string;
 }) {
   return (
-    <Card className="border-0 shadow-sm bg-white hover:shadow-md transition-all">
+    <Card className="border-0 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all">
       <CardContent className="p-6">
         <div className="flex items-start gap-3">
           <div
@@ -443,7 +443,7 @@ export const ListView: React.FC<ListViewProps> = ({
       </div>
 
       {/* Filters Section */}
-      <div className="bg-white rounded-lg border border-border p-4 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-border p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-foreground mb-4">Filters</h2>
         
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
@@ -462,7 +462,7 @@ export const ListView: React.FC<ListViewProps> = ({
           <select
             value={fStaffType}
             onChange={(e) => onStaffTypeChange(e.target.value)}
-            className="px-3 py-2 h-9 border border-border rounded-lg text-sm bg-white cursor-pointer appearance-none pr-8 hover:border-primary/50 transition-colors"
+            className="px-3 py-2 h-9 border border-border rounded-lg text-sm bg-white dark:bg-slate-900 cursor-pointer appearance-none pr-8 hover:border-primary/50 transition-colors"
           >
             <option value="all">All Types</option>
             {STAFF_TYPE_OPTIONS.map((opt) => (
@@ -476,7 +476,7 @@ export const ListView: React.FC<ListViewProps> = ({
           <select
             value={fStatus}
             onChange={(e) => onStatusChange(e.target.value)}
-            className="px-3 py-2 h-9 border border-border rounded-lg text-sm bg-white cursor-pointer appearance-none pr-8 hover:border-primary/50 transition-colors"
+            className="px-3 py-2 h-9 border border-border rounded-lg text-sm bg-white dark:bg-slate-900 cursor-pointer appearance-none pr-8 hover:border-primary/50 transition-colors"
           >
             <option value="all">All Status</option>
             {Object.keys(STATUS_CFG).map((key) => (
@@ -490,7 +490,7 @@ export const ListView: React.FC<ListViewProps> = ({
           <select
             value={fBranch}
             onChange={(e) => onBranchChange(e.target.value)}
-            className="px-3 py-2 h-9 border border-border rounded-lg text-sm bg-white cursor-pointer appearance-none pr-8 hover:border-primary/50 transition-colors"
+            className="px-3 py-2 h-9 border border-border rounded-lg text-sm bg-white dark:bg-slate-900 cursor-pointer appearance-none pr-8 hover:border-primary/50 transition-colors"
           >
             <option value="all">All Branches</option>
             {branchOptions.map((branchName) => (

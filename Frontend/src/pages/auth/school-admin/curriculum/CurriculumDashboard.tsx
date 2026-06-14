@@ -679,7 +679,7 @@ export default function CurriculumDashboard() {
                           : "shadow-lg border border-white/50 dark:border-slate-700/50 hover:border-white/80 hover:shadow-2xl hover:scale-105"
                       }`}
                     >
-                      <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/20 blur-3xl group-hover:scale-150 transition-transform" />
+                      <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white dark:bg-slate-900/20 blur-3xl group-hover:scale-150 transition-transform" />
                       <div className="relative">
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-white/90">{card.icon}</div>
@@ -837,7 +837,7 @@ export default function CurriculumDashboard() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="h-8 text-xs gap-1 bg-white hover:bg-slate-50 shadow-sm"
+                    className="h-8 text-xs gap-1 bg-white dark:bg-slate-900 hover:bg-slate-50 shadow-sm"
                     onClick={handleExportCSV}
                   >
                     <Download className="h-3 w-3" />
@@ -866,7 +866,7 @@ export default function CurriculumDashboard() {
 
             {/* Table View */}
             {viewMode === "table" && (
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg bg-white dark:bg-slate-950">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg bg-white dark:bg-slate-900 dark:bg-slate-950">
                 <LearningAreasTable
                   rows={pageRows}
                   selectedRows={selectedRows}

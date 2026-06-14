@@ -43,7 +43,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <Card className="rounded-3xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+      <Card className="rounded-3xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
         <div className="p-8 sm:p-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
             <div className="flex items-start gap-4 flex-1">
@@ -99,7 +99,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
           { label: "Utilization", value: `${pct}%`, icon: Target, gradient: pct > 80 ? GRADIENTS.danger : GRADIENTS.primary },
           { label: "Status", value: selected.is_active ? "Active" : "Inactive", icon: Activity, gradient: selected.is_active ? GRADIENTS.success : "from-gray-600 to-gray-500" },
         ].map((s) => (
-          <Card key={s.label} className="rounded-2xl border border-gray-200 shadow-sm bg-white">
+          <Card key={s.label} className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900">
             <CardContent className="p-5 flex items-center gap-3">
               <div className={cn("p-3 rounded-lg bg-gradient-to-br text-white", s.gradient)}>
                 <s.icon className="h-5 w-5" />
@@ -116,20 +116,20 @@ export const DetailView: React.FC<DetailViewProps> = ({
       {/* Tabs */}
       <Tabs defaultValue="learners" className="space-y-6">
         <TabsList className="bg-gray-100 rounded-xl border border-gray-200">
-          <TabsTrigger value="learners" className="rounded-lg data-[state=active]:bg-white font-semibold">
+          <TabsTrigger value="learners" className="rounded-lg data-[state=active]:bg-white dark:bg-slate-900 font-semibold">
             <Users className="h-4 w-4 mr-2" /> Learners
           </TabsTrigger>
-          <TabsTrigger value="timetable" className="rounded-lg data-[state=active]:bg-white font-semibold">
+          <TabsTrigger value="timetable" className="rounded-lg data-[state=active]:bg-white dark:bg-slate-900 font-semibold">
             <Clock className="h-4 w-4 mr-2" /> Timetable
           </TabsTrigger>
-          <TabsTrigger value="subjects" className="rounded-lg data-[state=active]:bg-white font-semibold">
+          <TabsTrigger value="subjects" className="rounded-lg data-[state=active]:bg-white dark:bg-slate-900 font-semibold">
             <BookOpen className="h-4 w-4 mr-2" /> Subjects
           </TabsTrigger>
         </TabsList>
 
         {/* Learners Tab */}
         <TabsContent value="learners">
-          <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+          <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
             <CardHeader className="pb-4 border-b border-gray-200">
               <CardTitle className="text-lg font-bold flex items-center gap-3 text-gray-900">
                 <div className={cn("p-2 rounded-lg bg-gradient-to-br text-white", GRADIENTS.primary)}>
@@ -173,7 +173,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
 
         {/* Timetable Tab */}
         <TabsContent value="timetable">
-          <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+          <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
             <CardHeader className="pb-4 border-b border-gray-200">
               <CardTitle className="text-lg font-bold flex items-center gap-3 text-gray-900">
                 <div className={cn("p-2 rounded-lg bg-gradient-to-br text-white", GRADIENTS.primary)}>
@@ -222,7 +222,7 @@ export const DetailView: React.FC<DetailViewProps> = ({
 
         {/* Subjects Tab */}
         <TabsContent value="subjects">
-          <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+          <Card className="rounded-2xl border border-gray-200 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
             <CardHeader className="pb-4 border-b border-gray-200">
               <CardTitle className="text-lg font-bold flex items-center gap-3 text-gray-900">
                 <div className={cn("p-2 rounded-lg bg-gradient-to-br text-white", GRADIENTS.primary)}>
