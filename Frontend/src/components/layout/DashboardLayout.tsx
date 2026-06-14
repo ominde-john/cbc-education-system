@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Settings,
   Home,
+  Mail,
+  Phone,
 } from 'lucide-react';
 
 // Types
@@ -412,16 +414,47 @@ const Header = ({
         </button>
 
         {/* Help - Hidden on mobile */}
-        <button
-          className={cn(
-            'p-2 rounded-lg transition-colors hidden md:flex items-center justify-center',
-            'hover:bg-gray-100 dark:hover:bg-gray-800'
-          )}
-          aria-label="Help"
-          title="Help"
-        >
-          <HelpCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        </button>
+        <div className="relative hidden md:block group">
+          <button
+            className={cn(
+              'p-2 rounded-lg transition-colors flex items-center justify-center',
+              'hover:bg-gray-100 dark:hover:bg-gray-800'
+            )}
+            aria-label="Help"
+            title="Help"
+          >
+            <HelpCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </button>
+          <div className="absolute right-0 top-full mt-1 w-80 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Need Help?</h3>
+            </div>
+            <div className="p-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                Welcome to CBE Noneaa! Use the sidebar to navigate between modules such as Student Management, 
+                Teachers, Attendance, and more. If you experience any issues or need assistance, 
+                please don't hesitate to reach out to our support team.
+              </p>
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                <a
+                  href="mailto:communityteksoft@gmail.com"
+                  className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <Mail className="w-4 h-4" />
+                  communityteksoft@gmail.com
+                </a>
+                <a
+                  href="tel:+254700000000"
+                  className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <Phone className="w-4 h-4" />
+                  +254 700 000 000
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Theme Toggle */}
         <button
