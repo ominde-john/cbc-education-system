@@ -43,10 +43,15 @@ import {
   Trash2,
   Upload,
   BarChart3,
+  Heart,
+  TrendingUp,
+  Shield,
+  Calendar,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  LineChart, Line,
 } from 'recharts';
 import {
   DropdownMenu,
@@ -550,6 +555,97 @@ const StudentManagement = () => {
         girlsPercent: Math.round((c.girls / c.total) * 100),
       }))
       .sort((a, b) => b.total - a.total);
+  }, [students]);
+
+  const ageDistributionData = useMemo(() => {
+    const ages: Record<number, number> = {};
+    const now = new Date();
+    students.forEach((s) => {
+      if (!s.date_of_birth) return;
+      const dob = new Date(s.date_of_birth);
+      const age = Math.floor((now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      if (age >= 0 && age <= 25) ages[age] = (ages[age] || 0) + 1;
+    });
+    return Object.entries(ages)
+      .map(([age, count]) => ({ age: `${age}yr`, ageNum: Number(age), count }))
+      .sort((a, b) => a.ageNum - b.ageNum);
+  }, [students]);
+
+  const specialNeedsData = useMemo(() => {
+    const withNeeds = students.filter((s) => s.special_needs === true).length;
+    const without = students.filter((s) => s.special_needs === false || s.special_needs === null).length;
+    const data: { name: string; value: number; color: string }[] = [];
+    if (withNeeds > 0) data.push({ name: 'Special Needs', value: withNeeds, color: '#f59e0b' });
+    if (without > 0) data.push({ name: 'Regular', value: without, color: '#3b82f6' });
+    return { chartData: data, withNeeds, without };
+  }, [students]);
+
+  const specialNeedsPerGrade = useMemo(() => {
+    const counts: Record<string, { grade: string; special: number; regular: number; total: number }> = {};
+    students.forEach((s) => {
+      const grade = s.grade_level || 'Unknown';
+      if (!counts[grade]) counts[grade] = { grade, special: 0, regular: 0, total: 0 };
+      counts[grade].total++;
+      if (s.special_needs === true) counts[grade].special++;
+      else counts[grade].regular++;
+    });
+    const gradeOrder = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9'];
+    return gradeOrder.filter((g) => counts[g]).map((g) => counts[g]);
+  }, [students]);
+
+  const enrollmentTrendData = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    students.forEach((s) => {
+      if (!s.created_at) return;
+      const d = new Date(s.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthly[key] = (monthly[key] || 0) + 1;
+    });
+    return Object.entries(monthly)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, count]) => {
+        const [y, m] = month.split('-');
+        const label = new Date(Number(y), Number(m) - 1).toLocaleDateString('en-KE', { month: 'short', year: '2-digit' });
+        return { month: label, count };
+      });
+  }, [students]);
+
+  const guardianCoverageData = useMemo(() => {
+    const withGuardian = students.filter((s) => s.learner_parents && s.learner_parents.length > 0 && s.learner_parents.some((lp) => lp.parents !== null)).length;
+    const without = totalStudents - withGuardian;
+    const data: { name: string; value: number; color: string }[] = [];
+    if (withGuardian > 0) data.push({ name: 'With Guardian', value: withGuardian, color: '#10b981' });
+    if (without > 0) data.push({ name: 'No Guardian', value: without, color: '#ef4444' });
+    return { chartData: data, withGuardian, without, percent: Math.round((withGuardian / Math.max(totalStudents, 1)) * 100) };
+  }, [students, totalStudents]);
+
+  const classSizeData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    students.forEach((s) => {
+      const label = s.stream_name ? `${s.grade_level} - ${s.stream_name}` : s.grade_level || 'Unknown';
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [students]);
+
+  const avgAgePerGrade = useMemo(() => {
+    const now = new Date();
+    const sums: Record<string, { total: number; count: number }> = {};
+    students.forEach((s) => {
+      if (!s.date_of_birth) return;
+      const grade = s.grade_level || 'Unknown';
+      const dob = new Date(s.date_of_birth);
+      const age = (now.getTime() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+      if (!sums[grade]) sums[grade] = { total: 0, count: 0 };
+      sums[grade].total += age;
+      sums[grade].count++;
+    });
+    const gradeOrder = ['PP1', 'PP2', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9'];
+    return gradeOrder
+      .filter((g) => sums[g])
+      .map((g) => ({ grade: g, avgAge: Number((sums[g].total / sums[g].count).toFixed(1)) }));
   }, [students]);
 
   const hasActiveFilters =
@@ -1072,6 +1168,256 @@ const StudentManagement = () => {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Additional Analytics */}
+      {totalStudents > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* Age Distribution */}
+          {ageDistributionData.length > 0 && (
+            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-orange-100 flex items-center justify-center">
+                    <Calendar className="h-3.5 w-3.5 text-orange-600" />
+                  </div>
+                  Age Distribution
+                </CardTitle>
+                <CardDescription className="text-xs">Student count by age</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="h-[160px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={ageDistributionData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                      <XAxis dataKey="age" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(val: number) => [val, 'Students']} />
+                      <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Special Needs Overview */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-amber-100 flex items-center justify-center">
+                  <Heart className="h-3.5 w-3.5 text-amber-600" />
+                </div>
+                Special Needs Overview
+              </CardTitle>
+              <CardDescription className="text-xs">Students with special needs</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {specialNeedsData.chartData.length > 0 ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-[120px] h-[120px] shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={specialNeedsData.chartData} cx="50%" cy="50%" innerRadius={32} outerRadius={52} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                          {specialNeedsData.chartData.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
+                        </Pie>
+                        <Tooltip formatter={(val: number) => [val, 'Students']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {specialNeedsData.chartData.map((entry) => (
+                      <div key={entry.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
+                          <span className="text-xs text-slate-600">{entry.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                      </div>
+                    ))}
+                    <div className="pt-1 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-500">SN Rate</span>
+                        <span className="text-xs font-bold text-amber-600">{Math.round((specialNeedsData.withNeeds / Math.max(totalStudents, 1)) * 100)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-6">No data</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Guardian Coverage */}
+          <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-6 w-6 rounded-md bg-teal-100 flex items-center justify-center">
+                  <Shield className="h-3.5 w-3.5 text-teal-600" />
+                </div>
+                Guardian Coverage
+              </CardTitle>
+              <CardDescription className="text-xs">Students with assigned guardians</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              {guardianCoverageData.chartData.length > 0 ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-[120px] h-[120px] shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={guardianCoverageData.chartData} cx="50%" cy="50%" innerRadius={32} outerRadius={52} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                          {guardianCoverageData.chartData.map((entry, i) => (<Cell key={i} fill={entry.color} />))}
+                        </Pie>
+                        <Tooltip formatter={(val: number) => [val, 'Students']} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {guardianCoverageData.chartData.map((entry) => (
+                      <div key={entry.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
+                          <span className="text-xs text-slate-600">{entry.name}</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-900">{entry.value}</span>
+                      </div>
+                    ))}
+                    <div className="pt-1 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-500">Coverage</span>
+                        <span className="text-xs font-bold text-teal-600">{guardianCoverageData.percent}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-6">No data</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Enrollment Trend, Class Size, Average Age */}
+      {totalStudents > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* Enrollment Trend */}
+          {enrollmentTrendData.length > 1 && (
+            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-sky-100 flex items-center justify-center">
+                    <TrendingUp className="h-3.5 w-3.5 text-sky-600" />
+                  </div>
+                  Enrollment Trend
+                </CardTitle>
+                <CardDescription className="text-xs">New enrollments over time</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="h-[160px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={enrollmentTrendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(val: number) => [val, 'Enrolled']} />
+                      <Line type="monotone" dataKey="count" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3, fill: '#0ea5e9' }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Class Size Comparison */}
+          {classSizeData.length > 0 && (
+            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-rose-100 flex items-center justify-center">
+                    <BarChart3 className="h-3.5 w-3.5 text-rose-600" />
+                  </div>
+                  Class Size Comparison
+                </CardTitle>
+                <CardDescription className="text-xs">Students per class/stream</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                  {classSizeData.map((c) => (
+                    <div key={c.name} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-700 truncate max-w-[60%]">{c.name}</span>
+                        <span className="text-xs font-bold text-slate-900">{c.count}</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full rounded-full bg-rose-500 transition-all" style={{ width: `${Math.round((c.count / Math.max(classSizeData[0]?.count || 1, 1)) * 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Average Age per Grade */}
+          {avgAgePerGrade.length > 0 && (
+            <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-violet-100 flex items-center justify-center">
+                    <GraduationCap className="h-3.5 w-3.5 text-violet-600" />
+                  </div>
+                  Average Age per Grade
+                </CardTitle>
+                <CardDescription className="text-xs">Mean student age by grade level</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="h-[160px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={avgAgePerGrade} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                      <XAxis dataKey="grade" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(val: number) => [`${val} years`, 'Avg Age']} />
+                      <Bar dataKey="avgAge" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Special Needs per Grade */}
+      {specialNeedsPerGrade.some((g) => g.special > 0) && (
+        <Card className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <div className="h-6 w-6 rounded-md bg-amber-100 flex items-center justify-center">
+                <Heart className="h-3.5 w-3.5 text-amber-600" />
+              </div>
+              Special Needs per Grade
+            </CardTitle>
+            <CardDescription className="text-xs">Special needs students breakdown by grade</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={specialNeedsPerGrade} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="grade" tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="special" name="Special Needs" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="regular" name="Regular" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Search and Filters Card */}
