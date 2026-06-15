@@ -16,7 +16,7 @@ const TYPING_SPEED_MS = 25;
 const INPUT_MAX_HEIGHT_PX = 120;
 
 const QUICK_PROMPTS = [
-  'What is CBC?',
+  'What is CBE?',
   'How does assessment work?',
   'Tell me about NONEAA',
   'CBC structure explained',
@@ -312,7 +312,7 @@ export default function AIAssistant() {
                 {/* Info */}
                 <div className="flex-1">
                   <h3 className="text-white font-semibold text-sm">Anna</h3>
-                  <p className="text-blue-100 text-xs">AI Assistant • Always online</p>
+                  <p className="text-blue-100 text-xs">VA • Currently offline</p>
                 </div>
 
                 {/* Close */}
