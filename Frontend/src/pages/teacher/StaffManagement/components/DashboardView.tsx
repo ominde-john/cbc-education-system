@@ -16,10 +16,13 @@ import {
   ArrowLeft,
   GraduationCap,
   BarChart3,
+  TrendingUp,
+  Building2,
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
+  RadialBarChart, RadialBar,
 } from "recharts";
 import { StaffMember } from "../types";
 import { StatusBadge, Toast } from "./index";
@@ -132,6 +135,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .slice(0, 7);
   }, [staff]);
 
+  const branchTeachingData = useMemo(() => {
+    const map: Record<string, { teaching: number; nonTeaching: number }> = {};
+    staff.forEach((s) => {
+      const branch = s.branch?.trim() || "Unassigned";
+      if (!map[branch]) map[branch] = { teaching: 0, nonTeaching: 0 };
+      if (s.staffType === "teaching") map[branch].teaching++;
+      else map[branch].nonTeaching++;
+    });
+    return Object.entries(map)
+      .map(([name, d]) => ({
+        name: name.length > 12 ? name.slice(0, 12) + "…" : name,
+        Teaching: d.teaching,
+        "Non-Teaching": d.nonTeaching,
+      }))
+      .sort((a, b) => (b.Teaching + b["Non-Teaching"]) - (a.Teaching + a["Non-Teaching"]))
+      .slice(0, 6);
+  }, [staff]);
+
+  const activeRateRadial = useMemo(() => {
+    return [{ name: "Active Rate", value: stats.activePercent, fill: "#10b981" }];
+  }, [stats]);
+
   const filteredStaff = useMemo(() => {
     return staff.filter((s) => {
       if (searchQuery) {
@@ -157,19 +182,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const quickActions = [
-    { icon: UserPlus, label: "Register New Staff", sub: "Add teacher or support staff", action: onCreate, color: "#3b82f6", bg: "#eff6ff" },
-    { icon: Users, label: "View All Staff", sub: "Browse & manage records", action: onViewList, color: "#10b981", bg: "#ecfdf5" },
-    { icon: Download, label: "Export Records", sub: "CSV, PDF, or Excel format", action: () => {}, color: "#8b5cf6", bg: "#f5f3ff" },
-    { icon: Award, label: "Performance", sub: "Attendance & reports", action: onViewPerformance || (() => {}), color: "#f59e0b", bg: "#fffbeb" },
+    { icon: UserPlus, label: "Register New Staff", sub: "Add teacher or support staff", action: onCreate, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/40" },
+    { icon: Users, label: "View All Staff", sub: "Browse & manage records", action: onViewList, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
+    { icon: Download, label: "Export Records", sub: "CSV, PDF, or Excel format", action: () => {}, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/40" },
+    { icon: Award, label: "Performance", sub: "Attendance & reports", action: onViewPerformance || (() => {}), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
   ];
 
   const statCards = [
-    { icon: Users, label: "Total Staff", value: stats.total, color: "#3b82f6", bg: "bg-blue-50", iconBg: "bg-blue-100", sub: `${stats.total} member${stats.total !== 1 ? "s" : ""}` },
-    { icon: UserCheck, label: "Active", value: stats.active, color: "#10b981", bg: "bg-emerald-50", iconBg: "bg-emerald-100", sub: `${stats.activePercent}% of total` },
-    { icon: Clock, label: "On Leave", value: stats.onLeave, color: "#f59e0b", bg: "bg-amber-50", iconBg: "bg-amber-100", sub: "Currently away" },
-    { icon: MapPin, label: "Branches", value: stats.branches, color: "#8b5cf6", bg: "bg-purple-50", iconBg: "bg-purple-100", sub: "Locations" },
-    { icon: Briefcase, label: "Non-Teaching", value: stats.nonTeaching, color: "#ef4444", bg: "bg-red-50", iconBg: "bg-red-100", sub: "Support staff" },
-    { icon: GraduationCap, label: "Teaching", value: stats.teaching, color: "#06b6d4", bg: "bg-cyan-50", iconBg: "bg-cyan-100", sub: "Educators" },
+    { icon: Users, label: "Total Staff", value: stats.total, color: "text-blue-600", accent: "bg-blue-500", iconBg: "bg-blue-50 dark:bg-blue-950/40", sub: `${stats.total} member${stats.total !== 1 ? "s" : ""}` },
+    { icon: UserCheck, label: "Active", value: stats.active, color: "text-emerald-600", accent: "bg-emerald-500", iconBg: "bg-emerald-50 dark:bg-emerald-950/40", sub: `${stats.activePercent}% of total` },
+    { icon: Clock, label: "On Leave", value: stats.onLeave, color: "text-amber-600", accent: "bg-amber-500", iconBg: "bg-amber-50 dark:bg-amber-950/40", sub: "Currently away" },
+    { icon: MapPin, label: "Branches", value: stats.branches, color: "text-violet-600", accent: "bg-violet-500", iconBg: "bg-violet-50 dark:bg-violet-950/40", sub: "Locations" },
+    { icon: Briefcase, label: "Non-Teaching", value: stats.nonTeaching, color: "text-rose-600", accent: "bg-rose-500", iconBg: "bg-rose-50 dark:bg-rose-950/40", sub: "Support staff" },
+    { icon: GraduationCap, label: "Teaching", value: stats.teaching, color: "text-cyan-600", accent: "bg-cyan-500", iconBg: "bg-cyan-50 dark:bg-cyan-950/40", sub: "Educators" },
   ];
 
   return (
@@ -198,207 +223,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="relative overflow-hidden border-border/60 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center mb-3", stat.iconBg)}>
-                  <Icon className="h-4 w-4" style={{ color: stat.color }} />
-                </div>
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                <p className="text-2xl font-extrabold text-foreground mt-0.5">{stat.value}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">{stat.sub}</p>
-              </CardContent>
-              <div className="absolute top-0 left-0 right-0 h-1 rounded-t-lg" style={{ background: stat.color }} />
-            </Card>
+            <div
+              key={stat.label}
+              className="relative rounded-xl border border-border/60 bg-card p-4 hover:shadow-md transition-shadow overflow-hidden dark:bg-card"
+            >
+              <div className={`absolute top-0 left-0 right-0 h-0.5 ${stat.accent}`} />
+              <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center mb-3", stat.iconBg)}>
+                <Icon className={cn("h-4 w-4", stat.color)} />
+              </div>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+              <p className="text-2xl font-extrabold text-foreground mt-0.5">{stat.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{stat.sub}</p>
+            </div>
           );
         })}
       </div>
-
-      {/* ── Charts Section ── */}
-      {staff.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {/* Staff Type Distribution - Donut */}
-          <Card className="border-border/60 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="h-6 w-6 rounded-md bg-blue-100 flex items-center justify-center">
-                  <Users className="h-3.5 w-3.5 text-blue-600" />
-                </div>
-                Staff Type Distribution
-              </CardTitle>
-              <CardDescription className="text-xs">Teaching vs Non-Teaching</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-4">
-              {staffTypeData.length > 0 ? (
-                <div className="flex items-center gap-4">
-                  <div className="w-[130px] h-[130px] shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={staffTypeData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={35}
-                          outerRadius={58}
-                          paddingAngle={3}
-                          dataKey="value"
-                          strokeWidth={0}
-                        >
-                          {staffTypeData.map((entry, i) => (
-                            <Cell key={i} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(val: number) => [val, "Staff"]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex-1 space-y-2.5">
-                    {staffTypeData.map((entry) => (
-                      <div key={entry.name} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
-                          <span className="text-xs text-muted-foreground">{entry.name}</span>
-                        </div>
-                        <span className="text-sm font-bold text-foreground">{entry.value}</span>
-                      </div>
-                    ))}
-                    <div className="pt-1.5 border-t border-border/50">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">Total</span>
-                        <span className="text-sm font-bold text-foreground">{stats.total}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-8">No staff data available</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Status Overview - Donut */}
-          <Card className="border-border/60 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="h-6 w-6 rounded-md bg-emerald-100 flex items-center justify-center">
-                  <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
-                </div>
-                Status Overview
-              </CardTitle>
-              <CardDescription className="text-xs">Current staff availability</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-4">
-              {statusData.length > 0 ? (
-                <div className="flex items-center gap-4">
-                  <div className="w-[130px] h-[130px] shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={statusData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={35}
-                          outerRadius={58}
-                          paddingAngle={3}
-                          dataKey="value"
-                          strokeWidth={0}
-                        >
-                          {statusData.map((entry, i) => (
-                            <Cell key={i} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(val: number) => [val, "Staff"]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex-1 space-y-2.5">
-                    {statusData.map((entry) => (
-                      <div key={entry.name} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
-                          <span className="text-xs text-muted-foreground">{entry.name}</span>
-                        </div>
-                        <span className="text-sm font-bold text-foreground">{entry.value}</span>
-                      </div>
-                    ))}
-                    <div className="pt-1.5 border-t border-border/50">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">Active Rate</span>
-                        <span className="text-sm font-bold text-emerald-600">{stats.activePercent}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-8">No staff data available</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Staff by Branch - Bar Chart */}
-          <Card className="border-border/60 shadow-sm md:col-span-2 xl:col-span-1">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="h-6 w-6 rounded-md bg-purple-100 flex items-center justify-center">
-                  <BarChart3 className="h-3.5 w-3.5 text-purple-600" />
-                </div>
-                Staff by Branch
-              </CardTitle>
-              <CardDescription className="text-xs">Distribution across locations</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-4">
-              {branchData.length > 0 ? (
-                <div className="h-[140px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={branchData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <Tooltip
-                        contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }}
-                        formatter={(val: number) => [val, "Staff"]}
-                      />
-                      <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={36} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-8">No branch data</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* ── Designation Breakdown (only if data exists) ── */}
-      {designationData.length > 1 && (
-        <Card className="border-border/60 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="h-6 w-6 rounded-md bg-cyan-100 flex items-center justify-center">
-                <Briefcase className="h-3.5 w-3.5 text-cyan-600" />
-              </div>
-              Staff by Designation
-            </CardTitle>
-            <CardDescription className="text-xs">Role distribution across your organization</CardDescription>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              {designationData.map((d) => (
-                <div key={d.name} className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-muted/40 border border-border/40">
-                  <span className="text-xl font-bold text-foreground">{d.value}</span>
-                  <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight">{d.name}</span>
-                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden mt-0.5">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${Math.round((d.value / stats.total) * 100)}%`, background: d.color }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ── Quick Actions ── */}
       <div className="space-y-3">
@@ -408,10 +247,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               key={label}
               onClick={action}
-              className="group relative flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 text-left transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30"
+              className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4 text-left transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 dark:bg-card"
             >
-              <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg }}>
-                <Icon className="h-[18px] w-[18px]" style={{ color }} />
+              <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center shrink-0", bg)}>
+                <Icon className={cn("h-[18px] w-[18px]", color)} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">{label}</p>
@@ -423,8 +262,280 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* ── Charts Section ── */}
+      {staff.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Staff Analytics</h2>
+
+          {/* Row 1: Three charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {/* Staff Type Distribution - Donut */}
+            <Card className="border-border/60 shadow-sm dark:bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
+                    <Users className="h-3.5 w-3.5 text-blue-600" />
+                  </div>
+                  Staff Type Distribution
+                </CardTitle>
+                <CardDescription className="text-xs">Teaching vs Non-Teaching</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                {staffTypeData.length > 0 ? (
+                  <div className="flex items-center gap-4">
+                    <div className="w-[130px] h-[130px] shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={staffTypeData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={35}
+                            outerRadius={58}
+                            paddingAngle={3}
+                            dataKey="value"
+                            strokeWidth={0}
+                          >
+                            {staffTypeData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(val: number) => [val, "Staff"]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex-1 space-y-2.5">
+                      {staffTypeData.map((entry) => (
+                        <div key={entry.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
+                            <span className="text-xs text-muted-foreground">{entry.name}</span>
+                          </div>
+                          <span className="text-sm font-bold text-foreground">{entry.value}</span>
+                        </div>
+                      ))}
+                      <div className="pt-1.5 border-t border-border/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-muted-foreground">Total</span>
+                          <span className="text-sm font-bold text-foreground">{stats.total}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-8">No staff data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Status Overview - Donut */}
+            <Card className="border-border/60 shadow-sm dark:bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
+                    <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+                  </div>
+                  Status Overview
+                </CardTitle>
+                <CardDescription className="text-xs">Current staff availability</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                {statusData.length > 0 ? (
+                  <div className="flex items-center gap-4">
+                    <div className="w-[130px] h-[130px] shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={statusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={35}
+                            outerRadius={58}
+                            paddingAngle={3}
+                            dataKey="value"
+                            strokeWidth={0}
+                          >
+                            {statusData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(val: number) => [val, "Staff"]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex-1 space-y-2.5">
+                      {statusData.map((entry) => (
+                        <div key={entry.name} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: entry.color }} />
+                            <span className="text-xs text-muted-foreground">{entry.name}</span>
+                          </div>
+                          <span className="text-sm font-bold text-foreground">{entry.value}</span>
+                        </div>
+                      ))}
+                      <div className="pt-1.5 border-t border-border/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-muted-foreground">Active Rate</span>
+                          <span className="text-sm font-bold text-emerald-600">{stats.activePercent}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-8">No staff data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Active Rate Gauge */}
+            <Card className="border-border/60 shadow-sm dark:bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-green-50 dark:bg-green-950/40 flex items-center justify-center">
+                    <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                  </div>
+                  Active Rate
+                </CardTitle>
+                <CardDescription className="text-xs">Percentage of currently active staff</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="flex flex-col items-center">
+                  <div className="w-[140px] h-[140px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="60%"
+                        outerRadius="90%"
+                        barSize={12}
+                        data={activeRateRadial}
+                        startAngle={180}
+                        endAngle={0}
+                      >
+                        <RadialBar
+                          dataKey="value"
+                          cornerRadius={6}
+                          background={{ fill: "hsl(var(--muted))" }}
+                        />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="text-center -mt-10">
+                    <p className="text-3xl font-extrabold text-foreground">{stats.activePercent}%</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{stats.active} of {stats.total} active</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Row 2: Branch charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Staff by Branch - Bar Chart */}
+            <Card className="border-border/60 shadow-sm dark:bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center">
+                    <BarChart3 className="h-3.5 w-3.5 text-violet-600" />
+                  </div>
+                  Staff by Branch
+                </CardTitle>
+                <CardDescription className="text-xs">Distribution across locations</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                {branchData.length > 0 ? (
+                  <div className="h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={branchData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }}
+                          formatter={(val: number) => [val, "Staff"]}
+                        />
+                        <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-8">No branch data</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Teaching vs Non-Teaching by Branch - Grouped Bar */}
+            <Card className="border-border/60 shadow-sm dark:bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center">
+                    <Building2 className="h-3.5 w-3.5 text-cyan-600" />
+                  </div>
+                  Staff Type by Branch
+                </CardTitle>
+                <CardDescription className="text-xs">Teaching vs Non-Teaching per location</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                {branchTeachingData.length > 0 ? (
+                  <div className="h-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={branchTeachingData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar dataKey="Teaching" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                        <Bar dataKey="Non-Teaching" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-8">No branch data</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* ── Designation Breakdown ── */}
+      {designationData.length > 1 && (
+        <Card className="border-border/60 shadow-sm dark:bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <div className="h-6 w-6 rounded-md bg-cyan-50 dark:bg-cyan-950/40 flex items-center justify-center">
+                <Briefcase className="h-3.5 w-3.5 text-cyan-600" />
+              </div>
+              Staff by Designation
+            </CardTitle>
+            <CardDescription className="text-xs">Role distribution across your organization</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="space-y-3">
+              {designationData.map((d) => {
+                const pct = Math.round((d.value / stats.total) * 100);
+                return (
+                  <div key={d.name} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-36 truncate shrink-0">{d.name}</span>
+                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${pct}%`, background: d.color }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-foreground w-8 text-right shrink-0">{d.value}</span>
+                    <span className="text-[10px] text-muted-foreground w-10 text-right shrink-0">{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Staff Directory ── */}
-      <Card className="border-border/60 shadow-sm">
+      <Card className="border-border/60 shadow-sm dark:bg-card">
         <CardHeader className="pb-3 border-b border-border/50">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -485,7 +596,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   className="flex items-center gap-3 px-4 sm:px-6 py-3 hover:bg-muted/40 transition-colors cursor-pointer group"
                   onClick={onViewList}
                 >
-                  {/* Avatar */}
                   <div className="shrink-0">
                     {s.photo && !imageErrors[s.id] ? (
                       <img
@@ -503,20 +613,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     )}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{s.firstName} {s.lastName}</p>
                     <p className="text-xs text-muted-foreground truncate">{s.designation || "Staff"} · {s.branch || "No Branch"}</p>
                   </div>
 
-                  {/* Badges */}
                   <Badge
                     variant="outline"
                     className={cn(
                       "hidden sm:inline-flex shrink-0 text-[10px]",
                       s.staffType === "teaching"
-                        ? "bg-blue-50 text-blue-700 border-blue-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
+                        ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+                        : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
                     )}
                   >
                     {s.staffType === "teaching" ? "Teaching" : "Support"}
