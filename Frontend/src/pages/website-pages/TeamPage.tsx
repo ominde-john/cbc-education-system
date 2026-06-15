@@ -1,338 +1,236 @@
-import React, { useState, useEffect } from 'react';
-import SectionTitle from '@/components/SectionTitle';
+import { useState, useEffect } from 'react';
 import { teamMembers } from '@/data/teamMembers';
-import TeamMemberCard from '@/components/TeamMemberCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { Linkedin, Mail, Github, Users, Lightbulb, Heart, CheckCircle, Code, BarChart3, DollarSign, Briefcase, Headphones, BookOpen, ArrowRight } from 'lucide-react';
 
 const TeamPage = () => {
   const [displayText, setDisplayText] = useState('');
-  const fullText = "Dedicated professionals driving innovation and excellence in everything we do.";
+  const fullText = "The passionate people behind Kenya's leading CBC education platform.";
 
   useEffect(() => {
     let index = 0;
     const interval = setInterval(() => {
       setDisplayText(fullText.slice(0, index + 1));
       index++;
-      if (index === fullText.length) {
-        index = 0;
-      }
-    }, 100);
+      if (index === fullText.length) clearInterval(interval);
+    }, 40);
     return () => clearInterval(interval);
   }, []);
 
+  const values = [
+    { icon: CheckCircle, title: 'Excellence', desc: 'Delivering the highest quality in every feature we ship', color: 'from-blue-500 to-blue-600' },
+    { icon: Users, title: 'Collaboration', desc: 'Working as one team to build tools that empower schools', color: 'from-cyan-500 to-teal-500' },
+    { icon: Lightbulb, title: 'Innovation', desc: 'Embracing new ideas to solve real education challenges', color: 'from-amber-500 to-orange-500' },
+    { icon: Heart, title: 'Integrity', desc: 'Acting with honesty and putting educators first', color: 'from-rose-500 to-pink-500' },
+  ];
+
+  const departments = [
+    { icon: Code, title: 'Technology', desc: 'Building the platform with cutting-edge tools', items: ['Software Development', 'Infrastructure & DevOps', 'Data Analytics'], color: 'blue' },
+    { icon: BarChart3, title: 'Operations', desc: 'Optimizing processes for maximum efficiency', items: ['Project Management', 'Process Optimization', 'Quality Assurance'], color: 'cyan' },
+    { icon: DollarSign, title: 'Finance', desc: 'Managing resources for sustainable growth', items: ['Financial Planning', 'Budget Management', 'Compliance & Reporting'], color: 'emerald' },
+    { icon: Briefcase, title: 'Business Development', desc: 'Building partnerships and expanding reach', items: ['Strategic Partnerships', 'Market Expansion', 'Client Relations'], color: 'violet' },
+    { icon: Headphones, title: 'Customer Service', desc: 'Providing exceptional support to every school', items: ['Customer Support', 'Client Success', 'Feedback Management'], color: 'amber' },
+    { icon: BookOpen, title: 'Accounting', desc: 'Ensuring transparent and accurate reporting', items: ['Financial Reporting', 'Audit & Compliance', 'Tax Management'], color: 'rose' },
+  ];
+
+  const colorMap: Record<string, { bg: string; border: string; dot: string; iconBg: string }> = {
+    blue: { bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500', iconBg: 'bg-blue-100 text-blue-600' },
+    cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', dot: 'bg-cyan-500', iconBg: 'bg-cyan-100 text-cyan-600' },
+    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', iconBg: 'bg-emerald-100 text-emerald-600' },
+    violet: { bg: 'bg-violet-50', border: 'border-violet-200', dot: 'bg-violet-500', iconBg: 'bg-violet-100 text-violet-600' },
+    amber: { bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500', iconBg: 'bg-amber-100 text-amber-600' },
+    rose: { bg: 'bg-rose-50', border: 'border-rose-200', dot: 'bg-rose-500', iconBg: 'bg-rose-100 text-rose-600' },
+  };
+
   return (
     <>
-      <Header/>
-      {/* Hero Section - Dark navy with accent */}
-      <section
-  className="relative text-white min-h-[70vh] flex items-center overflow-hidden"
-  style={{
-    backgroundImage: "url('/Gemini_Generated_Image_wxwqyiwxwqyiwxwq.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center"
-  }}
->
-  {/* Overlay */}
-  <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-[1px]" />
+      <Header />
 
-  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="max-w-3xl">
+      {/* Hero */}
+      <section className="relative min-h-[60vh] flex items-center overflow-hidden bg-gray-950">
+        <img
+          src="/Gemini_Generated_Image_wxwqyiwxwqyiwxwq.png"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-950/60 via-gray-950/40 to-gray-950/80" />
+        <div className="relative max-w-5xl mx-auto px-6 py-24 text-center">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-sm text-blue-200 font-medium mb-6">
+            <Users className="w-4 h-4" />
+            Our Team
+          </span>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
+            Meet the People Behind{' '}
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+              NONEAA
+            </span>
+          </h1>
+          <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            {displayText}
+            <span className="inline-block w-0.5 h-5 bg-blue-400 ml-1 align-middle animate-pulse" />
+          </p>
+        </div>
+      </section>
 
-      <h1 className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight 
-        bg-gradient-to-r from-white via-cyan-200 to-indigo-300 
-        bg-clip-text text-transparent drop-shadow-lg">
-        Meet Our Team
-      </h1>
-
-      <p className="text-xl md:text-2xl text-cyan-200 leading-relaxed font-medium drop-shadow-md">
-        {displayText}
-        <span className="animate-pulse">|</span>
-      </p>
-
-    </div>
-  </div>
-</section>
-
-      {/* Team Members Grid */}
-      <section className="py-20 bg-[#e8edf5]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[#0f1729] mb-4">Leadership Team</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Our experienced leadership team brings together diverse expertise to guide our organization's vision and strategy.
+      {/* Team Members */}
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Leadership Team</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Experienced leaders guiding our vision and strategy
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {teamMembers.map(member => (
-              <TeamMemberCard key={member.id} member={member} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {teamMembers.map((member) => (
+              <div
+                key={member.id}
+                className="group relative bg-white rounded-2xl border border-gray-100 p-6 text-center hover:shadow-xl hover:border-gray-200 hover:-translate-y-1 transition-all duration-300"
+              >
+                {/* Photo */}
+                <div className="relative w-28 h-28 mx-auto mb-5">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500" />
+                  {member.image ? (
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="w-28 h-28 rounded-full object-cover ring-4 ring-gray-100 group-hover:ring-blue-100 transition-all duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-4 ring-gray-100 ${member.image ? 'hidden' : ''}`}>
+                    <span className="text-2xl font-bold text-white">
+                      {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Info */}
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{member.name}</h3>
+                <p className="text-sm text-blue-600 font-medium mb-4">{member.role}</p>
+
+                {/* Socials */}
+                <div className="flex justify-center gap-2">
+                  {member.linkedin && (
+                    <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-blue-50 flex items-center justify-center text-gray-400 hover:text-blue-600 transition-colors">
+                      <Linkedin className="w-4 h-4" />
+                    </a>
+                  )}
+                  {member.github && (
+                    <a href={member.github} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors">
+                      <Github className="w-4 h-4" />
+                    </a>
+                  )}
+                  {member.email && (
+                    <a href={`mailto:${member.email}`} className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-cyan-50 flex items-center justify-center text-gray-400 hover:text-cyan-600 transition-colors">
+                      <Mail className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Values Section - Dark background */}
-      <section className="py-20 bg-gradient-to-b from-[#0f1729] to-[#1a2332]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Our Values</h2>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              The principles that guide our work and shape our culture
+      {/* Values */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Our Values</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              The principles that guide our work every day
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center p-6 group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#1e3a8a] to-[#2563eb] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl group-hover:shadow-blue-500/50">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Excellence</h3>
-              <p className="text-gray-400">Committed to delivering the highest quality in everything we do</p>
-            </div>
 
-            <div className="text-center p-6 group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#0891b2] to-[#06b6d4] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl group-hover:shadow-cyan-500/50">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Collaboration</h3>
-              <p className="text-gray-400">Working together to achieve shared goals and success</p>
-            </div>
-
-            <div className="text-center p-6 group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#2563eb] to-[#0891b2] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl group-hover:shadow-blue-500/50">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Innovation</h3>
-              <p className="text-gray-400">Embracing new ideas and creative solutions to challenges</p>
-            </div>
-
-            <div className="text-center p-6 group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#0891b2] to-[#1e3a8a] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl group-hover:shadow-cyan-500/50">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Integrity</h3>
-              <p className="text-gray-400">Acting with honesty and strong moral principles</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((v) => {
+              const Icon = v.icon;
+              return (
+                <div key={v.title} className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-center">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${v.color} flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{v.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{v.desc}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Departments Section */}
-      <section className="py-20 bg-[#e8edf5]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[#0f1729] mb-4">Our Departments</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Specialized teams working together to drive our mission forward
+      {/* Departments */}
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Our Departments</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Specialized teams working together to drive our mission
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Technology */}
-            <div className="bg-gradient-to-br from-[#0f1729] to-[#1a2332] rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 border-t-4 border-[#2563eb] hover:transform hover:-translate-y-1">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#2563eb] to-[#3b82f6] rounded-lg flex items-center justify-center mb-4 shadow-md">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Technology</h3>
-              <p className="text-gray-300 mb-4">
-                Building innovative solutions and maintaining our technical infrastructure with cutting-edge technologies.
-              </p>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Software Development
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Infrastructure & DevOps
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Data Analytics
-                </li>
-              </ul>
-            </div>
 
-            {/* Operations */}
-            <div className="bg-gradient-to-br from-[#0f1729] to-[#1a2332] rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 border-t-4 border-[#0891b2] hover:transform hover:-translate-y-1">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#0891b2] to-[#06b6d4] rounded-lg flex items-center justify-center mb-4 shadow-md">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Operations</h3>
-              <p className="text-gray-300 mb-4">
-                Ensuring smooth day-to-day operations and optimizing our processes for maximum efficiency.
-              </p>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#2563eb] rounded-full mr-2"></span>
-                  Project Management
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#2563eb] rounded-full mr-2"></span>
-                  Process Optimization
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#2563eb] rounded-full mr-2"></span>
-                  Quality Assurance
-                </li>
-              </ul>
-            </div>
-
-            {/* Finance */}
-            <div className="bg-gradient-to-br from-[#0f1729] to-[#1a2332] rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 border-t-4 border-[#3b82f6] hover:transform hover:-translate-y-1">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#2563eb] to-[#0891b2] rounded-lg flex items-center justify-center mb-4 shadow-md">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Finance</h3>
-              <p className="text-gray-300 mb-4">
-                Managing financial resources responsibly and ensuring sustainable growth for the organization.
-              </p>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Financial Planning
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Budget Management
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Compliance & Reporting
-                </li>
-              </ul>
-            </div>
-
-            {/* Business Development */}
-            <div className="bg-gradient-to-br from-[#0f1729] to-[#1a2332] rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 border-t-4 border-[#2563eb] hover:transform hover:-translate-y-1">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#1e3a8a] to-[#0891b2] rounded-lg flex items-center justify-center mb-4 shadow-md">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Business Development</h3>
-              <p className="text-gray-300 mb-4">
-                Identifying growth opportunities and building strategic partnerships to expand our reach.
-              </p>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#3b82f6] rounded-full mr-2"></span>
-                  Strategic Partnerships
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#3b82f6] rounded-full mr-2"></span>
-                  Market Expansion
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#3b82f6] rounded-full mr-2"></span>
-                  Client Relations
-                </li>
-              </ul>
-            </div>
-
-            {/* Customer Service */}
-            <div className="bg-gradient-to-br from-[#0f1729] to-[#1a2332] rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 border-t-4 border-[#06b6d4] hover:transform hover:-translate-y-1">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#06b6d4] to-[#0891b2] rounded-lg flex items-center justify-center mb-4 shadow-md">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Customer Service</h3>
-              <p className="text-gray-300 mb-4">
-                Providing exceptional support and building lasting relationships with our customers.
-              </p>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Customer Support
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Client Success
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#0891b2] rounded-full mr-2"></span>
-                  Feedback Management
-                </li>
-              </ul>
-            </div>
-
-            {/* Accounting */}
-            <div className="bg-gradient-to-br from-[#0f1729] to-[#1a2332] rounded-xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 border-t-4 border-[#0891b2] hover:transform hover:-translate-y-1">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#0891b2] to-[#2563eb] rounded-lg flex items-center justify-center mb-4 shadow-md">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Accounting</h3>
-              <p className="text-gray-300 mb-4">
-                Maintaining accurate financial records and ensuring transparent reporting practices.
-              </p>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#2563eb] rounded-full mr-2"></span>
-                  Financial Reporting
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#2563eb] rounded-full mr-2"></span>
-                  Audit & Compliance
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-[#2563eb] rounded-full mr-2"></span>
-                  Tax Management
-                </li>
-              </ul>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {departments.map((dept) => {
+              const Icon = dept.icon;
+              const c = colorMap[dept.color];
+              return (
+                <div key={dept.title} className={`rounded-2xl border ${c.border} ${c.bg} p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}>
+                  <div className={`w-12 h-12 rounded-xl ${c.iconBg} flex items-center justify-center mb-4`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{dept.title}</h3>
+                  <p className="text-sm text-gray-600 mb-4">{dept.desc}</p>
+                  <ul className="space-y-2">
+                    {dept.items.map((item) => (
+                      <li key={item} className="flex items-center text-sm text-gray-500">
+                        <span className={`w-1.5 h-1.5 rounded-full ${c.dot} mr-2.5 flex-shrink-0`} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Join the Team CTA - Matching footer style */}
-      <section className="bg-[#0f1729] text-white py-20 relative overflow-hidden border-t border-gray-800">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl"></div>
+      {/* Join CTA */}
+      <section className="py-20 bg-gray-950 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
         </div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h2 className="text-4xl font-bold mb-6">Join Our Team</h2>
-          <p className="text-xl mb-10 max-w-3xl mx-auto text-gray-300">
-            We're always looking for talented, passionate individuals who want to make a difference. 
-            If you're ready to take your career to the next level, we'd love to hear from you.
+        <div className="relative max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Join Our Team</h2>
+          <p className="text-gray-400 text-lg mb-10 leading-relaxed">
+            We're looking for talented, passionate individuals who want to make a difference in Kenya's education system.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="/careers" 
-              className="inline-block bg-gradient-to-r from-[#2563eb] to-[#3b82f6] text-white font-semibold py-4 px-10 rounded-lg hover:from-[#3b82f6] hover:to-[#2563eb] transition-all duration-300 shadow-xl hover:shadow-2xl hover:transform hover:-translate-y-1"
+            <a
+              href="/careers"
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-8 rounded-xl transition-colors shadow-lg shadow-blue-600/25"
             >
               View Open Positions
+              <ArrowRight className="w-4 h-4" />
             </a>
-            <a 
-              href="/contact" 
-              className="inline-block bg-transparent border-2 border-[#0891b2] text-[#0891b2] font-semibold py-4 px-10 rounded-lg hover:bg-[#0891b2] hover:text-white transition-all duration-300 hover:transform hover:-translate-y-1"
+            <a
+              href="/contact"
+              className="inline-flex items-center justify-center gap-2 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 font-semibold py-3.5 px-8 rounded-xl transition-colors"
             >
               Contact Us
             </a>
           </div>
         </div>
       </section>
-      <Footer/>
+
+      <Footer />
     </>
   );
 };
