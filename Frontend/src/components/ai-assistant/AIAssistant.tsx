@@ -201,11 +201,13 @@ export default function AIAssistant() {
           }),
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error('ASSISTANT_OFFLINE');
+          const errorMsg = data?.error || data?.message || 'ASSISTANT_OFFLINE';
+          throw new Error(errorMsg);
         }
 
-        const data = await response.json();
         reply =
           data?.data?.reply ||
           data?.message ||
@@ -222,12 +224,16 @@ export default function AIAssistant() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Chat Error:', error);
+      const errorContent = error?.message && error.message !== 'ASSISTANT_OFFLINE'
+        ? error.message
+        : 'I\'m having trouble connecting right now. Please try again in a moment, or reach out to us at contact@teksoft.co.ke for direct assistance.';
+
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I\'m having trouble connecting right now. Please try again in a moment, or reach out to us at contact@teksoft.co.ke for direct assistance.',
+        content: errorContent,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, fallbackMessage]);

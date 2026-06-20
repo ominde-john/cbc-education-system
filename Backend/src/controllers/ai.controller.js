@@ -23,9 +23,9 @@ exports.chat = async (req, res) => {
   try {
     // Check if API key is available
     if (!openai) {
-      return res.status(503).json({ 
-        error: "AI service is not configured. Please add your API key to the .env file.",
-        instructions: "Get your API key from https://openrouter.ai/keys or https://platform.openai.com/api-keys"
+      return res.status(200).json({
+        message: "Hi! I'm Anna, your AI assistant. I'm currently in demo mode or maintenance as the AI service is not fully configured. Please try again later or reach out to us at contact@teksoft.co.ke for direct assistance.",
+        isDemo: true
       });
     }
 
