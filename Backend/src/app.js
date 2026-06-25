@@ -40,7 +40,10 @@ const defaultOrigins = [
   'https://localhost:5174',
   'https://cbc-education-system-a478.vercel.app',
   'https://cbc-education-system-1.onrender.com',
+  // Additional production frontend origins
+  'https://www.noneaa.com',
   // GitHub Codespaces patterns
+
   'https://*.app.github.dev',
   'https://*.preview.app.github.dev',
   'https://*.vercel.app',
