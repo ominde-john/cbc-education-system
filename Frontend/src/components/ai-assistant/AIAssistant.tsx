@@ -11,7 +11,7 @@ interface Message {
   timestamp: Date;
 }
 
-const GREETING_TEXT = "Hi! I'm Anna, your AI assistant for the NONEAA platform. I can help you with anything related to Kenya's Competency-Based Education system. What would you like to know?";
+const GREETING_TEXT = "Hi! I'm Anna, your Virtual AI Assistant for the NONEAA platform. I can help you with anything related to Noneaa platform . What would you like to know?";
 const TYPING_SPEED_MS = 25;
 const INPUT_MAX_HEIGHT_PX = 120;
 
@@ -228,7 +228,7 @@ export default function AIAssistant() {
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I\'m having trouble connecting right now. Please try again in a moment, or reach out to us at contact@teksoft.co.ke for direct assistance.',
+        content: 'I\'m having trouble connecting right now. Please try again in a moment, or reach out to us at contact@noneaa.com for direct assistance.',
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, fallbackMessage]);
@@ -312,7 +312,7 @@ export default function AIAssistant() {
                 {/* Info */}
                 <div className="flex-1">
                   <h3 className="text-white font-semibold text-sm">Anna</h3>
-                  <p className="text-blue-100 text-xs">VA • Currently offline</p>
+                  <p className="text-blue-100 text-xs">VA • Online</p>
                 </div>
 
                 {/* Close */}
