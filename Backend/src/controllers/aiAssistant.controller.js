@@ -1,6 +1,9 @@
 const crypto = require('crypto');
 const OpenAI = require('openai');
-const { query, pool } = require('../config/database');
+// Supabase admin client is initialized in server-side layers (repos/services).
+
+
+
 
 const CFG = {
   apiKey: process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY || '',
@@ -29,8 +32,8 @@ const RATE_WINDOW_MS = 60 * 1000;
 const tableCache = new Map();
 const userBuckets = new Map();
 const schoolBuckets = new Map();
-const AI_DB_CONTEXT_ENABLED =
-  process.env.AI_ENABLE_DB_CONTEXT === 'true' || Boolean(process.env.SUPABASE_DB_PASSWORD);
+const AI_DB_CONTEXT_ENABLED = process.env.AI_ENABLE_DB_CONTEXT === 'true';
+
 
 const PRESETS = {
   fee_inquiry:
@@ -152,18 +155,11 @@ function consumeBucket(map, key, maxPerWindow) {
 }
 
 async function hasTable(name) {
-  if (!AI_DB_CONTEXT_ENABLED) return false;
-  if (tableCache.has(name)) return tableCache.get(name);
-  try {
-    const result = await query('SELECT to_regclass($1) AS table_name', [`public.${name}`]);
-    const exists = Boolean(result.rows[0]?.table_name);
-    tableCache.set(name, exists);
-    return exists;
-  } catch {
-    tableCache.set(name, false);
-    return false;
-  }
+  // Placeholder until we migrate table existence checks to Supabase schema RPC.
+  // For now, we assume tables exist when AI_DB_CONTEXT_ENABLED=true.
+  return AI_DB_CONTEXT_ENABLED;
 }
+
 
 async function getTableSupport() {
   const [conversations, messages, usage] = await Promise.all([
@@ -207,22 +203,18 @@ async function loadSchoolContext(schoolId) {
     return context;
   }
 
-  try {
-    const school = await query('SELECT name, code, level FROM schools WHERE id = $1 LIMIT 1', [schoolId]);
-    if (school.rows.length) {
-      context.school_name = school.rows[0].name;
-      context.school_code = school.rows[0].code;
-      context.school_level = school.rows[0].level;
-    }
-  } catch (error) {
-    log('error', 'context_school_failed', {
-      schoolId,
-      code: error.code,
-      message: sanitizeText(error.message, 180),
-    });
-  }
+  // TODO: Migrate to Supabase Admin SDK queries.
+  // Temporary behavior: return empty context until repositories are implemented.
+  return context;
+}
 
-  try {
+// DB context loading block intentionally disabled during refactor (pg -> Supabase).
+/*
+try {
+
+
+
+
     const year = await query(
       `SELECT name, year
        FROM academic_years
@@ -1105,7 +1097,7 @@ async function legacyChat(req, res) {
 /**
  * Dedicated streaming endpoint - supports authenticated and public users.
  */
-async function streamChat(req, res) {
+async function streamChatLegacy(req, res) {
   const reqId = requestId(req);
 
   if (!envState.ok && !CFG.fallbackEnabled) {
@@ -1149,6 +1141,7 @@ async function streamChat(req, res) {
  * Provides general CBE platform information without school-specific context.
  */
 async function preparePublicRequest(req, reqId) {
+
   // Apply public rate limiting
   const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
   const publicRate = consumeBucket(publicBuckets, clientIp, PUBLIC_RATE_LIMIT_PER_MIN);

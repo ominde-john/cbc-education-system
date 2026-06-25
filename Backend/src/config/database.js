@@ -26,15 +26,22 @@ if (!supabaseUrl) {
 // If you provide DATABASE_URL or SUPABASE_DB_PASSWORD, we can connect.
 // If you only have URL+anon+service-role keys, you must instead refactor the DB layer
 // to use Supabase client calls, which is out of scope for this env-template fix.
+// NOTE:
+// This app uses `pg` Pool for DB access.
+// Supabase anon/service-role keys are JWTs for the Supabase API, not DB credentials.
+// Therefore, `pg` still requires either:
+// - DATABASE_URL (postgresql://...)
+// - or SUPABASE_DB_PASSWORD (to construct a postgres connection string)
+//
+// To support environments where DATABASE_URL/SUPABASE_DB_PASSWORD are not set,
+// we will NOT hard-exit at startup; instead we allow the server to boot.
+// Any DB query will fail with a clear error.
 if (!process.env.DATABASE_URL && !dbPassword) {
   console.error(
-    "❌ Missing SUPABASE_DB_PASSWORD (or DATABASE_URL). Current DB layer requires a Postgres password to connect via `pg`."
+    "[database] Missing DATABASE_URL (postgresql://...) or SUPABASE_DB_PASSWORD. Supabase anon/service-role keys are not DB credentials; pg connection will fail."
   );
-  console.error(
-    "You asked for URL+anon+service-role only, but that is not sufficient for direct `pg` connections."
-  );
-  process.exit(1);
 }
+
 
 
 // ==================== EXTRACT PROJECT REF ====================
