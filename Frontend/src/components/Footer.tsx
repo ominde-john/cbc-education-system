@@ -3,11 +3,10 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
-  CircuitBoard, Database, Mail, Phone, ArrowRight,
+  CircuitBoard, Database, Mail, Phone,
   Facebook, Twitter, Linkedin, Instagram,
   LineChart, ClipboardCheck, BookOpen, Users,
-  ShieldCheck, Globe, ChevronRight, ExternalLink,
-  CheckCircle,
+  ShieldCheck, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,15 +42,18 @@ export default function Footer() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
+  const [emailError, setEmailError] = useState(false);
 
   const handleSubscribe = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email.trim())) {
-      alert('Please enter a valid email address.');
+      setEmailError(true);
       return;
     }
 
+    setEmailError(false);
     setLoading(true);
 
     try {
@@ -61,7 +63,7 @@ export default function Footer() {
 
       if (insertError) {
         if (insertError.code === '23505') {
-          alert("You're already subscribed.");
+          setAlreadySubscribed(true);
           return;
         }
         throw insertError;
@@ -81,7 +83,6 @@ export default function Footer() {
       setEmail('');
     } catch (error) {
       console.error(error);
-      alert('Unable to subscribe. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -171,32 +172,45 @@ export default function Footer() {
                 Weekly insights on CBE digital transformation.
               </p>
 
-              {!success ? (
-                <div className="mt-4 space-y-3">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@school.ke"
-                      className="pl-11 h-11 bg-slate-900/50 border-slate-700/50 rounded-xl focus-visible:ring-blue-500 text-sm"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSubscribe}
-                    disabled={loading}
-                    className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium"
-                  >
-                    {loading ? 'Subscribing...' : 'Subscribe'}
-                  </Button>
+              <div className="mt-4 space-y-3">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailError) setEmailError(false);
+                    }}
+                    placeholder="email@school.ke"
+                    className={`pl-11 h-11 bg-slate-900/50 rounded-xl focus-visible:ring-blue-500 text-sm transition-colors ${
+                      emailError
+                        ? 'border-red-500 focus-visible:ring-red-500'
+                        : 'border-slate-700/50'
+                    }`}
+                  />
                 </div>
-              ) : (
-                <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-6 text-center">
-                  <CheckCircle className="text-emerald-400" size={32} />
-                  <span className="text-emerald-400 font-semibold">Success</span>
-                </div>
-              )}
+
+                <Button
+                  onClick={handleSubscribe}
+                  disabled={loading || success || alreadySubscribed}
+                  className={`w-full h-11 rounded-xl font-medium text-white transition-colors ${
+                    success
+                      ? 'bg-emerald-600 hover:bg-emerald-600 cursor-default text-xs'
+                      : alreadySubscribed
+                      ? 'bg-amber-600 hover:bg-amber-600 cursor-default'
+                      : 'bg-blue-600 hover:bg-blue-500'
+                  }`}
+                >
+                  {success
+                    ? 'Thank you for subscribing! Please check your email.'
+                    : alreadySubscribed
+                    ? 'Already subscribed'
+                    : loading
+                    ? 'Subscribing...'
+                    : 'Subscribe'}
+                </Button>
+              </div>
 
               <div className="mt-6 pt-6 border-t border-slate-800">
                 <div className="flex items-start gap-3">
