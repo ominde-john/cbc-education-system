@@ -189,22 +189,30 @@ export default function ContactPage() {
     setStatus(null);
 
     try {
-      // Fixed: Inserted the missing Fetch request targeting your Edge function
-      const response = await fetch('https://ywcrsgaxftooovqipkdr.supabase.co/functions/v1/message-received-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          school: formData.school,
-          subject: formData.subject,
-          message: formData.message
-        }),
-      });
+      const supabaseUrl = 'https://ywcrsgaxftooovqipkdr.supabase.co';
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+      if (!supabaseAnonKey) {
+        throw new Error('Supabase configuration is missing');
+      }
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/message-received-confirmation`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            school: formData.school,subject: formData.subject,
+            message: formData.message,
+          }),
+        }
+      );
       const json = await response.json();
 
       if (response.ok && json.success) {
@@ -214,10 +222,17 @@ export default function ContactPage() {
         });
         setFormData({ fullName: '', email: '', phone: '', school: '', subject: '', message: '' });
       } else {
-        setStatus({ type: 'error', message: json.error || 'Something went wrong. Please try again.' });
+        setStatus({
+          type: 'error',
+          message: json.error || 'Something went wrong. Please try again.'
+        });
       }
-    } catch {
-      setStatus({ type: 'error', message: 'Network error. Please check your connection and try again.' });
+    } catch (err) {
+      console.error(err);
+      setStatus({
+        type: 'error',
+        message: 'Network error. Please check your connection and try again.'
+      });
     } finally {
       setIsSubmitting(false);
     }
