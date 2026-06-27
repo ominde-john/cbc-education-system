@@ -1,12 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { 
-  CircuitBoard, Database, Mail, Phone, ArrowRight,
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import {
+  CircuitBoard, Database, Mail, Phone,
   Facebook, Twitter, Linkedin, Instagram,
   LineChart, ClipboardCheck, BookOpen, Users,
-  ShieldCheck, Globe, ChevronRight, ExternalLink
+  ShieldCheck, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,117 +29,97 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+    transition: { staggerChildren: 0.1 },
+  },
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 15 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
 export default function Footer() {
-
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
+  const [emailError, setEmailError] = useState(false);
 
   const handleSubscribe = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email.trim())) {
-      alert("Please enter a valid email address.");
+      setEmailError(true);
       return;
     }
 
+    setEmailError(false);
     setLoading(true);
 
     try {
-
-      // Save subscriber
       const { error: insertError } = await supabase
-        .from("subscribers")
-        .insert({
-          email: email.trim(),
-        });
+        .from('subscribers')
+        .insert({ email: email.trim() });
 
       if (insertError) {
-
-        // Duplicate email
-        if (insertError.code === "23505") {
-          alert("You're already subscribed.");
+        if (insertError.code === '23505') {
+          setAlreadySubscribed(true);
           return;
         }
-
         throw insertError;
       }
 
-      // Send confirmation email
-      const { data, error: functionError } =
-       await supabase.functions.invoke(
-         "subscribe-confirmation",
-         {
-           body: {
-             email: email.trim(),
-             },
-           }
-         );
-      console.log("Edge Function Response:", data);
-      console.log("Edge Function Error:", functionError);
+      const { data, error: functionError } = await supabase.functions.invoke(
+        'send-subscription-email',
+        { body: { email: email.trim() } }
+      );
 
-      if (functionError) {
-        throw functionError;
-      }
+      console.log('Edge Function Response:', data);
+      console.log('Edge Function Error:', functionError);
 
-      alert(" Thank you for subscribing! Please check your email.");
+      if (functionError) throw functionError;
 
-      setEmail("");
-
+      setSuccess(true);
+      setEmail('');
     } catch (error) {
       console.error(error);
-      alert("Unable to subscribe. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <footer className="relative bg-[#0b0f1a] text-slate-300 overflow-hidden border-t border-slate-800/50">
+    <footer className="relative overflow-hidden bg-slate-950 text-slate-300">
       {/* Dynamic Background */}
-      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-blue-600/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-indigo-600/5 blur-[100px] rounded-full" />
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl" />
       </div>
 
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true }}
-        className="container mx-auto px-6 lg:px-12 py-16"
+        viewport={{ once: true, margin: '-100px' }}
+        className="relative max-w-7xl mx-auto px-6 py-16 lg:py-20"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           {/* Brand & Description */}
-          <motion.div variants={itemVariants} className="lg:col-span-4 space-y-6">
-            <Link to="/" className="inline-block group">
-              <img
-                src="/Noneea-logo.jpg" 
-                alt="Noneea Logo"
-                className="h-16 w-16 object-cover rounded-full transition-transform group-hover:scale-105"
-              />
+          <motion.div variants={itemVariants} className="lg:col-span-1">
+            <Link to="/" className="flex items-center gap-2 text-white font-semibold text-lg">
+              <span className="text-blue-500">NONEAA</span>
             </Link>
-            
-            <p className="text-slate-400 text-base leading-relaxed max-w-sm">
-              Empowering Kenyan educators with the next generation of <span className="text-white font-medium">Competency-Based</span> infrastructure. 
+            <p className="mt-4 text-sm leading-relaxed">
+              Empowering Kenyan educators with the next generation of Competency-Based infrastructure.
             </p>
 
             {/* Social Matrix */}
-            <div className="flex gap-2">
+            <div className="mt-6 flex items-center gap-3">
               {[Facebook, Twitter, Linkedin, Instagram].map((Icon, idx) => (
                 <a
                   key={idx}
                   href="#"
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all duration-300"
+                  className="p-2 rounded-lg bg-slate-900/50 border border-slate-800 hover:border-blue-500/50 hover:text-white transition-colors"
                 >
                   <Icon size={18} />
                 </a>
@@ -148,72 +128,99 @@ export default function Footer() {
           </motion.div>
 
           {/* Navigation Matrix */}
-          <div className="lg:col-span-4 grid grid-cols-2 gap-8">
-            <motion.div variants={itemVariants} className="space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white/90">Platform</h4>
-              <nav className="flex flex-col gap-3">
+          <motion.div variants={itemVariants} className="lg:col-span-2 grid grid-cols-2 gap-8">
+            <div>
+              <h4 className="text-white font-semibold mb-4">Platform</h4>
+              <ul className="space-y-3">
                 {platformLinks.map((link) => (
-                  <Link 
-                    key={link.label} 
-                    to={link.href} 
-                    className="group flex items-center gap-3 text-slate-400 hover:text-blue-400 transition-all"
-                  >
-                    <link.icon size={14} className="text-slate-600 group-hover:text-blue-500 transition-colors" />
-                    <span className="text-sm font-medium">{link.label}</span>
-                  </Link>
+                  <li key={link.label}>
+                    <Link
+                      to={link.href}
+                      className="group flex items-center gap-2 text-sm hover:text-blue-400 transition-colors"
+                    >
+                      <link.icon size={16} className="text-slate-500 group-hover:text-blue-400" />
+                      {link.label}
+                    </Link>
+                  </li>
                 ))}
-              </nav>
-            </motion.div>
+              </ul>
+            </div>
 
-            <motion.div variants={itemVariants} className="space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white/90">Resources</h4>
-              <nav className="flex flex-col gap-3">
+            <div>
+              <h4 className="text-white font-semibold mb-4">Resources</h4>
+              <ul className="space-y-3">
                 {resourceLinks.map((link) => (
-                  <Link 
-                    key={link.label} 
-                    to={link.href} 
-                    className="group flex items-center gap-3 text-slate-400 hover:text-blue-400 transition-all"
-                  >
-                    <link.icon size={14} className="text-slate-600 group-hover:text-blue-500 transition-colors" />
-                    <span className="text-sm font-medium">{link.label}</span>
-                  </Link>
+                  <li key={link.label}>
+                    <Link
+                      to={link.href}
+                      className="group flex items-center gap-2 text-sm hover:text-blue-400 transition-colors"
+                    >
+                      <link.icon size={16} className="text-slate-500 group-hover:text-blue-400" />
+                      {link.label}
+                    </Link>
+                  </li>
                 ))}
-              </nav>
-            </motion.div>
-          </div>
+              </ul>
+            </div>
+          </motion.div>
 
           {/* Newsletter / CTA Card */}
-          <motion.div variants={itemVariants} className="lg:col-span-4">
-            <div className="p-6 rounded-[2rem] bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-700/50 backdrop-blur-sm">
-              <h4 className="text-lg font-bold text-white mb-2">Join the Movement</h4>
-              <p className="text-xs text-slate-400 mb-6">Weekly insights on CBE digital transformation.</p>
-              
-              <div className="space-y-3">
+          <motion.div variants={itemVariants} className="lg:col-span-1">
+            <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-sm">
+              <h4 className="text-white font-semibold text-lg">Join the Movement</h4>
+              <p className="mt-2 text-sm text-slate-400">
+                Weekly insights on CBE digital transformation.
+              </p>
+
+              <div className="mt-4 space-y-3">
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <Input 
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <Input
+                    type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailError) setEmailError(false);
+                    }}
                     placeholder="email@school.ke"
-                    className="pl-11 h-11 bg-slate-900/50 border-slate-700/50 rounded-xl focus-visible:ring-blue-500 text-sm"
+                    className={`pl-11 h-11 bg-slate-900/50 rounded-xl focus-visible:ring-blue-500 text-sm transition-colors ${
+                      emailError
+                        ? 'border-red-500 focus-visible:ring-red-500'
+                        : 'border-slate-700/50'
+                    }`}
                   />
                 </div>
-                <Button 
+
+                <Button
                   onClick={handleSubscribe}
-                  disabled={loading}
-                  className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20"
+                  disabled={loading || success || alreadySubscribed}
+                  className={`w-full h-11 rounded-xl font-medium text-white transition-colors ${
+                    success
+                      ? 'bg-emerald-600 hover:bg-emerald-600 cursor-default text-xs'
+                      : alreadySubscribed
+                      ? 'bg-amber-600 hover:bg-amber-600 cursor-default'
+                      : 'bg-blue-600 hover:bg-blue-500'
+                  }`}
                 >
-                  {loading ? "Subscribing..." : "Subscribe"}
+                  {success
+                    ? 'Thank you for subscribing! Please check your email.'
+                    : alreadySubscribed
+                    ? 'Already subscribed'
+                    : loading
+                    ? 'Subscribing...'
+                    : 'Subscribe'}
                 </Button>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-700/50 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
-                  <Phone size={16} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority Support</p>
-                  <p className="text-sm font-bold text-white tracking-tight">+254 111 276 271</p>
+              <div className="mt-6 pt-6 border-t border-slate-800">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <Phone size={16} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">Priority Support</p>
+                    <p className="text-sm text-slate-400">+254 111 276 271</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -222,16 +229,13 @@ export default function Footer() {
       </motion.div>
 
       {/* Footer Bottom */}
-      <div className="bg-[#080b14] border-t border-slate-800/50">
-        <div className="container mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-center md:text-left">
-            <p className="text-xs font-bold text-slate-400">
-              © {new Date().getFullYear()} Noneaa Africa. <span className="text-slate-600 ml-2 hidden md:inline">|</span> 
-              <span className="block md:inline mt-1 md:mt-0 md:ml-2 text-slate-500 font-normal italic">Innovation for The Kenyan Classroom.</span>
-            </p>
-          </div>
-          
-          <div className="flex gap-6">
+      <div className="relative border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-slate-500">
+            © {new Date().getFullYear()} Noneaa Africa. | Innovation for The Kenyan Classroom.
+          </p>
+
+          <div className="flex items-center gap-6">
             {[
               { label: 'Privacy', href: '/privacy' },
               { label: 'Terms', href: '/terms' },
@@ -240,7 +244,7 @@ export default function Footer() {
               <Link
                 key={item.label}
                 to={item.href}
-                className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-500 hover:text-blue-500 transition-colors"
+                className="text-sm text-slate-500 hover:text-white transition-colors"
               >
                 {item.label}
               </Link>
