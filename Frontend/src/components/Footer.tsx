@@ -74,18 +74,20 @@ export default function Footer() {
       }
 
       // Send confirmation email
-      const { error: functionError } =
-        await supabase.functions.invoke(
-          "subscribe-confirmation",
-          {
-            body: {
-              email: email.trim(),
-            },
-          }
-        );
+      const { data, error: functionError } =
+       await supabase.functions.invoke(
+         "subscribe-confirmation",
+         {
+           body: {
+             email: email.trim(),
+             },
+           }
+         );
+      console.log("Edge Function Response:", data);
+      console.log("Edge Function Error:", functionError);
 
       if (functionError) {
-        console.error(functionError);
+        throw functionError;
       }
 
       alert(" Thank you for subscribing! Please check your email.");
