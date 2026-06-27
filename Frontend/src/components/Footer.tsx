@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   CircuitBoard, Database, Mail, Phone, ArrowRight,
   Facebook, Twitter, Linkedin, Instagram,
@@ -37,6 +39,67 @@ const itemVariants = {
 };
 
 export default function Footer() {
+
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email.trim())) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+
+      // Save subscriber
+      const { error: insertError } = await supabase
+        .from("subscribers")
+        .insert({
+          email: email.trim(),
+        });
+
+      if (insertError) {
+
+        // Duplicate email
+        if (insertError.code === "23505") {
+          alert("You're already subscribed.");
+          return;
+        }
+
+        throw insertError;
+      }
+
+      // Send confirmation email
+      const { error: functionError } =
+        await supabase.functions.invoke(
+          "subscribe-confirmation",
+          {
+            body: {
+              email: email.trim(),
+            },
+          }
+        );
+
+      if (functionError) {
+        console.error(functionError);
+      }
+
+      alert(" Thank you for subscribing! Please check your email.");
+
+      setEmail("");
+
+    } catch (error) {
+      console.error(error);
+      alert("Unable to subscribe. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <footer className="relative bg-[#0b0f1a] text-slate-300 overflow-hidden border-t border-slate-800/50">
       {/* Dynamic Background */}
@@ -127,12 +190,18 @@ export default function Footer() {
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input 
-                    placeholder="email@school.ke" 
-                    className="pl-11 h-11 bg-slate-900/50 border-slate-700/50 rounded-xl focus-visible:ring-blue-500 text-sm" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="email@school.ke"
+                    className="pl-11 h-11 bg-slate-900/50 border-slate-700/50 rounded-xl focus-visible:ring-blue-500 text-sm"
                   />
                 </div>
-                <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20">
-                  Subscribe
+                <Button 
+                  onClick={handleSubscribe}
+                  disabled={loading}
+                  className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20"
+                >
+                  {loading ? "Subscribing..." : "Subscribe"}
                 </Button>
               </div>
 
