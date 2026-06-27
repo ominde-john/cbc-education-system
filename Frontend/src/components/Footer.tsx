@@ -110,7 +110,7 @@ export default function Footer() {
               <span className="text-blue-500">NONEAA</span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed">
-              Empowering Kenyan educators with the next generation of Competency-Based infrastructure.
+              Empowering Kenyan educators with the next generation of Competency Based infrastructure.
             </p>
 
             {/* Social Matrix */}
