@@ -92,7 +92,7 @@ export default function ContactPage() {
     setStatus(null);
 
     try {
-      const response = await fetch('https://your-project-ref.supabase.co/functions/v1/contact-form', {
+      const response = await fetch('https://ywcrsgaxftooovqipkdr.supabase.co/functions/v1/message-received-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
