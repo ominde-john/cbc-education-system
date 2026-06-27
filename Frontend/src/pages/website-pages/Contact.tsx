@@ -35,9 +35,9 @@ export default function ContactPage() {
     
     try {
       // 1. Hardcoded target Edge Function endpoint route URL
-      const functionUrl = 'https://ywcrsgaxftooovqipkdr.supabase.co/functions/v1/contact';
+      const functionUrl = 'https://ywcrsgaxftooovqipkdr.supabase.co/functions/v1/message-received-confirmation';
       
-      // 2. Your provided secure public anon validation key string
+     
       const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3Y3JzZ2F4ZnRvb292cWlwa2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExODc5MjAsImV4cCI6MjA4Njc2MzkyMH0.kpA6-eGL_6Sxn13fm2p1GqJP4aoaZfhBE-binFkRfQk";
 
       const response = await fetch(functionUrl, {
