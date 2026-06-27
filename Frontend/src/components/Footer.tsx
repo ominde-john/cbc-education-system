@@ -69,7 +69,7 @@ export default function Footer() {
       }
 
       const { data, error: functionError } = await supabase.functions.invoke(
-        "subscribe-confirmation",
+        "send-subscription-email",
         { body: { email: email.trim() } }
       );
 
