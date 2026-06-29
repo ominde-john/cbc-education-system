@@ -27,13 +27,20 @@ const unwrapResponse = <T>(response: ApiResponse<T>, fallbackMessage: string): T
 };
 
 // API Configuration
-// In production, use relative path so requests are proxied through Vercel (avoids CORS on custom domains)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
+// Prefer explicit env var. Fallback to local dev.
+// IMPORTANT: do NOT use '/api' as a base in generic production hosts unless you have guaranteed rewrites.
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? '' : 'http://localhost:3001/api');
+
+// Normalize: ensure no trailing slashes
+const API_BASE_URL_NORMALIZED = API_BASE_URL.replace(/\/+$/, '');
 
 // 🔍 DEBUG LOGGING
-console.log('🔍 Frontend auth - API_BASE_URL:', API_BASE_URL);
+console.log('🔍 Frontend auth - API_BASE_URL:', API_BASE_URL_NORMALIZED);
 const TOKEN_KEY = 'cbe_access_token';
+
 const REFRESH_TOKEN_KEY = 'cbe_refresh_token';
 const USER_KEY = 'cbe_user_data';
 
@@ -177,7 +184,8 @@ class ApiClient {
 }
 
 // Auth API Client
-const apiClient = new ApiClient(API_BASE_URL);
+const apiClient = new ApiClient(API_BASE_URL_NORMALIZED);
+
 
 // Authentication Service
 export class AuthService {
